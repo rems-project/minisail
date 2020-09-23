@@ -1,7 +1,5 @@
 # minisail
 
-(This is what is meant to happen (but at the moment need to use Sail + some extras to access Env members))
-
 This is a wrapper around the Sail parser and type checker, and the code exported from
 Isabelle for the Sail declarative type checker and Sail to MiniSail converter.
 Its structure is based on isla/isla-sail.
