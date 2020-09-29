@@ -15,7 +15,7 @@ named_theorems ms_wb "Facts for helping with well-sortedness"
 
 section \<open>Definitions\<close>
 
-(* FIXME Argument contexts are the wrong way round *)
+
 inductive wfV :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> v \<Rightarrow> b \<Rightarrow> bool" (" _ ; _ ; _ \<turnstile>\<^sub>w\<^sub>f _ : _ " [50,50,50] 50)  and
           wfC :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> c \<Rightarrow> bool" (" _ ; _ ; _   \<turnstile>\<^sub>w\<^sub>f _ " [50,50] 50)  and         
           wfG :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> bool" (" _ ; _  \<turnstile>\<^sub>w\<^sub>f _ " [50,50] 50) and
@@ -195,14 +195,14 @@ inductive_cases wfCE_elims:
  " \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op opp v1 v2 : b"
 
 inductive_cases wfT_elims:
- "\<Pi>; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau>::\<tau>"
- "\<Pi>; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b | c \<rbrace>"
+ "\<Theta>; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau>::\<tau>"
+ "\<Theta>; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b | c \<rbrace>"
 
 inductive_cases wfG_elims:
-  "\<Pi> ; \<B> \<turnstile>\<^sub>w\<^sub>f GNil"
-  "\<Pi> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x,b,c)#\<^sub>\<Gamma>\<Gamma>"
-  "\<Pi> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x,b,TRUE)#\<^sub>\<Gamma>\<Gamma>"
-  "\<Pi> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x,b,FALSE)#\<^sub>\<Gamma>\<Gamma>"
+  "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f GNil"
+  "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f (x,b,c)#\<^sub>\<Gamma>\<Gamma>"
+  "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f (x,b,TRUE)#\<^sub>\<Gamma>\<Gamma>"
+  "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f (x,b,FALSE)#\<^sub>\<Gamma>\<Gamma>"
 
 inductive_cases wfTh_elims:
  " \<turnstile>\<^sub>w\<^sub>f []"
@@ -213,8 +213,8 @@ inductive_cases wfTD_elims:
  "\<Theta> \<turnstile>\<^sub>w\<^sub>f (AF_typedef_poly s bv lst )" 
 
 inductive_cases wfTs_elims:
-  "P ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f ([]::((string*\<tau>) list))"
-  "P ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f ((t#ts)::((string*\<tau>) list))"
+  "\<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f ([]::((string*\<tau>) list))"
+  "\<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f ((t#ts)::((string*\<tau>) list))"
 
 
 inductive_cases wfB_elims:
@@ -227,7 +227,7 @@ inductive_cases wfB_elims:
 equivariance wfV 
 
 
-(* This is by no means complete as we have for some of lemmas like weakening done it the hard way *)
+text \<open>This is by no means complete as we have for some of lemmas like weakening done it the hard way\<close>
 nominal_inductive wfV 
 avoids   wfV_conspI: bv | wfTI: z
 proof(goal_cases)
@@ -487,7 +487,7 @@ inductive_cases wfD_elims:
 
 equivariance wfE 
 
-(* This is by no means complete as we have for some of lemmas like weakening done it the hard way *)
+
 nominal_inductive wfE 
 avoids   wfE_appPI: bv |  wfS_varI: u |  wfS_letI: x | wfS_let2I: x  | wfS_branchI: x | wfS_assertI: x
     

@@ -9,16 +9,14 @@ declare freshers[simp del]
 chapter \<open>Context Subtyping  Lemmas\<close>
 
 
-text {* Lemmas allowing us to replace the type of a variable in the context with a subtype
-and have the judgement remain valid. Otherwise known as narrowing. *}
-
-
+text \<open>Lemmas allowing us to replace the type of a variable in the context with a subtype
+and have the judgement remain valid. Sometimes known as narrowing.\<close>
 
 section \<open>Replace Type of Variable in Context\<close>
 
-text {* Because the G-context is extended by the statements like let, we will need a generalised 
+text \<open> Because the G-context is extended by the statements like let, we will need a generalised 
 substitution lemma for statements. 
-For this we setup a function that replaces in G for a particular x the constraint for it *}
+For this we setup a function that replaces in G for a particular x the constraint for it\<close>
 
 nominal_function replace_in_g_many :: "\<Gamma> \<Rightarrow> (x*c) list \<Rightarrow> \<Gamma>" where
   "replace_in_g_many G xcs = List.foldr (\<lambda>(x,c) G. G[x \<longmapsto> c]) xcs G"
@@ -41,7 +39,6 @@ inductive_cases replace_in_g_subtyped_elims[elim!]:
   "\<Theta> ; \<B> \<turnstile> ((x,b,c)#\<^sub>\<Gamma>\<Gamma> G) \<langle> acs \<rangle> \<leadsto> ((x,b,c)#\<^sub>\<Gamma>G')"
   "\<Theta> ; \<B> \<turnstile> G' \<langle> (x,c)# acs \<rangle> \<leadsto> G"
 
-thm replace_in_g_def
 
 lemma rigs_atom_dom_eq:
   assumes "\<Theta> ; \<B> \<turnstile> G \<langle> xcs \<rangle> \<leadsto> G'"
@@ -116,7 +113,7 @@ proof -
   thus ?thesis using assms replace_in_g_fresh by metis
 qed
 
-text {* Wellscoping for an eXchange list *}
+text \<open> Wellscoping for an eXchange list\<close>
 inductive wsX:: "\<Gamma> \<Rightarrow> (x*c) list \<Rightarrow> bool" where
   wsX_NilI: "wsX G []"
  |  wsX_ConsI: "\<lbrakk> wsX G xcs ; atom x \<in> atom_dom G ; x \<notin> fst ` set xcs \<rbrakk> \<Longrightarrow> wsX G ((x,c)#xcs)"
@@ -405,9 +402,9 @@ proof -
 qed
 
 
-text {* We now prove versions of the @{text "ctx_subtype"} lemmas above using @{text "replace_in_g"}. First we do case where
+text \<open> We now prove versions of the @{text "ctx_subtype"} lemmas above using @{text "replace_in_g"}. First we do case where
 the replace is just for a single variable (indicated by suffix rig) and then the general case for
-multiple replacements (indicated by suffix rigs) *}
+multiple replacements (indicated by suffix rigs)\<close>
 
 lemma ctx_subtype_subtype_rigs:
   assumes "replace_in_g_subtyped \<Theta> \<B> \<Gamma>' xcs \<Gamma>" and  "\<Theta> ; \<B> ; \<Gamma>' \<turnstile> t1 \<lesssim> t2"  
@@ -495,8 +492,8 @@ lemma lookup_inside_unique_b[simp]:
 
 
 
-text {* I think using rule induction for values and expressions is only going to save us 
-from doing the elimination step *}
+text \<open> I think using rule induction for values and expressions is only going to save us 
+from doing the elimination step\<close>
 lemma ctx_subtype_v:
   fixes v::v
   assumes
@@ -697,7 +694,7 @@ proof -
   ultimately show ?thesis using check_v.intros by presburger 
 qed
 
-text {* Basically the same as @{text "ctx_subtype_v_eq"} but in a different form *}
+text \<open> Basically the same as @{text "ctx_subtype_v_eq"} but in a different form\<close>
 lemma ctx_subtype_v_rig_eq:
   fixes v::v
   assumes "replace_in_g_subtyped  \<Theta> \<B> \<Gamma>' [(x,c0)] \<Gamma>" and  

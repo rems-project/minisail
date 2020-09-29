@@ -86,8 +86,6 @@ abbreviation
 where 
   "v[x::=v']\<^sub>v\<^sub>v  \<equiv> subst_vv v x v'" 
 
-(* Note: Try to develop a style for these proofs that works for all cases (rather than opt for 
-the quick one liner for those cases where it works *)
 
 lemma fresh_subst_vv_if [simp]:
   "j \<sharp> t[i::=x]\<^sub>v\<^sub>v  = ((atom i \<sharp> t \<and> j \<sharp> t) \<or> (j \<sharp> x \<and> (j \<sharp> t \<or> j = atom i)))"
@@ -193,30 +191,13 @@ lemma subst_ev_id [simp]: "subst_ev A a (V_var a)  = A"
 
 lemma fresh_subst_ev_if [simp]:
   "j \<sharp> (subst_ev A i x ) = ((atom i \<sharp> A \<and> j \<sharp> A) \<or> (j \<sharp> x \<and> (j \<sharp> A \<or> j = atom i)))"
-  apply (induct A rule: e.induct) (* 9 goals from induction *)
-    apply(auto simp add: subst_ev.simps fresh_def fresh_subst_vv_if subst_vv.simps)  (* 80 foals of form .. \<Rightarrow> False *)
-     (* Now alternative between the next apply line and ones in the style of the one after that *)
-            apply (metis (no_types) fresh_def fresh_subst_vv_if)+
-           apply (metis  b.supp supp_b_empty  fresh_opp_all fresh_def)  (* adding + to this makes it loop, whereas plus on the one above is ok *)                
-            apply (metis (no_types) fresh_def fresh_subst_vv_if)+   
-           apply (metis  b.supp supp_b_empty  fresh_opp_all fresh_def)
-            apply (metis (no_types) fresh_def fresh_subst_vv_if)+
-           apply (metis  b.supp supp_b_empty  fresh_opp_all fresh_def)
-            apply (metis (no_types) fresh_def fresh_subst_vv_if)+
-           apply (metis  b.supp supp_b_empty  fresh_opp_all fresh_def)
-            apply (blast | meson fresh_def fresh_subst_vv_if)
-           apply (metis  b.supp supp_b_empty  fresh_opp_all fresh_def)
-            apply (metis (no_types) fresh_def fresh_subst_vv_if)+
-           apply (metis  b.supp supp_b_empty  fresh_opp_all fresh_def)
-            apply (metis (no_types) fresh_def fresh_subst_vv_if)+                   
-           apply (simp add: supp_at_base x_not_in_u_atoms)
-           apply (simp add: supp_at_base x_not_in_u_atoms)
-            apply (metis (no_types) fresh_def fresh_subst_vv_if)+
+  apply (induct A rule: e.induct)
+  unfolding subst_ev.simps fresh_subst_vv_if apply auto+
+  using pure_fresh fresh_opp_all apply metis+
   done
 
-
 lemma subst_ev_commute [simp]:
-  "atom j \<sharp> A \<Longrightarrow> (subst_ev (subst_ev A i t )) j u = subst_ev A i (subst_vv t j u )"
+  "atom j \<sharp> A \<Longrightarrow> (A[i::=t]\<^sub>e\<^sub>v)[j::=u]\<^sub>e\<^sub>v = A[i::=t[j::=u]\<^sub>v\<^sub>v]\<^sub>e\<^sub>v"
   by (nominal_induct A avoiding: i j t u rule: e.strong_induct) (auto simp: fresh_at_base)
 
 lemma subst_ev_var_flip[simp]:
@@ -354,19 +335,7 @@ next
     by (simp add: CE_op.hyps(1) CE_op.hyps(2))
   finally show ?case using subst_cev.simps  opp.perm_simps  opp.strong_exhaust 
     by (metis (full_types))
-next
-  case (CE_fst v)
-  then show ?case using permute_pure subst_vv_var_flip by simp
-next
-  case (CE_snd v)
-  then show ?case using permute_pure subst_vv_var_flip by simp
-next
-  case (CE_len v)
-  then show ?case using permute_pure subst_vv_var_flip by simp
-next
-  case (CE_concat v1 v2)
-  then show ?case using permute_pure subst_vv_var_flip by simp
-qed
+qed( (auto simp add: permute_pure subst_vv_var_flip)+)
 
 lemma subst_cev_flip:
   fixes e::ce and ea::ce and c::x
@@ -787,8 +756,6 @@ qed
 
 end
 
-
-
 lemma subst_tv_commute_subst:
   fixes c::\<tau>
   assumes "atom z \<sharp> v" and "atom x \<sharp> w" and "x\<noteq>z"
@@ -797,7 +764,6 @@ lemma subst_tv_commute_subst:
   case (T_refined_type x1a x2a x3a)
   then show ?case using subst_cv_commute_subst by simp
 qed
-
 
 lemma type_eq_subst_eq:
   fixes v::v and c1::c
@@ -956,31 +922,6 @@ proof -
   thus ?thesis using zbc by blast
 qed
 
-(*
-lemma subst_tv_supp1 [simp]:
-  fixes t::\<tau>
-  assumes "atom z \<sharp> (x,v)" and "t = \<lbrace> z : b | c \<rbrace>"
-  shows "supp t[x::=v]\<^sub>\<tau>\<^sub>v \<subseteq> supp t- { atom x}  \<union> supp v"
-proof -
-  have tsupp: "supp t = supp c - {atom z} \<union> supp b" using \<tau>.supp assms by force
-  hence "supp t[x::=v]\<^sub>\<tau>\<^sub>v \<subseteq> supp c[x::=v]\<^sub>c\<^sub>v - { atom z } \<union> supp b" using subst_tv.simps assms  by simp
-  also have " ... \<subseteq> (supp c - { atom x } \<union> supp v)  - { atom z } \<union> supp b" 
-    using subst_cv_supp supp_at_base by blast
-  also have " ... = (supp c - { atom z } \<union> supp b)  - { atom x } \<union> supp v" 
-    using fresh_def assms by fastforce
-  also have " ... = supp t  - { atom x } \<union> supp v" using tsupp by simp
-  finally show  "supp t[x::=v]\<^sub>\<tau>\<^sub>v \<subseteq> supp t  - { atom x } \<union> supp v" by auto
-qed
-
-lemma subst_tv_supp2 [simp]:
-  fixes t::\<tau>
-  shows "supp t[x::=v]\<^sub>\<tau>\<^sub>v \<subseteq> supp t - { atom x}  \<union> supp v"
-proof -
-  obtain z and b and c where teq: "t = \<lbrace> z : b  | c \<rbrace> \<and> atom z \<sharp> (x,v)" using \<tau>.exhaust
-    by (metis prod.inject subst_tv.cases)
-  thus  ?thesis using subst_tv_supp1 by blast
-qed
-*)
 lemma subst_tv_if:
   assumes "atom z1 \<sharp> (x,v)" and "atom z' \<sharp> (x,v)" 
   shows "\<lbrace> z1 : b  | CE_val (v'[x::=v]\<^sub>v\<^sub>v)  ==  CE_val (V_lit l)   IMP  (c'[x::=v]\<^sub>c\<^sub>v)[z'::=[z1]\<^sup>v]\<^sub>c\<^sub>v  \<rbrace> = 
@@ -1091,7 +1032,7 @@ lemma subst_dv_member:
   shows  "(u, \<tau>[x::=v]\<^sub>\<tau>\<^sub>v) \<in> setD (\<Delta>[x::=v]\<^sub>\<Delta>\<^sub>v)"
 using assms  by(induct \<Delta> rule: \<Delta>_induct,auto)
 
-(* MOE *)
+
 lemma fresh_subst_dv:
   fixes x::x
   assumes "atom xa \<sharp> \<Delta>" and "atom xa \<sharp> v"
@@ -1342,8 +1283,8 @@ proof -
        z1 "CE_val v  ==  CE_val (V_lit ll)   IMP ca[za::=[z1]\<^sup>v]\<^sub>c\<^sub>v"] by blast
 qed 
 
-(* NOTE: Using  'using [[simproc del: alpha_lst]]' after the first step helps to see what is 
-needed next but is not required for the final script. alpha_lst goes too far. *)
+text \<open>NOTE: Using  'using [[simproc del: alpha_lst]]' after the first step helps to see what is 
+needed next but is not required for the final script. alpha_lst goes too far.\<close>
 
 lemma subst_sv_var_flip:
   fixes x::x and s::s and z::x

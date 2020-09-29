@@ -47,14 +47,15 @@ nominal_datatype "l" =
  | L_unit 
  | L_bitvec "bit list"
 
-text  \<open> Values \<close>
+text  \<open> Values. We include a type identifier, tyid, in the constructors to make typing and well-formedness checking easier \<close>
+
+
 nominal_datatype "v" = 
     V_lit "l"        ( "[ _ ]\<^sup>v")
   | V_var "x"        ( "[ _ ]\<^sup>v")
   | V_pair "v" "v"   ( "[ _ , _ ]\<^sup>v")
-  | V_cons tyid dc "v" (* Including tyid makes typing and well-formedness checking easier - can be done locally. If required can be added during elaboration  *)
-  | V_consp tyid dc b "v" (* Including tyid makes typing and well-formedness checking easier - can be done locally. If required can be added during elaboration  *)
-
+  | V_cons tyid dc "v" 
+  | V_consp tyid dc b "v" 
 
 text \<open> Binary Operations \<close>
 nominal_datatype "opp" = Plus ( "plus") | LEq ("leq")
@@ -70,7 +71,7 @@ nominal_datatype "e" =
  | AE_snd "v"           ( "[#2_ ]\<^sup>e"     )
  | AE_mvar "u"          ( "[ _ ]\<^sup>e"      )
  | AE_len "v"           ( "[| _ |]\<^sup>e"    )
- | AE_split "v" "v"  
+ | AE_split "v" "v"     ( "[ _ / _ ]\<^sup>e"  )
 
 
 text \<open> Expressions for Constraints\<close>
@@ -96,8 +97,6 @@ text  \<open> Refined type \<close>
 nominal_datatype "\<tau>" = 
    T_refined_type  x::x b c::c   binds x in c   ("\<lbrace> _ : _  | _ \<rbrace>" [50, 50] 1000)
 
-value "\<lbrace> z : b_of \<tau> | ([v]\<^sup>c\<^sup>e == [[L_false]\<^sup>v]\<^sup>c\<^sup>e) IMP (c_of \<tau> z) \<rbrace>"
-
 
 text \<open> Statements \<close>
 
@@ -119,7 +118,6 @@ and branch_list =
   AS_final  branch_s                   ( "{ _ }" )
 | AS_cons  branch_s branch_list        ( "( _ | _  )")
 
-term "LET x = [plus [x]\<^sup>v [x]\<^sup>v]\<^sup>e IN [[x]\<^sup>v]\<^sup>s"
 
 text \<open> Function and union type definitions \<close>
 
@@ -213,7 +211,6 @@ lemma u_fresh_b[simp]:
   shows "atom x \<sharp> b"
 by(induct b rule: b.induct, auto simp: pure_fresh )
 
-
 lemma supp_b_v_disjoint:
   fixes x::x and bv::bv
   shows "supp (V_var x) \<inter> supp (B_var bv) = {}" 
@@ -223,8 +220,6 @@ lemma supp_b_u_disjoint[simp]:
   fixes b::b and u::u
   shows "supp u \<inter> supp b = {}" 
 by(nominal_induct b rule:b.strong_induct,(auto simp add: pure_supp b.supp supp_at_base)+)
-
-
 
 lemma u_fresh_bv[simp]:
   fixes  u::u and b::bv
@@ -288,9 +283,8 @@ lemma bitvec_pure[simp]:
 lemma supp_l_empty[simp]:
   fixes l:: l
   shows "supp (V_lit l) = {}"
-  apply(nominal_induct l rule: l.strong_induct)
-  apply(auto simp add: l.supp l.strong_exhaust pure_supp v.fv_defs)[4]
-  using l.supp pure_supp supp_of_atom_list supp_bitvec_empty by simp
+  by(nominal_induct l rule: l.strong_induct,
+     auto simp add: l.strong_exhaust pure_supp v.fv_defs supp_bitvec_empty)
 
 lemma type_l_nosupp[simp]:
   fixes x::x and l::l
@@ -349,7 +343,6 @@ lemma flip_base_eq:
   using b.fresh  by (simp add: flip_fresh_fresh fresh_def)
  
 
-
 text \<open> Obtain an alpha-equivalent type where the bound variable is fresh in some term t \<close>
 lemma has_fresh_z0:
  fixes t::"'b::fs"
@@ -395,7 +388,7 @@ lemma obtain_fresh_z2:
 
 
 
-subsubsection \<open>Value\<close>
+subsubsection \<open>Values\<close>
 
 
 lemma u_notin_supp_v[simp]:
@@ -694,7 +687,7 @@ section \<open>Context Syntax\<close>
 subsection \<open>Datatypes\<close>
 
 
-(* Type and function/type definition contexts *)
+text \<open>Type and function/type definition contexts\<close>
 type_synonym \<Phi> = "fun_def list"
 type_synonym \<Theta> = "type_def list"
 type_synonym \<B> = "bv fset"
@@ -874,8 +867,6 @@ using append_g.simps by auto
 lemma append_g_setGU [simp]: "setG (G1@G2) = setG G1 \<union> setG G2"
   by(induct G1, auto+)
 
-
-
 lemma supp_GNil: 
   shows "supp GNil = {}"
   by (simp add: supp_def)
@@ -884,7 +875,6 @@ lemma supp_GCons:
   fixes xs::\<Gamma>
   shows "supp (x #\<^sub>\<Gamma> xs) = supp x \<union> supp xs"
 by (simp add: supp_def Collect_imp_eq Collect_neg_eq)
-
 
 lemma atom_dom_eq[simp]: 
   fixes G::\<Gamma>
@@ -902,8 +892,6 @@ lemma dom_cons[simp]:
 lemma fresh_GNil[ms_fresh]: 
   shows "a \<sharp> GNil"
   by (simp add: fresh_def supp_GNil)
-
-
 
 lemma fresh_GCons[ms_fresh]: 
   fixes xs::\<Gamma>
@@ -967,13 +955,9 @@ proof(rule ccontr)
   thus False using fresh_def assms by auto
 qed
 
-
-
 instance \<Gamma> :: fs
   by (standard, induct_tac x, simp_all add: supp_GNil supp_GCons  finite_supp)
 
-
-(* MOVE *)
 lemma fresh_gamma_elem:
   fixes \<Gamma>::\<Gamma>
   assumes "a \<sharp> \<Gamma>"
@@ -1178,7 +1162,6 @@ nominal_termination (eqvt) by lexicographic_order
 lemma neq_DNil_conv: "(xs \<noteq> DNil) = (\<exists>y ys. xs = y #\<^sub>\<Delta> ys)"
   by (induct xs) auto
 
-
 nominal_function setD :: "\<Delta> \<Rightarrow> (u*\<tau>) set" where
   "setD DNil = {}"
 | "setD (DCons xbc G) = {xbc} \<union> (setD G)"
@@ -1186,7 +1169,6 @@ apply (auto,simp add: eqvt_def setD_graph_aux_def )
 using neq_DNil_conv surj_pair by metis
 nominal_termination (eqvt)
   by lexicographic_order
-
 
 
 lemma eqvt_triple:

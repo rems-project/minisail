@@ -867,18 +867,6 @@ proof -
   thus ?thesis using u_not_in_dom_g u_not_in_b_set  by blast 
 qed  
 
-(* MOVE *)
-lemma bv_not_in_bset_supp:
-  fixes bv::bv
-  assumes "bv |\<notin>| B"
-  shows "atom bv \<notin> supp B"
-proof - 
-  have *:"supp B = fset (fimage atom B)"
-      by (metis fimage.rep_eq finite_fset supp_finite_set_at_base supp_fset)
-  thus ?thesis using assms 
-    using notin_fset by fastforce
-qed
-
 lemma wfT_supp_c:
   fixes \<B>::\<B> and z::x
   assumes "wfT P \<B> \<Gamma> (\<lbrace> z : b  | c \<rbrace>)" 
@@ -1425,6 +1413,13 @@ next
 qed(auto)+
 
 lemmas wf_restrict=wf_restrict1 wf_restrict2
+
+
+lemma wfT_restrict2:
+  fixes \<tau>::\<tau>
+  assumes "wfT \<Theta> \<B> ((x, b, c) #\<^sub>\<Gamma> \<Gamma>) \<tau>" and "atom x \<sharp> \<tau>" 
+  shows "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau>"
+  using wf_restrict1(4)[of \<Theta> \<B> "((x, b, c) #\<^sub>\<Gamma> \<Gamma>)"  \<tau> GNil x "b" "c" \<Gamma>] assms fresh_GNil append_g.simps by auto
 
 lemma wfG_intros2:
   assumes "wfC P \<B> ((x,b,TRUE) #\<^sub>\<Gamma>\<Gamma>) c"
@@ -3225,17 +3220,7 @@ proof
   qed    
 qed
 
-(*
-lemma wfT_weakening:
-  fixes \<Gamma>::\<Gamma> and  \<Gamma>'::\<Gamma> and \<tau>::\<tau>
-  assumes "\<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<tau>"  and "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f  \<Gamma>'" and "setG \<Gamma> \<subseteq> setG \<Gamma>'" 
-  shows "\<Theta> ; \<B> ; \<Gamma>'  \<turnstile>\<^sub>w\<^sub>f  \<tau>" 
-proof -
-  obtain z b c where *:"\<tau>= \<lbrace> z : b | c \<rbrace> \<and> atom z \<sharp> \<Gamma>'"  using obtain_fresh_z by metis
-  hence  "\<Theta> ; \<B> ; \<Gamma>'  \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b | c \<rbrace>" using assms wfT_weakening_aux by metis
-  thus ?thesis using * by auto
-qed
-*)
+
 lemma wfT_weakening_all:
   fixes \<Gamma>::\<Gamma> and  \<Gamma>'::\<Gamma> and \<tau>::\<tau>
   assumes "\<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<tau>"  and "\<Theta> ; \<B>' \<turnstile>\<^sub>w\<^sub>f  \<Gamma>'" and "setG \<Gamma> \<subseteq> setG \<Gamma>'" and "\<B> |\<subseteq>| \<B>'" 
@@ -3250,8 +3235,7 @@ lemma wfT_weakening_nil:
   using assms(1) assms(2) setG.simps(1) by blast
 
 
-(* MOVE *)
-lemma dc_t_closed: 
+lemma wfTh_wfT2: 
   fixes x::x and v::v and \<tau>::\<tau> and G::\<Gamma>
   assumes "wfTh \<Theta>" and "AF_typedef s dclist \<in> set \<Theta>" and 
       "(dc, \<tau>) \<in> set dclist"  and "\<Theta> ; B \<turnstile>\<^sub>w\<^sub>f G"
@@ -3276,18 +3260,6 @@ proof -
 
 qed
 
-(* MOVE *)
-lemma u_fresh_d:
-  assumes "atom u \<sharp> D"
-  shows "u \<notin> fst ` setD D"
-  using assms proof(induct D rule: \<Delta>_induct)
-case DNil
-  then show ?case by auto
-next
-  case (DCons u' t' \<Delta>')
-  then show ?case unfolding setD.simps 
-    using fresh_DCons fresh_Pair  by (simp add: fresh_Pair fresh_at_base(2))
-qed
 
 lemma wf_d_weakening:
   fixes \<Gamma>::\<Gamma> and  \<Gamma>'::\<Gamma> and v::v and e::e and c::c and \<tau>::\<tau> and ts::"(string*\<tau>) list" and \<Delta>::\<Delta> and s::s and \<B>::\<B> and ftq::fun_typ_q and ft::fun_typ and ce::ce and td::type_def

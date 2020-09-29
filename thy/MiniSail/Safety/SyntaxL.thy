@@ -200,6 +200,56 @@ lemma GCons_eq_append_conv:
   shows "x#\<^sub>\<Gamma>xs = ys@zs = (ys = GNil \<and> x#\<^sub>\<Gamma>xs = zs \<or> (\<exists>ys'. x#\<^sub>\<Gamma>ys' = ys \<and> xs = ys'@zs))"
 by(cases ys) auto
 
+
+lemma dclist_distinct_unique:
+  assumes  "(dc, const) \<in> set dclist2" and  "(cons, const1) \<in> set dclist2" and "dc=cons" and  "distinct (List.map fst dclist2)"
+  shows "(const) = const1"
+proof -
+  have  "(cons, const) = (dc, const1)" 
+    using assms     by (metis (no_types, lifting) assms(3) assms(4) distinct.simps(1) distinct.simps(2) empty_iff insert_iff list.set(1) list.simps(15) list.simps(8) list.simps(9) map_of_eq_Some_iff)
+  thus ?thesis by auto
+qed
+
+
+lemma fresh_d_fst_d:
+  assumes "atom u \<sharp> \<delta>"
+  shows  "u \<notin> fst ` set \<delta>"
+using assms proof(induct \<delta>)
+  case Nil
+  then show ?case by auto
+next
+  case (Cons ut \<delta>')
+  obtain u' and t' where *:"ut = (u',t') " by fastforce
+  hence "atom u \<sharp> ut \<and> atom u \<sharp> \<delta>'" using fresh_Cons Cons by auto
+  moreover hence "atom u \<sharp> fst ut" using * fresh_Pair[of "atom u" u' t'] Cons by auto
+  ultimately show ?case using Cons by auto
+qed
+
+
+lemma bv_not_in_bset_supp:
+  fixes bv::bv
+  assumes "bv |\<notin>| B"
+  shows "atom bv \<notin> supp B"
+proof - 
+  have *:"supp B = fset (fimage atom B)"
+      by (metis fimage.rep_eq finite_fset supp_finite_set_at_base supp_fset)
+  thus ?thesis using assms 
+    using notin_fset by fastforce
+qed
+
+lemma u_fresh_d:
+  assumes "atom u \<sharp> D"
+  shows "u \<notin> fst ` setD D"
+  using assms proof(induct D rule: \<Delta>_induct)
+case DNil
+  then show ?case by auto
+next
+  case (DCons u' t' \<Delta>')
+  then show ?case unfolding setD.simps 
+    using fresh_DCons fresh_Pair  by (simp add: fresh_Pair fresh_at_base(2))
+qed
+
+
 section \<open>Type Definitions\<close>
 
 

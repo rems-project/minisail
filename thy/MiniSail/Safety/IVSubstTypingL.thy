@@ -8,7 +8,7 @@ chapter \<open>Immutable Variable Substitution Lemmas\<close>
 text \<open> Lemmas that show that types are preserved, in some way, under immutable variable substitution\<close>
 
 section \<open>Misc\<close>
-(* MOE *)
+(* MOVE *)
 
 lemma subst_top_eq:
    "\<lbrace> z : b  | TRUE \<rbrace> = \<lbrace> z : b  | TRUE \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v" 
@@ -629,9 +629,6 @@ next
   hence zf: "atom z \<sharp> CE_val (V_cons s dc (w[x::=v]\<^sub>v\<^sub>v))"  
     unfolding ce.fresh v.fresh   by(simp add: pure_fresh *)
 
-
-  (* NOTE: Want to unpact/apply IH/repack as top level and hide or put as second level all the ancillary things such as freshness *)
-
   obtain z0'::x where z0:"atom z0' \<sharp>  (x,v,w[x::=v]\<^sub>v\<^sub>v, \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>,CE_val (V_cons s dc (w[x::=v]\<^sub>v\<^sub>v)))" using obtain_fresh by metis
   hence  zf2: "atom z0' \<sharp> CE_val (V_cons s dc (w[x::=v]\<^sub>v\<^sub>v))" using e.fresh fresh_Pair v.fresh pure_fresh fresh_prod5 by metis
   hence zeq: "\<lbrace> z : B_id s |  CE_val (V_var z)  ==  CE_val (V_cons s dc (w[x::=v]\<^sub>v\<^sub>v))  \<rbrace> = 
@@ -648,7 +645,7 @@ next
       have xx:" \<Theta> ; \<B> ; \<Gamma>'@((x,b\<^sub>1,c0[z0::=[x]\<^sup>v]\<^sub>c\<^sub>v)#\<^sub>\<Gamma>\<Gamma>)  \<turnstile>\<lbrace> z' : b2  | c' \<rbrace> \<lesssim> \<lbrace> x2 : b2  | c2 \<rbrace>" using * by auto
       hence "\<Theta> ; \<B> ; (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v@\<Gamma>) \<turnstile>  \<lbrace> z' : b2  | c' \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v \<lesssim> \<lbrace> x2 : b2  | c2 \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v" using subst_subtype_tau[OF V_cons(2) assms(3) xx  V_cons(5)]  by auto
       moreover have "\<turnstile>\<^sub>w\<^sub>f \<Theta>" using infer_v_wf   * by auto
-      moreover hence " \<lbrace> x2 : b2  | c2 \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v = \<lbrace> x2 : b2  | c2 \<rbrace>" using dc_t_closed(1) * forget_subst_tv fresh_def wfG_nilI by fast
+      moreover hence " \<lbrace> x2 : b2  | c2 \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v = \<lbrace> x2 : b2  | c2 \<rbrace>" using wfTh_wfT2 * forget_subst_tv fresh_def wfG_nilI by fast
       moreover have "\<Theta> ; \<B> ; (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v@\<Gamma>) \<turnstile>\<lbrace> z3 : b2  | c3 \<rbrace> \<lesssim>  \<lbrace> z' : b2  | c' \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v" using yy yy2 \<open>b2=b3\<close> subtype_reflI infer_v_t_wf[OF ***]  by metis
       ultimately show ?thesis using subtype_trans by metis
     qed

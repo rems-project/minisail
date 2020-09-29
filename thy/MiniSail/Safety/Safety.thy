@@ -14,31 +14,6 @@ chapter \<open>Safety\<close>
 
 section \<open>Operational Semantics\<close>
 
-(* MOVE *)
-lemma dclist_distinct_unique:
-  assumes  "(dc, const) \<in> set dclist2" and  "(cons, const1) \<in> set dclist2" and "dc=cons" and  "distinct (List.map fst dclist2)"
-  shows "(const) = const1"
-proof -
-  have  "(cons, const) = (dc, const1)" 
-    using assms     by (metis (no_types, lifting) assms(3) assms(4) distinct.simps(1) distinct.simps(2) empty_iff insert_iff list.set(1) list.simps(15) list.simps(8) list.simps(9) map_of_eq_Some_iff)
-  thus ?thesis by auto
-qed
-
-
-lemma fresh_d_fst_d:
-  assumes "atom u \<sharp> \<delta>"
-  shows  "u \<notin> fst ` set \<delta>"
-using assms proof(induct \<delta>)
-  case Nil
-  then show ?case by auto
-next
-  case (Cons ut \<delta>')
-  obtain u' and t' where *:"ut = (u',t') " by fastforce
-  hence "atom u \<sharp> ut \<and> atom u \<sharp> \<delta>'" using fresh_Cons Cons by auto
-  moreover hence "atom u \<sharp> fst ut" using * fresh_Pair[of "atom u" u' t'] Cons by auto
-  ultimately show ?case using Cons by auto
-qed
-
 nominal_function dc_of :: "branch_s \<Rightarrow> string" where
   "dc_of (AS_branch dc _ _) = dc"
   apply(auto,simp add: eqvt_def dc_of_graph_aux_def)
@@ -147,44 +122,9 @@ qed
 
 
 section \<open>Preservation\<close>
-text {* Types are preserved under reduction step *}
+text \<open>Types are preserved under reduction step\<close>
 
-lemma check_if:
-  fixes s'::s and cs::branch_s and css::branch_list and v::v
-  shows    "\<Theta> ; \<Phi> ; B  ; G ; \<Delta>  \<turnstile>  s' \<Leftarrow> \<tau> \<Longrightarrow> s' =  IF (V_lit ll) THEN s1 ELSE s2 \<Longrightarrow>  
-        \<Theta> ; {||} ; GNil  \<turnstile>\<^sub>w\<^sub>f \<tau> \<Longrightarrow> G = GNil \<Longrightarrow> B = {||} \<Longrightarrow> ll = L_true \<and> s = s1 \<or> ll = L_false \<and> s = s2 \<Longrightarrow> 
-        \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  s \<Leftarrow> \<tau>" and
-    "check_branch_s \<Theta> \<Phi>  {||} GNil \<Delta> tid dc const v cs \<tau> \<Longrightarrow> True" and 
-    "check_branch_list \<Theta> \<Phi>  {||} \<Gamma> \<Delta> tid dclist v css \<tau> \<Longrightarrow> True"
-proof(nominal_induct \<tau> and \<tau> and \<tau>  rule: check_s_check_branch_s_check_branch_list.strong_induct)
-  case (check_ifI z \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v s1 s2 \<tau>)
-  obtain z' where teq: "\<tau> = \<lbrace> z' : b_of \<tau> | c_of \<tau> z' \<rbrace> \<and> atom z' \<sharp> (z,\<tau>)" using obtain_fresh_z_c_of by metis
-  hence ceq: "(c_of \<tau> z')[z'::=[ z ]\<^sup>v]\<^sub>c\<^sub>v = (c_of \<tau> z)" using c_of_switch fresh_Pair by metis
-  have zf: " atom z \<sharp> c_of \<tau> z'" by(rule c_of_fresh, auto simp add: freshers check_ifI, insert  fresh_Pair teq fresh_at_base, simp add: freshers)
-
-  hence 1:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> s \<Leftarrow>  \<lbrace> z : b_of \<tau>  | CE_val (V_lit ll)  ==  CE_val (V_lit ll)  IMP  c_of \<tau> z  \<rbrace>" using check_ifI by auto
-  moreover have 2:"\<Theta> ; {||} ; GNil \<turnstile> (\<lbrace> z : b_of \<tau>  | CE_val (V_lit ll)  ==  CE_val (V_lit ll)  IMP  c_of \<tau> z  \<rbrace>) \<lesssim>  \<tau>" 
-  proof - 
-    have "\<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f (\<lbrace> z : b_of \<tau>  | CE_val (V_lit ll )  ==  CE_val (V_lit ll)   IMP c_of \<tau> z  \<rbrace>)" using check_ifI check_s_wf by auto
-    moreover have "\<Theta> ; {||} ; GNil  \<turnstile>\<^sub>w\<^sub>f \<tau>" using  check_s_wf check_ifI by auto
-    ultimately show ?thesis using subtype_if_simp[of \<Theta> " {||}" z "b_of \<tau>" ll "c_of \<tau> z'" z'] using teq ceq zf subst_defs by metis
-  qed
-  ultimately show ?case  using check_s_supertype(1) check_ifI by metis
-
-qed(auto+)
-
-lemma preservation_if: 
-  assumes  "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , IF (V_lit ll) THEN s1 ELSE s2 \<rangle> \<Leftarrow> \<tau>" and 
-           "ll = L_true \<and> s = s1 \<or> ll = L_false \<and> s = s2"
-  shows "\<Theta> ; \<Phi> ; \<Delta>  \<turnstile> \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>"
-proof -
-  have *: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  AS_if (V_lit ll) s1 s2 \<Leftarrow> \<tau> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
-    using assms config_type_elims by metis
-  hence "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  s \<Leftarrow> \<tau>" using check_s_wf check_if assms by metis
-  hence "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>" using config_typeI * 
-    using assms(1) by blast
-  thus ?thesis by blast
-qed
+subsection \<open>Function Application\<close>
 
 lemma check_s_x_fresh:
   fixes x::x and s::s
@@ -509,7 +449,9 @@ proof -
        by (metis opp.distinct(1) subtype_bop type_l_eq)
    qed
 
-qed
+ qed
+
+subsection \<open>Operators\<close>
 
 lemma preservation_plus:
   assumes "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , LET x = (AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2))) IN s' \<rangle> \<Leftarrow> \<tau>"        
@@ -541,6 +483,7 @@ proof -
     by (meson order_refl)
 qed
 
+subsection \<open>Let Statements\<close>
 
 lemma subst_s_abs_lst:
   fixes s::s and sa::s and v'::v
@@ -716,6 +659,45 @@ proof
     show "i \<lbrakk> c2 \<rbrakk> ~ True" using assms valid.simps 
       using is_satis.cases * by blast  
   qed
+qed
+
+subsection \<open>Other Statements\<close>
+
+lemma check_if:
+  fixes s'::s and cs::branch_s and css::branch_list and v::v
+  shows    "\<Theta> ; \<Phi> ; B  ; G ; \<Delta>  \<turnstile>  s' \<Leftarrow> \<tau> \<Longrightarrow> s' =  IF (V_lit ll) THEN s1 ELSE s2 \<Longrightarrow>  
+        \<Theta> ; {||} ; GNil  \<turnstile>\<^sub>w\<^sub>f \<tau> \<Longrightarrow> G = GNil \<Longrightarrow> B = {||} \<Longrightarrow> ll = L_true \<and> s = s1 \<or> ll = L_false \<and> s = s2 \<Longrightarrow> 
+        \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  s \<Leftarrow> \<tau>" and
+    "check_branch_s \<Theta> \<Phi>  {||} GNil \<Delta> tid dc const v cs \<tau> \<Longrightarrow> True" and 
+    "check_branch_list \<Theta> \<Phi>  {||} \<Gamma> \<Delta> tid dclist v css \<tau> \<Longrightarrow> True"
+proof(nominal_induct \<tau> and \<tau> and \<tau>  rule: check_s_check_branch_s_check_branch_list.strong_induct)
+  case (check_ifI z \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v s1 s2 \<tau>)
+  obtain z' where teq: "\<tau> = \<lbrace> z' : b_of \<tau> | c_of \<tau> z' \<rbrace> \<and> atom z' \<sharp> (z,\<tau>)" using obtain_fresh_z_c_of by metis
+  hence ceq: "(c_of \<tau> z')[z'::=[ z ]\<^sup>v]\<^sub>c\<^sub>v = (c_of \<tau> z)" using c_of_switch fresh_Pair by metis
+  have zf: " atom z \<sharp> c_of \<tau> z'"
+     using c_of_fresh check_ifI teq fresh_Pair fresh_at_base by metis
+  hence 1:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> s \<Leftarrow>  \<lbrace> z : b_of \<tau>  | CE_val (V_lit ll)  ==  CE_val (V_lit ll)  IMP  c_of \<tau> z  \<rbrace>" using check_ifI by auto
+  moreover have 2:"\<Theta> ; {||} ; GNil \<turnstile> (\<lbrace> z : b_of \<tau>  | CE_val (V_lit ll)  ==  CE_val (V_lit ll)  IMP  c_of \<tau> z  \<rbrace>) \<lesssim>  \<tau>" 
+  proof - 
+    have "\<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f (\<lbrace> z : b_of \<tau>  | CE_val (V_lit ll )  ==  CE_val (V_lit ll)   IMP c_of \<tau> z  \<rbrace>)" using check_ifI check_s_wf by auto
+    moreover have "\<Theta> ; {||} ; GNil  \<turnstile>\<^sub>w\<^sub>f \<tau>" using  check_s_wf check_ifI by auto
+    ultimately show ?thesis using subtype_if_simp[of \<Theta> " {||}" z "b_of \<tau>" ll "c_of \<tau> z'" z'] using teq ceq zf subst_defs by metis
+  qed
+  ultimately show ?case  using check_s_supertype(1) check_ifI by metis
+
+qed(auto+)
+
+lemma preservation_if: 
+  assumes  "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , IF (V_lit ll) THEN s1 ELSE s2 \<rangle> \<Leftarrow> \<tau>" and 
+           "ll = L_true \<and> s = s1 \<or> ll = L_false \<and> s = s2"
+  shows "\<Theta> ; \<Phi> ; \<Delta>  \<turnstile> \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>"
+proof -
+  have *: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  AS_if (V_lit ll) s1 s2 \<Leftarrow> \<tau> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
+    using assms config_type_elims by metis
+  hence "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  s \<Leftarrow> \<tau>" using check_s_wf check_if assms by metis
+  hence "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>" using config_typeI * 
+    using assms(1) by blast
+  thus ?thesis by blast
 qed
 
 
@@ -1146,6 +1128,7 @@ proof -
   show ?thesis using assms check_s_narrow x by metis
 qed
 
+subsection \<open>Main Lemma\<close>
 
 lemma preservation:
   fixes s::s and s'::s

@@ -5,12 +5,6 @@ begin
 (*>*)
 
 
-(* MOVE - this is better than the other one as well*)
-lemma wfT_restrict2:
-  fixes \<tau>::\<tau>
-  assumes "wfT \<Theta> \<B> ((x, b, c) #\<^sub>\<Gamma> \<Gamma>) \<tau>" and "atom x \<sharp> \<tau>" 
-  shows "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau>"
-  using wf_restrict1(4)[of \<Theta> \<B> "((x, b, c) #\<^sub>\<Gamma> \<Gamma>)"  \<tau> GNil x "b" "c" \<Gamma>] assms fresh_GNil append_g.simps by auto
 
 chapter  \<open>Typing Lemmas\<close>
 
@@ -100,7 +94,7 @@ proof -
     using theta_flip_eq G_cons_flip_fresh3[of x \<Gamma> z b c]  assms fresh_Pair flip_commute by metis
 qed
 
-(* Move *)
+(* MOVE *)
 
 lemma valid_wf_all:
   assumes " \<Theta> ; \<B> ; (z0,b,c0)#\<^sub>\<Gamma>G \<Turnstile> c"   
@@ -490,8 +484,6 @@ proof -
   ultimately show ?thesis using subtype_baseI assms  xf2 by metis 
 qed
 
-fun single_g :: "x*b*c \<Rightarrow> \<Gamma>" where
-  "single_g xbc = GCons xbc GNil"
 
 lemma eval_e_concat_eq:
   assumes  "wfI \<Theta> \<Gamma> i" 
@@ -662,10 +654,6 @@ proof -
  qed
 qed
 
-thm valid_split
-
-thm valid_wf_all
-
 lemma if_simp:
   "(if x = x then e1 else e2) = e1"
   by auto
@@ -817,19 +805,6 @@ proof -
     by (metis infer_l_form3)
 qed
 
-(*
-lemma infer_l_any:
-  fixes \<Gamma>'::\<Gamma> and l::l
-  assumes "\<turnstile> l \<Rightarrow> \<tau>"  and "\<Theta> ;\<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'" 
-  shows "\<Theta> ; \<B> ; \<Gamma>' \<turnstile> l \<Rightarrow> \<tau>"
-proof - 
-  obtain z::x where "atom z \<sharp> \<Gamma>'" using obtain_fresh by blast
-  moreover then obtain b where "\<Theta> ; \<B> ; \<Gamma>' \<turnstile> l \<Rightarrow> (\<lbrace> z : b  | C_eq (CE_val (V_var z)) (CE_val (V_lit l)) \<rbrace>)"
-    using assms infer_l.intros  infer_l_form2 type_l_eq  by metis
-  ultimately show ?thesis using infer_l_uniqueness assms
-    by metis
-qed
-*)
 
 section \<open>Values\<close>
 
@@ -1525,7 +1500,6 @@ proof -
   hence "\<Theta> ; {||} ; GNil  \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : b1  | CE_val (V_var z1)  ==  CE_val v1 \<rbrace>" using infer_v_form2 * 
     using fresh_def by fastforce
   moreover have "\<Theta> ; {||} ; GNil  \<turnstile>\<^sub>w\<^sub>f CE_fst [V_pair v1 v2]\<^sup>c\<^sup>e : b1" using wfCE_fstI infer_v_wf(1) ** b_of.simps wfCE_valI by metis
-(*    by (metis "**" assms infer_e_e_wf)*)
   moreover hence st: "\<Theta> ; {||} ; GNil  \<turnstile> \<lbrace> z1 : b1  | CE_val (V_var z1)  ==  CE_val v1 \<rbrace> \<lesssim> (\<lbrace> z : b1  | CE_val (V_var z)  ==  CE_fst [V_pair v1 v2]\<^sup>c\<^sup>e  \<rbrace>)" 
     using subtype_gnil_fst infer_v_v_wf by auto
   moreover have "wfD \<Theta> {||} GNil \<Delta> \<and>  wfPhi \<Theta> \<Phi>" using **  by auto
@@ -1577,8 +1551,8 @@ qed
 
 section \<open>Replacing Variables\<close>
 
-text {* Needed as the typing elimination rules give us facts for an alpha-equivalent version of a term
-      and so need to be able to 'jump back' to a typing judgement for the orginal term *}
+text \<open>Needed as the typing elimination rules give us facts for an alpha-equivalent version of a term
+      and so need to be able to 'jump back' to a typing judgement for the orginal term\<close>
 
 lemma \<tau>_fresh_c[simp]:
   assumes "atom x \<sharp> \<lbrace> z : b | c \<rbrace>" and "atom z \<sharp> x"
@@ -1597,8 +1571,6 @@ using assms proof(nominal_induct t avoiding: \<Gamma> z rule: \<tau>.strong_indu
     show \<open>atom z \<sharp> (c', \<Gamma>)\<close> using T_refined_type fresh_prodN \<tau>_fresh_c by metis
   qed
 qed
-
-thm check_s_check_branch_s_check_branch_list.inducts
 
 lemma check_s_check_branch_s_wf:
   fixes s::s and cs::branch_s and \<Theta>::\<Theta> and \<Phi>::\<Phi> and \<Gamma>::\<Gamma> and \<Delta>::\<Delta> and v::v and \<tau>::\<tau> and css::branch_list
@@ -2859,52 +2831,5 @@ proof -
   thus ?thesis using b_of.simps assms * check_v_subtypeI t b_of.simps subtype_eq_base2 by metis
 qed
 
-
-
-text \<open>This lemma confirms that if we assume the existence of a boolean like datatype then if and match are the same where
-the latter is a match for this datatype\<close>
-(*
-lemma
- 
-  shows  "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> IF [L_true]\<^sup>v THEN s1 ELSE s2  \<Leftarrow> \<tau> \<Longrightarrow> 
-            AF_typedef ''bool'' [ ( ''true'' , \<lbrace> z : B_unit | TRUE \<rbrace> ) , (''false'' , \<lbrace> z : B_unit | TRUE \<rbrace>)] \<in> set \<Theta> \<Longrightarrow>
-           \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> AS_match ( V_cons ''bool'' ''true'' [L_unit]\<^sup>v )  
-                 (AS_cons (AS_branch ''true'' x1 s1) (AS_final (AS_branch ''false'' x2 s2))) \<Leftarrow> \<tau>" and
-         "check_branch_s \<Theta> \<Phi> \<B> \<Gamma> \<Delta> tid cons const v cs \<tau> \<Longrightarrow> True" and
-         "check_branch_list \<Theta> \<Phi> \<B> \<Gamma> \<Delta> tid dclist v css \<tau> \<Longrightarrow> True"
-proof(nominal_induct "IF [L_true]\<^sup>v THEN s1 ELSE s2" \<tau>  and \<tau> and \<tau> rule: check_s_check_branch_s_check_branch_list.strong_induct)
-  case (check_ifI zz \<Theta> \<Phi> \<B> \<Gamma> \<Delta> \<tau>)
-
-  have "\<lbrace> zz : b_of \<tau>  | [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   IMP  c_of \<tau> zz  \<rbrace> = \<tau>" srry
-  hence *:\<open> \<Theta> ; \<Phi> ; \<B> ; (x1, b_of \<lbrace> z : B_unit  | TRUE \<rbrace>,
-       [ V_cons ''bool'' ''true'' [ L_unit ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ V_cons ''bool'' ''true'' [ x1 ]\<^sup>v ]\<^sup>c\<^sup>e   AND  c_of \<lbrace> z : B_unit  | TRUE \<rbrace> x1 ) #\<^sub>\<Gamma>
-                       \<Gamma> ; \<Delta>  \<turnstile> s1 \<Leftarrow> \<tau>\<close>
-    using check_ifI(11) check_s_g_weakening(1) sory
-
-  show ?case proof
-    show \<open> \<Theta> ;  \<Phi> ; \<B> ; \<Gamma> ; \<Delta> ; ''bool'' ;  [ ( ''true'' , \<lbrace> z : B_unit | TRUE \<rbrace> ) , (''false'' , \<lbrace> z : B_unit | TRUE \<rbrace>)] ; V_cons ''bool'' ''true''
-                                                  [ L_unit ]\<^sup>v \<turnstile>   ''true'' x1 \<Rightarrow> s1  | {  ''false'' x2 \<Rightarrow> s2  }   \<Leftarrow> \<tau>\<close>
-    proof
-      show \<open> \<Theta> ;  \<Phi> ; \<B> ; \<Gamma> ; \<Delta> ; ''bool'' ; ''true'' ; \<lbrace> z : B_unit  | TRUE \<rbrace> ; V_cons ''bool'' ''true'' [ L_unit ]\<^sup>v \<turnstile>  ''true'' x1 \<Rightarrow> s1  \<Leftarrow> \<tau>\<close> 
-      proof     
-        show \<open> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using check_ifI check_s_wf by auto
-        show \<open>   \<turnstile>\<^sub>w\<^sub>f \<Theta> \<close> using check_ifI check_s_wf by auto
-        show \<open> \<Theta> ; \<B> ; \<Gamma>   \<turnstile>\<^sub>w\<^sub>f \<tau> \<close> using check_ifI check_s_wf sory
-        show \<open> \<Theta> ; {||} ; GNil   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : B_unit  | TRUE \<rbrace> \<close> sory
-        show \<open>atom x1 \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>, \<Delta>, ''bool'', ''true'', \<lbrace> z : B_unit  | TRUE \<rbrace>, V_cons ''bool'' ''true'' [ L_unit ]\<^sup>v, \<tau>)\<close> sory
-        show \<open> \<Theta> ; \<Phi> ; \<B> ; (x1, b_of \<lbrace> z : B_unit  | TRUE \<rbrace>,
-                        [ V_cons ''bool'' ''true'' [ L_unit ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ V_cons ''bool'' ''true'' [ x1 ]\<^sup>v ]\<^sup>c\<^sup>e   AND  c_of \<lbrace> z : B_unit  | TRUE \<rbrace> x1 ) #\<^sub>\<Gamma>
-                       \<Gamma> ; \<Delta>  \<turnstile> s1 \<Leftarrow> \<tau>\<close> using * by auto
-      qed
-      show \<open> \<Theta> ;  \<Phi> ; \<B> ; \<Gamma> ; \<Delta> ; ''bool'' ; [(''false'', \<lbrace> z : B_unit  | TRUE \<rbrace>)] ; V_cons ''bool'' ''true'' [ L_unit ]\<^sup>v \<turnstile> {  ''false'' x2 \<Rightarrow> s2  } \<Leftarrow> \<tau>\<close> sory
-    qed
-    show \<open>AF_typedef ''bool''  [ ( ''true'' , \<lbrace> z : B_unit | TRUE \<rbrace> ) , (''false'' , \<lbrace> z : B_unit | TRUE \<rbrace>)] \<in> set \<Theta>\<close> 
-      using check_ifI  by auto
-    show \<open>\<Theta> ; \<B> ; \<Gamma>  \<turnstile> V_cons ''bool'' ''true'' [ L_unit ]\<^sup>v \<Leftarrow> \<lbrace> z : B_id ''bool''  | TRUE \<rbrace>\<close> sory
-  
-    show \<open>   \<turnstile>\<^sub>w\<^sub>f \<Theta> \<close> using check_ifI wfX_wfY by blast
- qed
-qed(auto)
-*)
 end
 

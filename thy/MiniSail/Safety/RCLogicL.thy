@@ -224,8 +224,6 @@ next
     then show ?thesis
       by metis (* 0.0 ms *)
   qed
-(*(6)[OF CE_concat(1)]  eval_e_elims (6)[OF CE_concat(2)]
-    by (metis rcl_val.eq_iff(1))*)
 next
   case (CE_fst x)
   then show ?case using eval_v_uniqueness  by (meson eval_e_elims rcl_val.eq_iff)
@@ -1416,8 +1414,6 @@ inductive_cases boxed_i_elims:
   "\<Theta> ; ((x,b,c)#\<^sub>\<Gamma>\<Gamma>) ; b' , bv \<turnstile> i \<approx> i'"
 
 
-(* Need to induct over s to get induction to go past B_id case; inducting over B_id or wfRCV doesn't do this *)
-(* USe subst_bb_inject *)
 
 lemma wfRCV_poly_elims:
   fixes tm::"'a::fs" and b::b
@@ -2181,28 +2177,6 @@ proof(rule valid_eq_e)
     using wfCE_valI by blast
 qed
 
-(*
-lemma valid_fst: 
-  fixes x::x and v\<^sub>1::v and v\<^sub>2::v
-  assumes   "wfTh \<Theta>" and "wfV \<Theta> \<B> GNil (V_pair v\<^sub>1 v\<^sub>2) (B_pair b\<^sub>1 b\<^sub>2)"
-  shows "\<Theta> ; \<B> ; (x, b\<^sub>1, [[x]\<^sup>v]\<^sup>c\<^sup>e  ==  [v\<^sub>1]\<^sup>c\<^sup>e) #\<^sub>\<Gamma> GNil  \<Turnstile> [[x]\<^sup>v]\<^sup>c\<^sup>e  ==  [#1[v\<^sub>1,v\<^sub>2]\<^sup>v]\<^sup>c\<^sup>e" 
-proof(rule valid_eq_e)
-  show \<open>\<forall>i s1 s2.  (\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f GNil)  \<and>  (\<Theta> ; GNil \<turnstile> i) \<and> (i \<lbrakk> [ v\<^sub>1 ]\<^sup>c\<^sup>e \<rbrakk> ~ s1)  \<and> (i \<lbrakk> [#1[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e \<rbrakk> ~ s2)  \<longrightarrow> s1 = s2\<close> 
-  proof(rule+)
-    fix i s1 s2 
-    assume as:"\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f GNil  \<and>  \<Theta> ; GNil \<turnstile> i \<and> (i \<lbrakk> [ v\<^sub>1 ]\<^sup>c\<^sup>e \<rbrakk> ~ s1)  \<and> (i \<lbrakk> [#1[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e \<rbrakk> ~ s2)"
-    then obtain s2' where *:"i \<lbrakk> [ v\<^sub>1 , v\<^sub>2 ]\<^sup>v \<rbrakk> ~ SPair s2 s2'" 
-      using eval_e_elims(4)[of i "[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v" s2] by auto
-    then have " i \<lbrakk> v\<^sub>1 \<rbrakk> ~ s2" using eval_v_elims(3)[OF *] by auto
-    then show "s1 = s2" using eval_v_uniqueness as 
-      using eval_e_uniqueness eval_e_valI by blast
-  qed
-     
-  show \<open>  \<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f [ v\<^sub>1 ]\<^sup>c\<^sup>e : b\<^sub>1 \<close> using assms 
-    by (metis b.eq_iff(4) wfV_elims(3) wfV_wfCE)
-  show \<open>  \<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f [#1[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e : b\<^sub>1 \<close> using assms using wfCE_fstI by auto
-qed
-*)
 
 lemma valid_snd: 
   fixes x::x and v\<^sub>1::v and v\<^sub>2::v
@@ -2227,7 +2201,6 @@ proof(rule valid_eq_e)
   show \<open>  \<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f [#2[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e : b\<^sub>2 \<close> using assms using wfCE_sndI wfCE_valI by blast
 qed
 
-(* FIXME. Use this *)
 
 lemma valid_concat:
   fixes v1::"bit list" and v2::"bit list"
