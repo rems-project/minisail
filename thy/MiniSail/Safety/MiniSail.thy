@@ -1,6 +1,6 @@
 (*<*)
 theory MiniSail 
-  imports  Safety
+  imports  "Safety"
 begin
 (*>*)
 

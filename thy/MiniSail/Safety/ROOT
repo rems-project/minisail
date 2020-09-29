@@ -1,0 +1,13 @@
+session "MiniSail" = "HOL" +
+  description {* Formalisation of MiniSail *}
+  options [document = pdf, document_output = "output"]
+  sessions   
+     "Nominal2"
+     "HOL-Eisbach" 
+  theories [document = false]
+    "Nominal2.Nominal2"
+    "Explorer"
+  theories
+    MiniSail
+  document_files
+    "root.tex"
