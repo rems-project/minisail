@@ -1,0 +1,114 @@
+%
+% This contains meta and nonterms that we need for MiniSail that
+% are defined in Sail.ott and for when we want to process but not
+% with sail.ott
+%
+
+% Do not include k as its used for kid variables
+indexvar n , k , i, j , q , m ::=
+  {{ phantom }}
+  {{ ocaml string }}
+  {{ com Index variables for meta-lists }}
+
+metavar num,numZero {{ tex 0 }},numOne ::=
+  {{ phantom }}
+  {{ lex numeric }}
+  {{ ocaml int }}
+  {{ hol num }}
+  {{ lem integer }}
+  {{ isa integer }}
+  {{ com Numeric literals }}
+  {{ ocamllex ['0'-'9']+ }}
+
+metavar nat ::=
+  {{ phantom }}
+  {{ ocaml int }}
+  {{ lex numeric }}
+  {{ lem nat }}
+  {{ isa integer }}  % Would like to use uint32 but problems with this in isa proof
+  {{ ocamllex 'n'['0'-'9']+ }}
+
+metavar hex ::=
+  {{ phantom }}
+  {{ lex numeric }}
+  {{ ocaml string }}
+  {{ lem string }}
+  {{ isa string }}
+  {{ com Bit vector literal, specified by C-style hex number }}
+  {{ ocamllex '0''x'['0'-'9' 'A'-'F']+ }}
+
+metavar bin ::=
+  {{ phantom }}
+  {{ lex numeric }}
+  {{ ocaml string }}
+  {{ lem string }}
+  {{ isa string }}
+  {{ com Bit vector literal, specified by C-style binary number }}
+  {{ ocamllex '0''b'['0'-'1']+ }}
+
+
+% Projection index
+%metavar p ::=
+%  {{ phantom }}
+%  {{ ocaml string }}
+%  {{ lem string }}
+%  {{ hol string }}
+%  {{ isa string }}
+%  {{ com String literals }}
+%  {{ ocamllex ['a'-'z' 'A'-'Z']+ }}
+
+
+metavar regexp ::=
+  {{ phantom }}
+  {{ ocaml string }}
+  {{ lem string }}
+  {{ hol string }}
+  {{ isa string }}
+  {{ com Regular expresions, as a string literal }}
+  {{ ocamllex "['a'-'z' 'A'-'Z']+" }}
+
+
+
+metavar id  ::=
+  {{ isa string }}
+  {{ ocaml string }}
+  {{ ocamllex 'f'['a'-'z']+ }}
+
+%metavar x , z , k , y , w , f , a, bvar {{ tex \hat{[[a]]} }}  ::=
+%  {{ com Identifier }}
+%  {{ ocaml string }}
+%  {{ ocamllex [a-z]+ }}
+
+%metavar ctor {{ tex \dot{[[ctor]]} }} ::= {{ com Constructor }}
+%  {{ isa string }}
+%  {{ ocaml string }}
+%  {{ ocamllex [a-z]+ }}
+
+%metavar field  ::= {{ com Record Field }}
+%  {{ isa string }}
+%  {{ ocaml string }}
+%  {{ ocamllex [a-z]+ }}
+
+metavar string_val ::=
+  {{ phantom }}
+  {{ ocaml string }}
+  {{ lem string }}
+  {{ hol string }}
+  {{ isa string }}
+  {{ com String literals }}
+  {{ ocamllex "['a'-'z' 'A'-'Z']+" }}
+
+metavar real_val ::=
+  {{ phantom }}
+  {{ ocaml string }}
+  {{ lem string }}
+  {{ hol string }}
+  {{ isa string }}
+  {{ com Real number literal }}
+  {{ ocamllex 'r'['0'-'9' '.']+ }}
+
+metavar ctor {{ tex \dot{[[ctor]]} }} ::= {{ com Constructor }}
+  {{ isa string }}
+  {{ ocaml string }}
+  {{ ocamllex [a-z]+ }}
+  {{ coq nat }} {{ coq-equality }}

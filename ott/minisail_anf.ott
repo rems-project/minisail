@@ -1,0 +1,1438 @@
+%% Mini-Sail in let-normal form
+%%
+%% Two versions of tex homs for productions with %? prefix
+%%    %a Superscript for when combining with syntax and rules for MiniSail+ and Sail,
+%%    %b Without superscript for standalone 
+
+
+embed
+{{ tex-preamble
+\usepackage{stmaryrd}
+%\makeatletter
+%\input ott-spec.ltx
+%\makeatother
+}}
+
+embed 
+{{ tex
+\section{Syntax}
+\label{ms_anf.syntax}
+The syntax ...
+}}
+
+
+metavar xa {{ tex x }} , ya  {{ tex y }}, za {{ tex z }} , wa {{ tex x }} , f {{ tex f }} , ka ::=
+  {{ com Identifier }}
+  {{ isa string }}
+  {{ ocaml string }}
+  {{ ocamllex ['v''z''x''y''w''t''f']['0'-'9']* }}
+
+metavar bit ::= {{ com Bit }}
+   {{ isa string }}
+  {{ ocaml string }}
+  {{ ocamllex 'b'['0'-'1']+ }}
+
+
+metavar ua {{ tex u }} ::=
+  {{ com Mutable Variables }}
+  {{ isa string }}
+  {{ ocaml string }}
+  {{ ocamllex 'u'['0'-'9''a'-'z']* }}
+
+metavar bv {{ tex \beta }}  ::=
+    {{ com Base type variables }}
+    {{ isa string }}
+    {{ ocaml string }}
+    {{ ocamllex '0''b'['a'-'z']+ }}
+
+
+metavar tid ::= {{ com Type ID }} {{ isa string }} {{ ocaml string }} {{ ocamllex 't'['a'-'z']+ }}
+
+%metavar C ::= {{ com Data Constructor }} {{ isa string }} {{ ocaml string }} {{ ocamllex ['A'-'Z']['a'-'z''A'-'Z']+ }} {{ lex string }}
+
+% In common_metavar.ott
+%metavar ctor ::= {{ com Data Constructor }} {{ isa string }} {{ ocaml string }} {{ ocamllex ['A'-'Z']['a'-'z''A'-'Z']+ }} {{ lex string }}
+
+%metavar q ::= {{ com Predicate }} {{ isa string }} {{ ocaml string }} {{ ocamllex [a-z]+ }}
+
+
+grammar
+
+rcl_v {{ tex rv }} :: 'RCL_' ::= {{ com Constraint logic ground value }}
+  | num :: :: num
+  | true :: :: true
+  | false :: :: false
+  | () :: :: unit
+  | bitstr :: :: bvec
+  | ( rcl_v1 , rcl_v2 ) :: :: pair
+  | ctor tid rcl_v :: :: cons
+  | ctor tid ba rcl_v :: :: consp
+  | usort rcl_v           :: :: boxed
+  
+vval {{ tex i }} :: 'Val_' ::= {{ com RCL valuation }} 
+  | empty :: :: nil
+  | xa -> rcl_v , vval :: :: cons
+  
+ba
+%a {{ tex b^a }}
+%b {{ tex b }}
+:: 'BA_' ::= {{ com Base Type }}
+  | int :: :: int
+  | bool :: :: bool
+  | tid :: :: id     {{ com Type ID }}
+  | unit :: :: unit
+  | bvec :: :: bvec  {{ com Bit vectors }}
+  | ba1 * ba2 :: :: pair
+  | bv :: :: bvr
+  | bapp tid ba :: :: bapp
+  | [ ta ]b :: M :: b_of {{ tex |[[ta]]|_b }} {{ icho (b_of [[ta]]) }}
+  | ba1 [ ba2 / bv ] :: M :: subst {{ icho (subst_b [[bv]] [[ba2]] [[ba1]])}}
+
+ta
+%a {{ tex \tau^a }}
+%b {{ tex \tau }}
+:: 'TA_' ::= {{ com Refined Type }}
+  | { xa : ba | ca } :: :: refined_type (+ bind xa in ca +)
+  | xa : ba [ ca ]     :: :: type       (+ bind xa in ca +)
+  | ta [ va / xa ]   :: M :: subst {{ icho (subst_l [[va]] [[xa]] [[ta]])}}
+  | ta [ ba / bv ] :: M :: subst_b {{ icho (subst_b [[bv]] [[ba]] [[ta]])}}
+  | ( ta ) :: S :: parens {{ icho ([[ta]]) }}
+%  | l1 * l2     :: :: pair
+
+A :: 'AA_' ::= {{ com Dependent Function Type }}
+  | ta                    :: :: monotype
+  | xa : ba [ ca ] -> ta  :: :: function
+
+
+cea
+%a {{ tex ce^a }}
+%b {{ tex ce }}
+:: 'CEA_' ::= {{ com Expressions for constraints }}
+    | va            :: :: val {{ com Value }}
+    | cea1 + cea2      :: :: plus  {{ com Addition }}
+    | cea1 <= cea2     :: :: leq {{ tex [[va1]] \le [[va2]] }} {{ com Less than or equl }}
+    | fst cea        :: :: fst  {{ com Project first part of pair }}
+    | snd cea        :: :: snd  {{ com Project second part of pair }}
+    | len cea        :: :: len  {{ com Length of vector }}
+    | cea1 @ cea2     :: :: concat {{ com Bit vector concat }}
+    | cea [ va / xa ]  :: M :: subst      {{ com Substitution }} {{ icho (subst_e [[va]] [[xa]] [[cea]])}}
+    | ( cea )          :: S :: parens {{ icho [[cea]] }}
+    
+ca
+%a {{ tex \phi^a }}
+%b {{ tex \phi }}
+:: 'CA_' ::= {{ com Refinement Constraints - Quntifier free logic of uninterpreted functions and linear arithmetic}}
+  | Top :: :: true {{ tex \top }}
+  | Bot :: :: false {{ tex \bot }}
+  | ca1 /\ ca2 :: :: conj
+  | ~ ca   :: :: not {{ tex \neg [[ca]] }}
+  | cea1 = cea2 :: :: eq
+  | cea1 <= cea2 :: :: leq
+  | ( ca ) :: S :: parens {{ ichlo [[ca]] }}
+  | ca [ va / xa ] :: M :: subst {{ icho (subst_c [[va]] [[xa]] [[ca]])}}
+  | ca1 ==> ca2 ::    :: implies
+
+la
+%a {{ tex l^a }}
+%b {{ tex l }}
+:: 'LA_' ::= {{ com Literals }}
+  | num  :: :: num  {{ tex n }}  {{ com Numeric literal }}
+  | true :: :: true {{ tex \textbf{T} }}  {{ com true boolean literal }}
+  | false :: :: false {{ tex \textbf{F} }} {{ com false boolean literal }}
+  | ()            :: :: unit {{ com Unit value }}
+  | bin :: :: bvec {{ com Bit vector }}
+
+va
+%a {{ tex v^a }}
+%b {{ tex v }}
+:: 'VA_' ::= {{ com Values }}
+  | xa :: :: var                  {{ com Immutable variable }}
+  | la :: :: lit
+  | va1 [ va2 / xa ]   :: M :: subst      {{ com Substitution }}  {{ icho (subst_v [[va2]] [[xa]] [[va1]])}}
+  | ( va ) :: S :: parens {{ ichlo [[va]] }}
+  | ( va1 , va2 )   :: :: pair {{ com Value pair }}
+  | ctor tid va        :: :: cons {{ com Data constructor }}
+  | ctor tid [ ba ] va :: :: consp {{ com Data constructor for polymorphic types }} 
+
+
+ea
+%a {{ tex e^a }}
+%b {{ tex e }}
+:: 'EA_' ::= {{ com Expressions }}
+  | va            :: :: val {{ com Value }}
+  | ua            :: :: mvar {{ com Mutable Variable }}
+  | f va          :: :: app  {{ com Function Application }}
+  | f [ ba ] va    :: :: app_poly  {{ com Polymorphic Function Application }}
+  | va1 + va2      :: :: plus  {{ com Addition }}
+  | va1 <= va2     :: :: leq {{ tex [[va1]] \le [[va2]] }} {{ com Less than or equal }}
+  | va1 = va2      :: :: eq 
+  | fst va        :: :: fst  {{ com Project first part of pair }}
+  | snd va        :: :: snd  {{ com Project second part of pair }}
+  | len ea        :: :: len
+  | va1 @ va2     :: :: concat
+  | split va1 va2   :: :: split {{ com Split vector }}
+  | ( ea ) :: S :: parens {{ icho ([[ea]]) }}
+  | ea [ va / xa ]  :: M :: subst      {{ com Substitution }} {{ icho (subst_e [[va]] [[xa]] [[ea]])}}
+
+
+sa
+%a {{ tex s^a }}
+%b {{ tex s }}
+:: 'SA_' ::= {{ com Statement  }}
+  | va                     :: :: val
+  | let xa = ea in sa        :: :: let (+ bind xa in sa +)   {{ com Let binding }}
+  | let2 xa : ta = sa1 in sa2 :: :: let2 (+ bind xa in sa2 +) {{ tex \textbf{let}\ [[xa]] : [[ta]] = [[sa1]] \textbf{ in } [[sa2]] }} {{ com Let binding with type annotation }}
+  | if va then sa1 else sa2  :: :: if1  {{ com If-then-else  }}
+  | sa [ va / xa ]           :: M :: subst      {{ com Substitution }} {{ icho (subst_s [[va]] [[xa]] [[sa]])}}
+  | match va of ctor1 xa1 => sa1 , ... , ctorn xan => san :: :: match {{ com Match statement }}
+  | var ua : ta := va in sa   :: :: mvardecl (+ bind ua in sa +) {{ com Declaration and scoping of mutable variable }}
+  | ua := va                :: :: mvarassign {{ com Assignment to mutable variable }}
+  | while ( sa1 ) do { sa2 }   :: :: while    {{ com While loop }}
+  | sa1 ; sa2               :: :: seq    {{ com Statement sequence }}
+  | abort :: :: abort
+  | assert ca in sa        :: :: assert
+  | ( sa )                 :: S :: parens {{ icho ([[sa]]) }}
+  | { sa }                 :: S :: cparens {{ icho ([[sa]]) }}
+  | sa [ ba / bv ] :: M :: subst_b {{ icho (subst_b [[bv]] [[ba]] [[sa]])}}
+
+defa
+%a {{ tex def^a }}
+%b {{ tex def }}
+:: 'DEFA_' ::= {{ com Definitions }}
+  | val f : ( xa : ba [ ca ] ) -> ta :: :: valspec (+ bind xa in ta +) (+ bind xa in ca +)
+  | val forall bv . f : ( xa : ba [ ca ] ) -> ta :: :: valspecpoly (+ bind xa in ta +) (+ bind xa in ca +)
+  | function f ( xa ) = sa :: :: fundef (+ bind xa in sa +)
+  | function f ( xa ) = sa :: :: fundefpoly (+ bind xa in sa +)
+  | union tid = { ctor1 : ta1 , ... , ctorn : tan } :: :: union
+  | union tid = forall bv . { ctor1 : ta1 , ... , ctorn : tan } :: :: union_poly
+
+pa
+%a {{ tex p^a }}
+%b {{ tex p }}
+:: 'PA_' ::= {{ menhir-start }} {{ com Program }} 
+  | defa1 ; .. ; defan ;; sa :: :: prog
+
+
+Ga {{tex \Gamma }} :: 'GA_' ::= {{ com Variable type context }} {{ isa (x*A) list }}
+  | empty     :: :: empty {{ tex \cdot }} {{ com Empty context }} {{ isa ([]) }}
+  | xa : ba [ ca ] :: :: singleton
+  | Ga , xa : ba [ ca ] :: :: cons
+  | ( Ga ) :: S :: parens {{ icho [[Ga]] }}
+  | Ga1 U Ga2 :: :: union {{ tex [[Ga1]] , [[Ga2]] }}
+  | Ga [ va / xa ]  :: M :: subst {{ icho (subst_g [[Ga]] [[va]] [[xa]] ) }}
+
+
+PCa {{tex \Phi }} :: 'PCA_' ::= {{ com Function context }}
+  | empty :: :: empty {{ tex \cdot  }}
+  | PCa , defa :: :: cons
+  | defa :: :: singleton
+
+Da {{tex \Delta }} :: 'DA_' ::= {{ com Mutable variables context }}
+  | empty ::  :: empty {{ tex \cdot  }}
+  | Da1 U Da2 :: :: union {{ tex [[Da1]] , [[Da2]] }}
+  | ( Da ) :: S :: parens {{ icho [[Da]] }}
+  | Da , ua : ta :: :: cons
+  | ua : ta :: :: singleton
+
+TCa {{tex \Theta }} :: 'TCA_' ::= {{ com Type defintions }}
+  | empty :: :: empty {{ tex \cdot  }}
+  | TCa , defa :: :: cons
+  | defa :: :: singleton
+
+BCa  {{tex B }}:: 'BBA_' ::= {{ com BCase type variable context }}
+  | empty :: :: empty {{ tex \cdot  }}
+  | BCa , bv :: :: cons
+  | bv :: :: singleton
+
+
+HCa {{tex \pi }} :: 'HA_' ::= {{ com Reduction Function Body Context }}
+  | empty :: :: empty {{ tex \cdot  }}
+  | HCa , f : sa :: :: cons
+
+d {{tex \delta }} :: 'DSA_' ::= {{ com Reduction Local Store }}
+  | empty   :: :: empty {{ tex \cdot }}
+  | d [ ua <- va ] :: :: update
+
+terminals :: '' ::=
+  | << :: :: extension {{ tex \sqsubseteq }}
+  | ->                                  :: :: arrow_anf
+   {{ tex \ensuremath{\rightarrow} }}
+  | |-                                  :: :: vdash_anf2
+    {{ tex \ensuremath{\vdash} }}
+  | |^-                                  :: :: vdash_minus
+%%    {{ tex \ensuremath{\vdash^-} }}
+    {{ tex \ensuremath{\vdash^{\mkern-10mu\scriptscriptstyle\rule[-.9ex]{0pt}{0pt}\phi} } }}
+  | |a-                                  :: :: vdash_anf
+    {{ tex \ensuremath{\vdash}_a }}
+  | |v-                                  :: :: vdash_v
+    {{ tex \ensuremath{\vdash} }}
+  | |-w                                 :: :: vdash_wf
+    {{ tex \ensuremath{\vdash}_{wf} }}
+  | -|                                  :: :: dashv_anf
+    {{ tex \ensuremath{\dashv} }}
+  | |=                                  :: :: models_anf
+    {{ tex \ensuremath{\models} }}
+  | =>                                  :: :: Rightarrow_anf
+    {{ tex \ensuremath{\Rightarrow} }}
+  | <=                                  :: :: Leftarrow_anf
+    {{ tex \ensuremath{\Leftarrow} }}
+  | \/                                  :: :: disjunction_anf
+    {{ tex \vee }}
+  | /\                                  :: :: conjunction_anf
+    {{ tex \wedge }}
+  | ~<                                  :: :: subtype_sym_anf
+    {{ tex \lesssim }}
+%  | u+                                  :: :: uplus
+%    {{ tex \ensuremath{\uplus} }}
+  | forall                              :: :: forall_anf
+    {{ tex \forall }}
+  | exists                              :: :: exist_anf
+    {{ tex \exists }}
+  | ==>                                 :: :: implies_anf
+    {{ tex \Longrightarrow }}
+  | -->                                :: :: reduce_arrow_anf
+    {{ tex \longrightarrow }}
+  | ~>                                    :: :: squiggle_anf
+    {{ tex \leadsto }}
+  | INN                   :: :: member_of_anf
+    {{ tex \in }}
+  | NOTIN                 :: :: not_member_of_anf
+    {{ tex \notin }}
+  | <-  :: :: mapsto_anf
+    {{ tex \mapsto }}
+  | ~ :: :: sim {{ tex \sim }}
+
+formula :: formula_ ::=
+%b  | judgement                               :: :: judgement
+%b  | formula1 .. formulan                    :: :: dots
+%  | TCa ; BCa ; Ga |= ca                              :: :: cons_sat2 {{ tex [[TCa]] ; [[BCa]] ; [[Ga]] \models [[ca]] }}
+  | xa : ba [ ca ] INN Ga                       :: :: lookup_var_anf {{ tex [[xa]] : [[ba]] [ [[ca]] ] \in [[Ga]] }}
+  | ua : ta INN Da                             :: :: lookup_mvar_anf {{ tex [[ua]] : [[ta]] \in [[Da]] }}
+  | union  tid = { ctor1 : ta1 , ... , ctorn : tan } INN TCa :: :: lookup_tdef
+  | union  tid = forall bv . { ctor1 : ta1 , ... , ctorn : tan } INN TCa :: :: lookup_tdef_poly
+  | xa  IND Ga a                                     :: :: in_domain_g_anf {{ tex [[xa]]  \in \text{dom}([[Ga]]) }}
+  | val f : ( xa : ba [ ca ] ) -> ta NOTIN PCa         :: :: valspec_not_in
+  | val f : ( xa : ba [ ca ] ) -> ta INN PCa         :: :: valspec_in
+  | val forall bv . f : ( xa : ba [ ca ] ) -> ta INN PCa :: :: valspec_poly_in
+  | function f ( xa ) = sa  NOTIN PCa                 :: :: fundef_not_in
+  | function f ( xa ) = sa  INN PCa                   :: :: fundef_in
+  | f  IND PCa                             :: :: in_domain_d_fun_anf {{ tex [[f]] \in \text{dom}([[PCa]]) }}
+  | ua  IND Da                             :: :: in_domain_delta {{ tex [[ua]] \in \text{dom}([[Da]]) }}
+  | tid NOTIN PCa                        :: :: tid_not_in_p {{ tex [[tid]] \notin [[PCa]] }}
+  | ctor NOTIN PCa                         :: :: cons_not_in_p {{ tex [[ctor]] \notin [[PCa]] }}
+  | f NOTIN PCa                         :: :: f_not_in_p {{ tex [[f]] \notin [[PCa]] }}
+  | f NOTIN dom ( PCa )                        :: :: f_not_in_dom_p {{ tex [[f]] \notin \text{dom}([[PCa]]) }}
+  | ua NOTIN dom ( d )                    :: :: u_not_ind {{ tex [[ua]] \notin \text{dom}([[d]]) }}
+  | ua NOTIN dom ( Da )                    :: :: u_not_D {{ tex [[ua]] \notin \text{dom}([[Da]]) }}
+  | xa NOTIN dom ( Ga )                    :: :: x_not_G {{ tex [[xa]] \notin \text{dom}([[Ga]]) }}
+  | tid NOTIN dom ( TCa )                    :: :: tid_not_T {{ tex [[tid]] \notin \text{dom}([[TCa]]) }}
+  | distinct ctor1 ... ctorn                      :: :: ctor_distinct
+  | ctor1 ... ctorn NOTIN TCa                      :: :: ctor_not_used
+  | va1 + va2 = va                          :: :: plus_reduction_anf
+  | va1 <= va2 = va                          :: :: leq_reduction_anf {{ tex [[va1]] \le [[va2]] = [[va]] }}
+  | len va1 = va2 :: :: len
+  | va1 @ va2 = va3 :: :: concat
+  | va1 = split va2 va3 :: :: split
+  | f xa = ea                             :: :: fundef
+  | xa1 = xa2 :: :: var_eq_anf
+  | xa1 <> xa2 :: :: var_neq_anf  {{ tex [[xa1]] \neq [[xa2]] }}
+  | xa # ea  :: :: x_fresh_in_e_anf
+  | xa # Ga :: :: x_fresh_g
+  | xa fresh :: :: fresh_x_anf
+  | va = d ( ua ) :: :: lookup_mvar_val
+  | d' = d [ ua <- va ] :: :: update_mvar {{ tex [[d']] = [[d]] [ [[ua]] \mapsto [[va]] ] }}
+  | d = ua1 -> va1 , .. , uan -> van  :: :: store_equls
+  | Da = ua1 : ta1 , .. , uan : tan  :: :: mvars_equal
+  | bv INN BCa :: :: bv_in {{ tex [[bv]] \in [[BCa]] }}
+  | ALL_VAL_SATIS :: :: all_val {{ tex  \forall i. \Theta ; \Gamma \vdash i  \wedge  i \models \Gamma \longrightarrow i \models \phi }}
+  | rcl_v = vval ( xa ) :: :: val_x {{ tex [[rcl_v]] = [[vval]] ( [[xa]] ) }}
+  | rcl_v = rcl_v1 + rcl_v2 :: :: rcl_plus
+  | rcl_v = rcl_v1 <= rcl_v2 :: :: rcl_leq
+  | rcl_v = rcl_v1 @ rcl_v2 :: :: rcl_concat
+  | rcl_v = len rcl_v' :: :: rcl_len
+  | rcl_v = ( rcl_v1 = rcl_v2 ) :: :: rcl_eq
+  | rcl_v = rcl_v1 \/ rcl_v2  :: :: rcl_or
+  | rcl_v = rcl_v1 /\ rcl_v2  :: :: rcl_and
+  | rcl_v = rcl_v1 ==> rcl_v2 :: :: rcl_imp
+  | rcl_v = ~ rcl_v1 :: :: rcl_not
+
+
+parsing
+CA_conj left CA_conj
+GA_cons left GA_cons
+SA_let left SA_seq
+
+substitutions
+  single va xa :: subst
+
+freevars
+    va xa  :: ftv
+
+
+defns rcl :: '' ::=
+{{tex \section{MiniSail type system}\subsection{Refinement constraint logic} }}
+
+defn
+  [ la ] ~ rcl_v :: :: eval_lit :: eval_lit_
+  {{ tex \llbracket [[la]] \rrbracket \sim [[rcl_v]] }}
+by
+
+------------   :: num
+[ num ] ~ num
+
+------------   :: true
+[ true ] ~ true
+
+
+------------   :: false
+[ false ] ~ false
+
+
+------------   :: unit
+[ () ] ~ ()
+
+
+defn
+  vval [ va ] ~ rcl_v :: :: eval_v :: eval_v_
+  {{ tex [[vval]] \llbracket [[va]] \rrbracket \sim [[rcl_v]] }}
+by
+
+[ la ] ~ rcl_v
+----------------   :: lit
+vval [ la ] ~ rcl_v
+
+
+rcl_v = vval ( xa )
+------------------ :: var
+vval [ xa ] ~ rcl_v
+
+
+vval [ va1 ] ~ rcl_v1
+vval [ va2 ] ~ rcl_v2
+----------------- :: pair
+vval [ (va1,va2) ] ~ ( rcl_v1 ,  rcl_v2 )
+
+
+vval [ va ] ~ rcl_v
+------------------------ :: cons
+vval [ ctor tid va ] ~ ctor tid rcl_v
+
+vval [ va ] ~ rcl_v
+------------------------------------------------- :: consp
+vval [ ctor tid [ ba ] va ] ~ ctor tid ba rcl_v
+
+defn
+  vval [ cea ] ~ rcl_v :: :: eval_ce :: eval_ce_
+  {{ tex [[vval]] \llbracket [[cea]] \rrbracket \sim [[rcl_v]] }}
+by
+
+
+vval [ va ] ~ rcl_v
+--------------------- :: val
+vval [ va ] ~ rcl_v
+
+vval [ va1 ] ~ rcl_v1
+vval [ va2 ] ~ rcl_v2
+rcl_v = rcl_v1 + rcl_v2
+--------------------------- :: plus
+vval [ va1 + va2 ] ~ rcl_v
+
+vval [ va1 ] ~ rcl_v1
+vval [ va2 ] ~ rcl_v2
+rcl_v = rcl_v1 <= rcl_v2
+--------------------------- :: leq
+vval [ va1 <= va2 ] ~ rcl_v
+
+vval [ va1 ] ~ rcl_v1
+--------------------------- :: fst
+vval [ fst ( va1 , va2 ) ] ~ rcl_v1
+
+vval [ va2 ] ~ rcl_v2
+--------------------------- :: snd
+vval [ snd ( va1 , va2 ) ] ~ rcl_v2
+
+vval [ va1 ] ~ rcl_v1
+vval [ va2 ] ~ rcl_v2
+rcl_v = rcl_v1 @ rcl_v2
+--------------------------- :: concat
+vval [ va1 @ va2 ] ~ rcl_v
+
+vval [ va ] ~ rcl_v'
+rcl_v = len rcl_v'
+--------------------------- :: len
+vval [ len va1 ] ~ rcl_v
+
+
+defn
+  vval [ ca ] ~ rcl_v :: :: eval_c :: eval_c_
+  {{ tex [[vval]] \llbracket [[ca]] \rrbracket \sim [[rcl_v]] }}
+by
+
+vval [ cea1 ] ~ rcl_v1
+vval [ cea2 ] ~ rcl_v2
+rcl_v = (rcl_v1 = rcl_v2)
+------------------------------ :: eq
+vval [ cea1 = cea2 ] ~ rcl_v
+
+
+vval [ ca1 ] ~ rcl_v1
+vval [ ca2 ] ~ rcl_v2
+rcl_v = rcl_v1 /\ rcl_v2
+------------------------------ :: and
+vval [ ca1 /\ ca2 ] ~ rcl_v
+
+vval [ ca ] ~ rcl_v'
+rcl_v = ~ rcl_v'
+------------------------------ :: not
+vval [ ~ ca ] ~ rcl_v
+
+
+vval [ ca1 ] ~ rcl_v1
+vval [ ca2 ] ~ rcl_v2
+rcl_v = rcl_v1 ==> rcl_v2
+------------------------------ :: imp
+vval [ ca1 ==> ca2 ] ~ rcl_v
+
+defn
+  vval |= ca :: :: satis_ca :: satis_ca_
+by
+
+vval [ ca ] ~ true
+-------------------- :: ca
+vval |= ca
+
+defn
+  vval |= Ga :: :: satis_g :: satis_g_
+by
+
+----------------- :: nil
+vval |= empty
+
+
+vval |= Ga
+vval |= ca
+----------------------- :: cons
+vval |= Ga , xa : ba [ ca ] 
+
+defn
+TCa |-w rcl_v : ba :: :: wf_rcl_v :: wf_rcl_v_
+by
+
+------------------------ :: int
+TCa |-w num : int
+
+------------------------ :: true
+TCa |-w true : bool
+
+------------------------ :: false
+TCa |-w false : bool
+
+------------------------ :: unit
+TCa |-w () : unit
+
+------------------------ :: bvec
+TCa |-w bitstr : bvec
+
+
+TCa |-w rcl_v1 : ba1
+TCa |-w rcl_v2 : ba2
+----------------------------------------------- :: pair
+TCa |-w ( rcl_v1 , rcl_v2 ) : ba1 * ba2
+
+TCa |-w rcl_v : ba
+union  tid = { </ ctori : tai // i />  } INN TCa
+--------------------------------------------------- :: cons
+TCa  |-w ctorj tid rcl_v : tid
+
+TCa |-w rcl_v  :  [ taj ]b [ ba2 / bv ] 
+union  tid = forall bv . { </ ctori : tai // i />  } INN TCa
+-------------------------------------------------------------- :: consp
+TCa |-w ctorj tid ba2 rcl_v : bapp tid ba2
+
+
+
+-------------------------------- :: boxed
+TCa |-w usort rcl_v : bv
+
+
+
+
+defn
+TCa ; Ga |- vval :: :: wf_val :: wf_val_
+by
+
+--------------- :: empty
+TCa ; empty |- vval 
+
+rcl_v = vval ( xa )
+TCa |-w rcl_v : ba
+---------------------------- :: cons
+TCa ; Ga , xa : ba [ ca ] |- vval
+
+defn
+  TCa ; BCa ; Ga |= ca :: :: valid :: valid_
+by  
+
+TCa ; BCa ; Ga |-w ca
+ALL_VAL_SATIS
+-------------------- :: valid
+TCa ; BCa ; Ga |= ca
+
+defns wf_check :: '' ::=
+{{ tex \subsection{Wellformedness} }}
+
+defn
+|-w TCa   :: :: theta_b  :: theta_b {{ com Wellformedness for type definition context }}
+by
+
+-------------- :: empty
+|-w empty
+
+
+tid NOTIN dom ( TCa )
+distinct ctor1 ... ctorn
+ctor1 ... ctorn NOTIN TCa
+------------------------------------------------- :: union
+|-w TCa, union tid = { ctor1 : ta1 , ... , ctorn : tan }
+
+defn
+TCa ; BCa |-w ba  :: :: wf_b :: wf_b_ {{ com Wellformedness for base-type }}
+by
+
+|-w TCa
+------------- :: bool
+TCa ; BCa |-w bool
+
+|-w TCa
+------------- :: int
+TCa ; BCa |-w int
+
+
+|-w TCa
+------------- :: unit
+TCa ; BCa |-w unit
+
+|-w TCa
+------------- :: bvec
+TCa ; BCa |-w bvec
+
+
+TCa ; BCa |-w ba1
+TCa ; BCa |-w ba2
+-------------- :: pair
+TCa ; BCa |-w ba1 * ba2
+
+
+|-w TCa
+union  tid = { ctor1 : ta1 , .. , ctorn : tan } INN TCa
+-------------------------------------------------- :: tid
+TCa ; BCa |-w tid
+
+bv INN BCa
+-------------------- :: bvr
+TCa ; BCa |-w bv
+
+defn
+TCa  |-w PCa  :: :: wf_p :: wf_p_ {{ com Wellformedness for function definition context }}
+by
+
+f NOTIN dom ( PCa )
+TCa ; empty , bv |-w ba
+TCa ; empty , bv |-w xa : ba [ ca ]
+TCa ; empty , bv ; xa : ba [ ca ] |-w ta
+-------------------------------------------- :: valspec_poly
+TCa |-w PCa , val forall bv . f : ( xa : ba [ ca ] ) -> ta
+
+f NOTIN dom ( PCa )
+TCa ; empty  |-w ba
+TCa ; empty  |-w xa : ba [ ca ]
+TCa ; empty  ; xa : ba [ ca ] |-w ta
+-------------------------------------------- :: valspec
+TCa |-w PCa , val f : ( xa : ba [ ca ] ) -> ta
+
+|-w TCa
+-------------------- :: empty
+TCa |-w empty
+
+
+defn
+TCa ; BCa |-w Ga  :: :: wf_ :: wf_g_ {{ com Wellformedness for immutable variable context }}
+by
+
+|-w TCa
+----------------- :: empty
+TCa ; BCa |-w empty
+
+
+TCa ; BCa |-w Ga
+TCa ; BCa |-w ba
+TCa ; BCa ; Ga , xa : ba [Top] |-w ca
+xa NOTIN dom ( Ga )
+--------------------------- :: cons
+TCa ; BCa |-w Ga, xa : ba [ca]
+
+TCa ; BCa |-w Ga
+TCa ; BCa |-w ba
+xa NOTIN dom ( Ga )
+--------------------------- :: cons_true
+TCa ; BCa |-w Ga, xa : ba [Top]
+
+TCa ; BCa |-w Ga
+TCa ; BCa |-w ba
+xa NOTIN dom ( Ga )
+--------------------------- :: cons_false
+TCa ; BCa |-w Ga, xa : ba [Bot]
+
+
+defn
+TCa ; BCa ; Ga |-w Da  :: :: wf_d :: wf_d_ {{ com Wellformedness for mutable variable context }}
+by
+
+TCa ; BCa |-w Ga
+----------------- :: empty
+TCa ; BCa ; Ga |-w empty
+
+
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |-w ta
+ua NOTIN dom(Da)
+------------------ :: cons
+TCa ; BCa ; Ga |-w Da , ua : ta
+
+
+
+defn
+TCa ; BCa ; Ga |-w va : ba  :: :: wf_v :: wf_v_ {{ com WF for values }}
+by
+
+TCa ; BCa  |-w Ga
+xa:ba[ca] INN Ga
+------------------- :: var
+TCa ; BCa ; Ga |-w xa : ba
+
+TCa ; BCa |-w Ga
+---------------- :: num
+TCa ; BCa ; Ga |-w num : int
+
+TCa ; BCa |-w Ga
+---------------- :: true
+TCa ; BCa ; Ga |-w true : bool
+
+TCa ; BCa |-w Ga
+---------------- :: false
+TCa ; BCa ; Ga |-w false : bool
+
+TCa ; BCa |-w Ga
+-------------------- :: unit
+TCa ; BCa ; Ga |-w () : unit
+
+
+TCa ; BCa ; Ga |-w va : [ taj ]b
+union  tid = { </ ctori : tai // i />  } INN TCa
+-------------------------------------------- :: cons
+TCa ; BCa ; Ga |-w ctorj tid va : tid
+
+TCa ; BCa ; Ga |-w va : [ taj ]b  [ ba2 / bv ]
+TCa ; BCa |-w ba2 
+union  tid = forall bv . { </ ctori : tai // i />  } INN TCa
+---------------------------------------------------------------- :: consp
+TCa ; BCa ; Ga |-w ctorj tid [ ba2 ] va : bapp tid ba2
+
+TCa ; BCa ; Ga |-w va1 : ba1
+TCa ; BCa ; Ga |-w va2 : ba2
+----------------------------------------- :: pair
+TCa ; BCa ; Ga |-w (va1,va2) : ba1 * ba2
+
+
+
+
+defn
+TCa ; PCa ; BCa ; Ga ; Da |-w ea : ba  :: :: wf_e :: wf_e_ {{ com WF for expressions }}
+by
+
+TCa ; BCa ; Ga |-w Da
+TCa |-w PCa
+TCa ; BCa ; Ga |-w va : ba
+val f : ( xa : ba [ ca ] ) -> ta INN PCa
+------------------- :: app
+TCa ; PCa ; BCa ; Ga ; Da |-w f va  : [ ta ]b
+
+TCa ; BCa ; Ga |-w Da
+TCa |-w PCa
+TCa ; BCa ; Ga |-w va : ba1 [ ba2 / bv ]
+val forall bv . f : ( xa : ba1 [ ca ] ) -> ta INN PCa
+------------------- :: app_poly
+TCa ; PCa ; BCa ; Ga ; Da |-w f [ ba2 ] va  : [ ta ]b [ ba2 / bv ]
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |-w va1 : int
+TCa ; BCa ; Ga |-w va2 : int
+---------------- :: plus
+TCa ; PCa ; BCa ; Ga ; Da |-w va1 + va2 : int
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |-w va1 : int
+TCa ; BCa ; Ga |-w va2 : int
+---------------- :: leq
+TCa ; PCa ; BCa ; Ga ; Da |-w va1 <= va2 : bool
+
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |-w va : ba1 * ba2
+---------------------- :: fst
+TCa ; PCa ; BCa ; Ga ; Da |-w fst va : ba1
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |-w va : ba1 * ba2
+---------------------- :: snd
+TCa ; PCa ; BCa ; Ga ; Da |-w snd va : ba2
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |-w va : bvec
+---------------------- :: len
+TCa ; PCa ; BCa ; Ga ; Da |-w len va : int
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |-w va1 : bvec
+TCa ; BCa ; Ga |-w va2 : bvec
+---------------------- :: concat
+TCa ; PCa ; BCa ; Ga ; Da |-w va1 @ va2 : bvec
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |-w va1 : int
+TCa ; BCa ; Ga |-w va2 : bvec
+--------------------------------------------------- :: split
+TCa ; PCa ; BCa ; Ga ; Da |-w split va1 va2 : bvec * bvec
+
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+ua : ta  INN Da
+------------------ :: mvar
+TCa ; PCa ; BCa ; Ga ; Da |-w ua : [ ta ]b
+
+
+defn
+TCa ; BCa ; Ga |-w ca  :: :: wf_c :: wf_c_ {{ com WF for constraints }}
+by
+
+
+TCa ; BCa ; Ga |-w ca1
+TCa ; BCa ; Ga |-w ca2
+---------------------------------------  :: conj
+TCa ; BCa ; Ga |-w ca1 /\ ca2
+
+TCa ; BCa ; Ga |-w ca1
+TCa ; BCa ; Ga |-w ca2
+---------------------------------------  :: imp
+TCa ; BCa ; Ga |-w ca1 ==> ca2
+
+
+TCa ; empty ; BCa ; Ga ; empty |-w ea1 : ba
+TCa ; empty ; BCa ; Ga ; empty |-w ea2 : ba
+---------------------------------------  :: eq
+TCa ; BCa ; Ga |-w cea1 = cea2
+
+defn
+TCa ; BCa ; Ga |-w ta  :: :: wf_t :: wf_t_ {{ com WF for types }}
+by
+
+TCa ; BCa ; Ga , za : ba [Top] |-w ca
+----------------- :: tau
+TCa ; BCa ; Ga |-w { za : ba | ca }
+
+
+defn
+TCa ; PCa ; BCa ; Ga ; Da |-w sa : ba  :: :: wf_s :: wf_s_ {{ com WF for statements }}
+by
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |-w va : ba
+------------------------------ :: val
+TCa ; PCa ; BCa ; Ga ; Da |-w va : ba
+
+ua NOTIN dom(Da)
+TCa ; BCa ; Ga |-w va : ba1
+TCa ; PCa ; BCa ; Ga; Da , ua : ta  |-w sa : ba2
+------------------------------ :: var
+TCa ; PCa ; BCa ; Ga ; Da |-w var ua : ta := va in sa : ba2
+
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+ua : { za : ba | ca } INN Da
+TCa ; BCa ; Ga |-w va : ba 
+------------------------------ :: assign
+TCa ; PCa ; BCa ; Ga ; Da |-w ua := va  : unit
+
+
+TCa ; BCa ; Ga |-w va : bool
+TCa ; PCa ; BCa ; Ga ; Da |-w sa1 : ba
+TCa ; PCa ; BCa ; Ga ; Da |-w sa2 : ba
+------------------------------------------------------- :: if
+TCa ; PCa ; BCa ; Ga ; Da |-w if va then sa1 else sa2 : ba
+
+xa # Ga
+TCa ; PCa ; BCa ; Ga ; Da  |-w ea : ba1
+TCa ; PCa ; BCa ; Ga , xa : ba1 [ ca ] ; Da |-w sa : ba2
+------------------------------ :: let
+TCa ; PCa ; BCa ; Ga ; Da  |-w let xa = ea in sa : ba2
+
+xa # Ga
+TCa ; PCa ; BCa ; Ga ; Da |-w sa1 : ba1
+TCa ; PCa ; BCa ; Ga , xa : ba1 [ Top  ] ; Da |-w sa2 : ba2
+TCa ; BCa ; Ga |-w { za : ba1 | ca }
+------------------------------ :: let2
+TCa ; PCa ; BCa ; Ga ; Da  |-w let2 xa : { za : ba1 | ca } = sa1 in sa2 : ba2
+
+
+union tid = { </ ctori : { zai:bai|cai} // i /> } INN TCa
+TCa ; BCa ; Ga |-w va : tid
+</ TCa ; PCa ; BCa ; Ga , xai : bai[ va = ctori tid xai /\ cai [xai/zai] ] ; Da |-w sai : ba  // i />
+---------------------------------------------------------------- :: match
+TCa ; PCa ; BCa ; Ga ; Da |-w match va of </ ctori xai => sai // i /> : ba
+
+
+
+TCa ; PCa ; BCa ; Ga ; Da |-w sa1 : bool
+TCa ; PCa ; BCa ; Ga ; Da |-w sa2 : unit
+--------------------------------- :: while
+TCa ; PCa ; BCa ; Ga ; Da |-w while ( sa1 ) do { sa2 } : unit
+
+
+TCa ; PCa ; BCa ; Ga ; Da |-w sa1 : unit
+TCa ; PCa ; BCa ; Ga ; Da |-w sa2 : ba
+--------------------------------- :: seq
+TCa ; PCa ; BCa ; Ga ; Da |-w sa1 ; sa2  : ba
+
+xa # Ga
+TCa ; BCa ; Ga  |-w ca
+TCa ; PCa ; BCa ; Ga , xa : bool [ ca ] ; Da |-w sa : ba
+----------------------------------------------------------- :: assert
+TCa ; PCa ; BCa ; Ga ; Da |-w assert ca in sa  : ba
+
+
+defns extension :: '' ::=
+
+defn
+TCa ; BCa |- Ga1 << Ga2 :: :: extend_g :: extend_g_
+{{ com $[[Ga2]]$ is an extension of $[[Ga1]]$ }}
+by
+
+TCa ; BCa |-w Ga
+-------------- :: refl
+TCa ; BCa |- Ga << Ga
+
+
+TCa ; BCa |- Ga3 << Ga1 U Ga2
+xa NOTIN dom (Ga1 U Ga2)
+TCa ; BCa |-w Ga , xa : ba [ca]
+------------------- :: insert
+TCa ; BCa |- Ga3 << Ga1 U ( Ga2 , xa : ba [ca] )
+
+
+defn
+TCa ; BCa ; Ga |- Da2 << Da1 :: :: extend_d :: extend_d_
+{{ com $[[Da1]]$ is an extension of $[[Da2]]$ }}
+by
+
+TCa ; BCa ; Ga |-w Da
+---------------  :: refl
+TCa ; BCa ; Ga |- Da << Da
+
+
+TCa ; BCa ; Ga |- Da3 << Da1 U Da2
+ua NOTIN dom (Da1 U Da2)
+TCa ; BCa ; Ga |-w  ta
+------------------- :: insert
+TCa ; BCa ; Ga |- Da3 << Da1 U ( Da2 , ua : ta )
+
+
+
+defns subtype_anf :: '' ::=
+{{ tex \subsection{Subtyping} }}
+
+defn
+TCa ; BCa ; Ga |- ta1 ~< ta2 :: :: subtype_anf :: subtype_anf_ {{ com Subtyping }}
+by
+
+TCa ; BCa ; Ga |-w { za1 : ba | ca1 }
+TCa ; BCa ; Ga |-w { za2 : ba | ca2 }
+TCa ; BCa ; Ga , za3 : ba [ca1[za3/za1]] |= ca2[za3/za1]
+------------------------------------------------ :: subtype
+TCa ; BCa ; Ga |- { za1 : ba | ca1 } ~< { za2 : ba | ca2 }
+
+
+defns typing :: '' ::=
+{{ tex \subsection{Typing} }}
+
+defn
+|- la => ta :: :: infer_l :: infer_l_
+{{ com Type synthesis for literals. Infer that type of $[[la]]$ is $[[ta]]$ }}
+by
+
+--------------------------------------- :: unit
+|- () => { za : unit | za = () }
+
+
+------------------------ :: true
+|- true =>  { za : bool |  za = true }
+
+
+------------------------ :: false
+|- false => { za : bool | za = false }
+
+
+------------------------ :: num
+|- num =>  { za : int | za = :CEA_val: num }
+
+
+---------------------------------------------------------------------- :: bvec
+|- bin => { za : bvec | za = bin }
+
+
+defn
+TCa ; BCa ; Ga |v- va => ta :: :: infer_v_anf :: infer_v_anf_
+{{ com Type synthesis. Infer that type of $[[va]]$ is $[[ta]]$ }}
+by
+
+za # Ga
+TCa ; BCa |-w Ga
+xa : ba [ ca ] INN Ga
+------------------------------------------  :: var
+TCa ; BCa ; Ga |v- xa => { za : ba |  za = xa }
+
+|- la => ta
+TCa ; BCa |-w Ga
+--------------------------------------- :: lit
+TCa ; BCa ; Ga |v- la => ta
+
+za # Ga
+TCa ; BCa ; Ga |v- va1 => { za1 : ba1 | ca1 }
+TCa ; BCa ; Ga |v- va2 => { za2 : ba2 | ca2 }
+------------------------------------------------- :: pair
+TCa ; BCa ; Ga |v- (va1,va2) =>  { za : ba1*ba2 | za = (va1,va2) }
+
+za # Ga
+union tid = { </ ctori : tai // i /> } INN TCa
+TCa ; BCa ; Ga |v- va <= ta
+---------------------------------------------------------------------- :: data_cons
+TCa ; BCa ; Ga |v- ctorj tid va => { za : tid | za = ctorj tid va }
+
+za # Ga
+union tid = forall bv . { </ ctori : tai // i /> } INN TCa
+TCa ; BCa ; Ga |v- va <= ta[ba/bv]
+---------------------------------------------------------------------- :: data_cons_poly
+TCa ; BCa ; Ga |v- ctorj tid [ ba ] va => { za : tid | za = ctorj tid [ ba ] va }
+
+
+
+
+% Need |v- form to disambigute
+defn
+TCa ; BCa ; Ga |v- va <= ta :: :: check_v_anf :: check_v_anf_
+{{ com Check that type of $[[va]]$ is $[[ta]]$ }}
+by
+
+
+TCa ; BCa ; Ga |v- va => { za2: ba | ca2 }
+TCa ; BCa ; Ga |- { za2 : ba | ca2 } ~< { za1 : ba | ca1 }
+-------------------------------------------- :: val
+TCa ; BCa ; Ga |v- va <= { za1 : ba | ca1 }
+
+defn
+TCa ; PCa ; BCa ; Ga ; Da |- ea => ta :: :: infer_e_anf :: infer_e_anf_
+{{ com Infer that type of $[[ea]]$ is $[[ta]]$ }}
+by
+
+za3 # Ga
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |v- va1 => { za1 : int | ca1 }
+TCa ; BCa ; Ga |v- va2 => { za2 : int | ca2 }
+------------------------ :: plus
+TCa ; PCa ; BCa ; Ga ; Da |- va1 + va2 => { za3 : int | za3 = va1 + va2 }
+
+za3 # Ga
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |v- va1 => { za1 : int | ca1 }
+TCa ; BCa ; Ga |v- va2 => { za2 : int | ca2 }
+------------------------ :: leq
+TCa ; PCa ; BCa ; Ga ; Da |- va1 <= va2 => { za3 : bool | za3 = va1 <= va2  }
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+val f : ( xa : ba [ ca ] ) -> ta  INN PCa
+TCa ; BCa ; Ga |v- va <= { za : ba | ca }
+---------------------------- :: app
+TCa ; PCa ; BCa ; Ga ; Da |- f va => ta [ va/xa ]
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+val forall bv . f : ( xa : ba [ ca ] ) -> ta  INN PCa
+TCa ; BCa ; Ga |v- va <= { za : ba[ ba2 / bv]  | ca }
+---------------------------- :: app_poly
+TCa ; PCa ; BCa ; Ga ; Da |- f [ ba2 ] va => ta [ ba2 / bv ] [ va/xa ]
+
+za # Ga
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |v- va =>  { za : ba1*ba2 | ca }
+------------------------------------------------------------------ :: fst
+TCa ; PCa ; BCa ; Ga ; Da |- fst va => { za : ba1 | za = fst va }
+
+za # Ga
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |v- va =>  { za : ba1*ba2 | ca }
+------------------------------------------------------------------- :: snd
+TCa ; PCa ; BCa ; Ga ; Da |- snd va => { za : ba2 | za = snd va }
+
+za # Ga
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |v- va1 =>  { za1 : bvec | ca1 }
+TCa ; BCa ; Ga |v- va2 =>  { za2 : bvec | ca2 }
+-------------------------------------------------------------------------- :: concat
+TCa ; PCa ; BCa ; Ga ; Da |- va1 @ va2 => { za : bvec | za = va1 @ va2 }
+
+za # Ga
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |v- va1 =>  { za1 : int | ca1 }
+TCa ; BCa ; Ga |v- va2 =>  { za2 : bvec | ca2 }
+-------------------------------------------------------------------------- :: split
+TCa ; PCa ; BCa ; Ga ; Da |- split va1 va2 => { za : bvec | va2 = fst za @ snd za /\ va1 = len ( fst za ) }
+
+
+za # Ga
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |v- va =>  { za : bvec | ca }
+-------------------------------------------------------------------- :: len
+TCa ; PCa ; BCa ; Ga ; Da |- snd va => { za : ba2 | za = len va  }
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+ua : ta INN Da
+--------------------------------  :: mvar
+TCa ; PCa ; BCa ; Ga ; Da |- ua => ta
+
+
+defn
+TCa ; PCa ; BCa ; Ga ; Da |- ea <= ta :: :: check_e_anf :: check_e_anf_
+{{ com Check that type of $[[ea]]$ is $[[ta]]$ }}
+by
+
+TCa ; PCa ; BCa ; Ga ; Da |- ea => { za2: ba | ca2 }
+TCa ; BCa ; Ga |- { za2 : ba | ca2 } ~< { za1 : ba | ca1 }
+------------------------------------------------------------ :: expr
+TCa ; PCa ; BCa ; Ga ; Da  |- ea <= { za1 : ba | ca1 }
+
+
+
+defn
+TCa ; PCa ; BCa ; Ga ; Da |- sa <= ta :: :: check_s :: check_s_
+{{com Check that type of $[[sa]]$ is $[[ta]]$ }}
+by
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+TCa ; BCa ; Ga |v- va <= ta
+----------------------------------------- :: val
+TCa ; PCa ; BCa ; Ga ; Da |- va <= ta
+
+ua NOTIN dom(Da)
+TCa ; BCa ; Ga |v- va <= ta
+TCa ; PCa ; BCa ; Ga; Da , ua : ta  |- sa <= ta2
+-------------------------------------------------------------- :: var
+TCa ; PCa ; BCa ; Ga ; Da |- var ua : ta := va in sa  <= ta2
+
+
+TCa |-w PCa
+TCa ; BCa ; Ga |-w Da
+ua : ta INN Da
+TCa ; BCa ; Ga |v- va <= ta
+-------------------------------------------------------------- :: assign
+TCa ; PCa ; BCa ; Ga ; Da |- ua := va  <= { za : unit | Top }
+
+
+TCa ; BCa ; Ga |v- va => { za : bool | ca1 }
+TCa ; PCa ; BCa ; Ga ; Da |- sa1 <= { za1 : ba |  va = true  ==> ca[za1/za] }
+TCa ; PCa ; BCa ; Ga ; Da |- sa2 <= { za2 : ba |  va = false  ==> ca[za2/za] }
+--------------------------------------------------------------------------------------------------- :: if
+TCa ; PCa ; BCa ; Ga ; Da |- if va then sa1 else sa2  <= { za : ba | ca }
+
+xa # Ga
+TCa ; PCa ; BCa ; Ga ; Da  |- ea => { za : ba | ca }
+TCa ; PCa ; BCa ; Ga , xa : ba [ ca[xa/za] ] ; Da |- sa <= ta
+--------------------------------------------------------------- :: let
+TCa ; PCa ; BCa ; Ga ; Da  |- let xa = ea in sa <= ta
+
+xa # Ga
+TCa ; PCa ; BCa ; Ga , xa : bool [ ca ] ; Da |- sa <= ta
+--------------------------------------------------------------- :: assert
+TCa ; PCa ; BCa ; Ga ; Da  |- assert ca  in sa <= ta
+
+
+xa # Ga
+TCa ; PCa ; BCa ; Ga ; Da |- sa1 <= { za : ba | ca }
+TCa ; PCa ; BCa ; Ga , xa : ba [ ca[xa/za] ] ; Da |- sa2 <= ta
+----------------------------------------------------------------------------- :: let2
+TCa ; PCa ; BCa ; Ga ; Da  |- let2 xa : { za : ba | ca } = sa1 in sa2 <= ta
+
+
+union tid = { </ ctori : { zai:bai|cai} // i /> } INN TCa
+TCa ; BCa ; Ga |v- va => { za : tid | ca }
+</ TCa ; PCa ; BCa ; Ga , xai : bai[ va = ctori tid xai /\ cai [xai/zai] ] ; Da |- sai <= ta  // i />
+---------------------------------------------------------------------------------------------------------------- :: match
+TCa ; PCa ; BCa ; Ga ; Da |- match va of </ ctori xai => sai // i /> <= ta
+
+
+TCa ; PCa ; BCa ; Ga ; Da |- sa1 <= { za : bool | Top }
+TCa ; PCa ; BCa ; Ga ; Da |- sa2 <= { za : unit | Top }
+---------------------------------------------------------------------------- :: while
+TCa ; PCa ; BCa ; Ga ; Da |- while ( sa1 ) do { sa2 } <= { za: unit | Top }
+
+TCa ; PCa ; BCa ; Ga ; Da |- sa1 <= { za : unit | Top }
+TCa ; PCa ; BCa ; Ga ; Da |- sa2 <= ta
+------------------------------------------------------- :: seq
+TCa ; PCa ; BCa ; Ga ; Da |- sa1 ; sa2  <= ta
+
+
+------------------------------------------ :: abort
+TCa ; PCa ; BCa ; Ga ; Da |- abort <= ta
+
+
+
+defn
+TCa1 ; PCa1 |- defa1 .. defan ~> TCa2 ; PCa2 :: :: check_defs_anf :: check_defs_anf_
+by
+
+val f : ( xa : ba [ ca ] ) -> ta INN PCa
+TCa ; PCa ; empty ; xa : ba [ca] ; empty |- sa <= ta
+------------------------------------------------------------------ :: fundef
+TCa ; PCa |- function f ( xa ) = sa ~> TCa ; PCa, function f ( xa  )  = sa
+
+val forall bv . f : ( xa : ba [ ca ] ) -> ta INN PCa
+TCa ; PCa ; empty , bv ; xa : ba [ca] ; empty |- sa <= ta
+------------------------------------------------------------------ :: fundef_poly
+TCa ; PCa  |- function f ( xa ) = sa ~> TCa ; PCa, function f ( xa  )  = sa
+
+
+TCa |-w val f : ( xa : ba [ ca ] ) -> ta
+------------------------------------------------- :: valspec
+TCa ; PCa  |- val f : ( xa : ba [ ca ] ) -> ta ~> TCa ; PCa , val f : ( xa : ba [ ca ] ) -> ta
+
+
+
+TCa |-w val forall bv . f : ( xa : ba [ ca ] ) -> ta
+------------------------------------------------- :: valspec_poly
+TCa ; PCa  |- val forall bv . f : ( xa : ba [ ca ] ) -> ta ~> TCa ; PCa , val forall bv . f : ( xa : ba [ ca ] ) -> ta
+
+%T ; PCa |-w union tid = { </ Ci : li // i /> }
+----------------------------------------------------- :: uniondef
+TCa ; PCa  |- union tid = { </ ctori : tai // i /> } ~> TCa , union tid = { </ ctori : tai // i />  } ; PCa
+
+TCa1 ; PCa1 |- defa ~> TCa2 ; PCa2
+TCa2 ; PCa2 |- defa1 .. defan ~> TCa3 ; PCa3
+----------------------------- :: defs
+TCa1 ; PCa1 |- defa  defa1 .. defan ~> TCa3 ; PCa3
+
+
+defn
+|- pa :: :: check_program :: check_program_
+by
+
+
+empty ; empty |- defa1 .. defan ~> TCa2 ; PCa2
+TCa2 ; PCa2 ; empty ; empty ; empty |- sa <= { za:int| Top }
+--------------------------------- :: prog
+|- defa1 ; .. ; defan ;; sa
+
+
+defn
+TCa  |- Da ~ d  :: :: dsim :: dsim_
+{{ tex [[TCa]] \vdash [[Da]] \sim [[d]] }}
+by
+
+
+d = ua1 -> va1 , .. , uan -> van
+Da = ua1 : ta1 , .. , uan : tan
+TCa ; empty ; empty |v- va1 <= ta1 .. TCa ; empty ; empty |v- van <= tan
+----------------------------  :: dsim
+TCa |- Da ~ d
+
+
+defn
+TCa ; PCa ; Da |- ( d , sa  ) <= ta :: :: check_redex :: check_redex_ {{ com Program state typing judgement }}
+by
+
+
+TCa  |- Da ~ d
+TCa ; PCa ; empty ; empty ; Da |- sa  <= ta
+----------------------------  :: stmt
+TCa ; PCa ; Da |- ( d , sa ) <= ta
+
+%% Using embed puts the tex in the wrong place; have to use com
+
+
+defns reduction :: '' ::=
+{{ tex \subsection{Operational semantics} }}
+
+defn
+PCa |- ( d , sa1 ) --> ( d' , sa2 ) :: :: reduce :: reduce_ {{ com One step reduction }}
+{{tex [[PCa]] \vdash \langle [[d]] , [[sa1]] \rangle \rightarrow \langle [[d']] , [[sa2]] \rangle }}
+by
+
+-------------------------------- :: if_true
+PCa |- (d,if true then sa1 else sa2) --> (d,sa1)
+
+-------------------------------- :: if_false
+PCa |- (d,if false then sa1 else sa2) --> (d,sa2)
+
+
+--------------------------- :: let_value
+PCa |- (d,let xa = va in sa) --> (d,sa[va/xa])
+
+
+va1 + va2 = va
+--------------------------- :: let_plus
+PCa |- (d,let xa = va1 + va2 in sa) --> (d,let xa = va in sa)
+
+va1 <= va2 = va
+--------------------------- :: let_leq
+PCa |- (d,let xa = va1 <= va2 in sa) --> (d,let xa = va in sa)
+
+
+val f : ( xa : ba [ ca ] ) -> ta INN PCa
+function f ( xa ) = sa1  INN PCa
+-------------------------------------------- :: let_app
+PCa |- (d,let ya = f va in sa2) --> (d,let2 ya : ta[va/xa] = sa1[va/xa] in sa2)
+
+val forall bv . f : ( xa : ba [ ca ] ) -> ta INN PCa
+function f ( xa ) = sa1  INN PCa
+-------------------------------------------- :: let_app_poly
+PCa |- (d,let ya = f [ba1] va in sa2) --> (d,let2 ya : ta[va/xa][ba1/bv] = sa1[va/xa][ba1/bv] in sa2)
+
+
+-------------------------------------------- :: let_fst
+PCa |- (d,let xa = fst (va1,va2) in sa) --> (d,let xa = va1 in sa)
+
+-------------------------------------------- :: let_snd
+PCa |- (d,let xa = snd (va1,va2) in sa) --> (d,let xa = va2 in sa)
+
+va1 @ va2 = va3
+-------------------------------------------- :: let_concat
+PCa |- (d,let xa = va1 @ va2 in sa) --> (d,let xa = va3 in sa)
+
+va1 = split va2 va3
+-------------------------------------------- :: let_split
+PCa |- (d,let xa = split va2 va3 in sa) --> (d,let xa = va1 in sa)
+
+
+len va1 = va2
+-------------------------------------------- :: let_len
+PCa |- (d,let xa = len va1 in sa) --> (d,let xa = va2 in sa)
+
+va = d(ua)
+------------------     :: let_mvar
+PCa |- (d,let xa = ua in sa) --> (d,let xa = va in sa)
+
+
+ua NOTIN dom(d)
+--------------------------------------------- :: mvar_decl
+PCa |- (d,var ua : ta := va in sa ) --> (d[ua <- va],sa)
+
+d' = d[ua <- va]
+----------------------- :: mvar_assign
+PCa |- (d, ua := va  )   --> (d', () )
+
+
+PCa |- (d,sa1) --> (d',sa3)
+---------------------------- :: seq1
+PCa |- (d,sa1;sa) --> (d',sa3;sa)
+
+
+---------------------------- :: seq2
+PCa |- (d, ();sa) --> (d,sa)
+
+
+--------------------------------------------------- :: let2_val
+PCa |- (d,let2 xa : ta = va in sa2) --> (d,sa2[va/xa])
+
+
+PCa |- (d,sa1) --> (d',sa3)
+--------------------------------------------------- :: let2_stmt
+PCa |- (d,let2 xa : ta = sa1 in sa2) --> (d',let2 xa : ta = sa3 in sa2)
+
+
+------------------------------------------------------------------ :: match
+PCa |- (d,match (ctorj tid va) of </ ctori xai => sai // i /> ) --> (d,saj[va/xaj])
+%PCa |- (d,match (ctor v) of ctor1 x1 => s1 , .. , Ci xi => si ,  ctor x => s , C'1 x'1 => s'n , .. , C'n x'n => s'n)  --> (d,s[v/x])
+
+
+xa fresh
+------------------------------------ :: while
+PCa |- (d, while ( sa1 )  do { sa2 } ) --> (d, let2 xa : { za : bool | Top } = sa1 in  if xa then ( sa2 ; while ( sa1 ) do { sa2 } ) else () )
+
+
+---------------------------------------- :: assert1
+PCa |- (d,assert ca in va ) --> ( d , va )
+
+
+PCa |- (d,sa1) --> (d',sa2)
+---------------------------------------- :: assert2
+PCa |- (d,assert ca in sa1 ) --> (d',assert ca in sa2)
+
+
+defn
+PCa |- ( d1 , sa1 ) -->* ( d2 , sa2  ) :: :: reduce_many :: reduce_many_ {{ com Multi-step reduction }}
+{{tex [[PCa]] \vdash \langle [[d1]] , [[sa1]] \rangle \xrightarrow{*} \langle [[d2]] , [[sa2]] \rangle }}
+by
+
+PCa |- (d1,sa1) --> (d2,sa2)
+----------------------------- :: single_step
+PCa |- (d1,sa1) -->* (d2,sa2)
+
+
+PCa |- (d1,sa1) --> (d2,sa2)
+PCa |- (d2,sa2) -->* (d3,sa3)
+----------------------------- :: many_step
+PCa |- (d1,sa1) -->* (d3,sa3)
+
+defns check_config :: '' ::=
+{{ tex \subsection{Machine configuration check} }}
+
+defn
+TCa |- d ~ Da :: :: check_store :: check_store_
+by
+
+-------------------- :: empty
+TCa |- empty ~ empty
+
+ua NOTIN dom(Da)
+TCa |- d ~ Da
+TCa ; empty ; empty |v- va <= ta
+--------------------------------- :: cons
+TCa |- d [ ua <- va ] ~ Da , ua : ta
+
+defn
+TCa ; PCa ; Da |- ( d , sa ) <= ta :: :: check_config :: check_config_
+by
+
+
+TCa |- d ~ Da
+TCa ; PCa ; empty ; empty ; Da |- sa <= ta
+------------------------------------------ :: config
+TCa ; PCa ; Da |- ( d , sa ) <= ta
+

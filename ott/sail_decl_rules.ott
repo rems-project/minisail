@@ -1,0 +1,960 @@
+%
+% Type checker for Sail
+%
+
+% TODO
+% Some terms, eg assert, add things to the environment and so we need to thread this though sequences
+% of statements.
+%
+% Either add ~> E to check_e and thread through in sequence/block or be more like type_checker.ml
+%
+% Would doing the latter make proofs harder?
+
+%
+% Isabelle export
+%   Some things need to be fixed. We want to be able to merge. Or at least merge meta/sugar things.
+%   Its putting the embed {{ isa into the wrong place.
+%   The pexp_funcl type synnoym does work. Need a concrete datatype. Need to change sail.ott
+%         pexp_funcl in sail.ott is a type_def which is makeing things awkward.
+
+
+embed {{ tex-preamble
+\providecommand{\ncdash}{\,\mid\!\sim\,}
+
+}}
+% \newcommand*{\ncdash}[2]{#1\mathbin{\left| \sim \vphantom{#1#2} \right.}#2}%
+
+
+
+grammar
+
+
+
+bindings {{ tex \gamma }} :: G_ ::=
+   | empty :: :: empty
+   | bindings , id : typ  :: :: cons
+   | id1 : typ1 .. idn : typn :: :: list
+   | bindings1 , .. , bindingsn :: :: append
+
+% Environment on type annotated Sail AST
+E :: Env_ ::=
+  {{ aux _ annot }} {{ auxparam 'a }}
+  | empty :: :: empty
+  | E , id : typ :: :: cons_var
+  | E_of exp :: M :: e_of_exp {{ tex E_{[[exp]]} }} {{ isa env_of_exp [[exp]] }}
+  | E_of pat :: M :: e_of_pat {{ tex E_{[[pat]]} }}  {{ isa env_of_pat [[pat]] }}
+  | E_of pexp :: M :: e_of_pexp {{ tex E_{[[pexp]]} }} {{ isa env_of_pexp [[pexp]] }}
+  | E_of lexp :: M :: e_of_lexp {{ tex E_{[[lexp]]} }}  {{ isa env_of_lexp [[lexp]] }}
+  | E , n_constraint :: M :: cons_nc {{ isa add_constraint [[E]] [[n_constraint]] }}
+  | E , kinded_id1 ...  kinded_idn :: M :: cons_kinded_id {{ isa add_type_vars [[E]] [[kinded_id1 ...  kinded_idn]] }}
+  | E , bindings :: M :: cons_bindings   {{ isa add_locals [[E]] [[bindings]] }}
+  | E , assert ( exp ) :: M :: assert_constraint {{ isa add_assert [[E]] [[exp]] }}
+  | E , typquant :: M :: cons_typquant {{ isa add_typq [[E]] [[typquant]] }}
+  
+%nexp :: 'Nexp_'::=
+%  | nexp1 + ... + nexpn :: M :: sum_many {{ isa nexp_sum [[nexp1 ... nexpn]] }}
+
+% Instantiation of type level variables. Use at function application nodes
+sigma {{ tex \sigma }} :: 'S_' ::=
+  | empty :: :: empty
+  | typ_arg / kid , sigma :: :: cons
+
+% Add type extractors from exp and patterns
+%typ :: 'Typ_' ::= {{ isa "typ" }}
+%  | t_of exp :: M :: typ_of_exp {{ tex \text{typ}_{[[exp]]} }} {{ isa t_of_exp [[exp]] }} 
+%  | t_of lexp :: M :: typ_of_lexp {{ tex \text{typ}_{[[lexp]]} }}	{{ isa t_of_lexp [[lexp]] }}
+%  | t_of pat :: M :: typ_of_pat {{ tex \text{typ}_{[[pat]]} }}        {{ isa t_of_pat [[pat]] }}
+
+%  | typ as { kinded_id1 ..  kinded_idn , n_constraint . nexp } :: M :: destruct_numeric
+%     {{ isa Some ([[kinded_id1 .. kindedidn]] , [[n_constraint]] , [[nexp]] ) =  destruct_numeric [[typ]] }}
+
+%  | { kinded_id1 ..  kinded_idn , n_constraint . nexp } :: :: destruct_numeric
+%  | { kinded_id1 ..  kinded_idn . n_constraint } :: :: destruct_bool
+% | sigma ( typ ) :: M :: subst  {{ isa subst_t [[typ]] [[sigma]] }}
+
+mut :: 'Mut_' ::=
+  | mutable :: :: mutable
+  | immutable :: :: immutable
+
+%terminals :: '' ::=
+%  | INN :: :: member {{ tex \in }}
+%  | |~ :: :: ncdash {{ tex \ncdash }}
+  
+formula :: formula_ ::=
+  | judgement                               :: :: judgement
+  | formula1 .. formulan                    :: :: dots
+  | id / mut : typ INN E                          :: :: lookup_local_var
+           {{ tex [[id]] / [[mut]] : [[typ]] \in [[E]] }}	   
+  | id / register : typ INN E                          :: :: lookup_register
+           {{ tex [[id]] / register : [[typ]] \in [[E]] }}
+  | id / enum : typ INN E                          :: :: lookup_enum
+           {{ tex [[id]] / enum : [[typ]] \in [[E]] }}
+
+  | id / mut NOTIN E                          :: :: lookup_local_var_not
+           {{ tex [[id]] / [[mut]] \notin [[E]] }}
+  | ( kid , kind ) INN E                    :: :: type_var_lookup {{ isa Some [[kind]] = lookup_type_var [[E]] [[kid]] }}
+  | ( id , kind ) INN E                     :: :: type_id_lookup  {{ isa Some [[kind]] = lookup_type_id [[E]] [[id]] }}
+  | { id : typ'' } : typ' INN E             :: :: record_field_type
+  | id ( kind1 , ... , kindn ) -> kind INN E        :: :: type_app_lookup {{ isa Some [[kind1 ... kindn]] = lookup_type_app [[E]] [[id]] }}
+  | register id : typ INN E                 :: :: register_lookup
+  | ret_typ typ INN E                       :: :: ret_type
+  | locals  id1 : typ1 .. idn : typn INN E  :: :: locals
+%  | ( id , Type ) INN E                     :: :: lookup_tyid
+  | FIXME                                   :: :: fixme
+  | E |= n_constraint                       :: :: prove {{ tex [[E]] \models [[n_constraint]] }}
+  | kid = kid_for id   :: :: kid_for_id
+  | id : ( typ1 , .. , typn ) -> typ' INN E :: :: lookup_fun
+  | id : typquant typ INN E :: :: lookup_fun_def
+  | nexp' = length [ exp1 , ... , expn ] :: :: vector_length
+  | nexp = length lit :: :: literal_length
+  | default Order order INN E :: :: default_order
+  | distinct E , bindings :: :: distinct 
+  | typ ~ { </ kinded_idi // i /> . n_constraint } :: :: destruct_bool
+%           {{ isa (Some ([[kinded_id1 .. kinded_idn]], [[n_constraint]]) = destruct_bool typ)  }}
+  | typ ~ { </ kinded_idi // i /> , n_constraint . nexp } :: :: destruct_numeric
+%           {{ isa (Some ([[kinded_id1 .. kinded_idn]], [[n_constraint]], [[nexp]]) = destruct_numeric typ)  }}
+
+embed {{ isa
+fun lookup_type_id :: "'a E => id => kind option" where
+  "lookup_type_id _ _ = None"
+
+fun lookup_type_var :: "'a E => kid => kind option" where
+"lookup_type_var _ _ = None"
+
+fun lookup_type_app :: "'a E => id => (kind list) option" where
+"lookup_type_app _ _ = None"
+
+fun add_type_vars :: "'a E => kinded_id list => 'a E" where
+  "add_type_vars E _ = E"
+
+fun get_locals :: "'a E => (id*typ) list" where
+  "get_locals _ = []"
+
+
+fun t_of_pat :: "'a pat ⇒ typ" where
+"t_of_pat _ = undefined"
+
+fun t_of_exp :: "'a exp ⇒ typ" where
+"t_of_exp _ = undefined"
+
+fun add_constraint :: "'a E ⇒ n_constraint ⇒ 'a E" where
+  "add_constraint E _ = E"
+
+fun add_assert :: "'a E ⇒ 'a exp ⇒ 'a E" where
+  "add_assert E _ = E"
+
+fun destruct_bool :: "typ ⇒ ((kinded_id list) * n_constraint) option" where
+"destruct_bool _ = None"
+
+}}
+
+
+defns well_formed :: '' ::=
+
+defn E |- nexp : kind :: :: wf_nexp :: wfne_
+by
+
+% FIXME What sort of thing could this be?
+( id , kind ) INN E
+---------------- :: id
+E |- id : kind
+
+
+(kid , kind ) INN E
+---------------- :: kid
+E |- kid : kind
+
+---------------- :: num
+E |- num : Int
+
+E |- nexp1 : kind1 ... E |- nexpn : kindn
+id ( kind1 , ... , kindn ) -> kind INN E
+--------------------------------- :: app
+E |- id ( nexp1 , ... , nexpn ) : kind
+
+E |- nexp1 : Int
+E |- nexp2 : Int
+---------------- :: times
+E |- nexp1 * nexp2 : Int
+
+E |- nexp1 : Int
+E |- nexp2 : Int
+---------------- :: plus
+E |- :Nexp_sum: nexp1 + nexp2 : Int
+
+E |- nexp1 : Int
+E |- nexp2 : Int
+---------------- :: minus
+E |- nexp1 - nexp2 : Int
+
+E |- nexp : Int
+---------------- :: exp
+E |- 2 ^ nexp : Int
+
+E |- nexp : Int
+---------------- :: neg
+E |- - nexp : Int
+
+
+
+defn E |- n_constraint  :: :: wf_n_constraint :: wfnc_
+by
+
+% These require i => o => bool mode 
+E |- nexp : kind
+E |- nexp' : kind
+------------------------ :: equal
+E |- nexp == nexp' 
+
+E |- nexp : kind
+E |- nexp' : kind
+------------------------ :: bounded_ge
+E |- nexp >= nexp'                    
+
+E |- nexp : kind
+E |- nexp' : kind
+------------------------ :: bounded_gt
+E |- nexp > nexp'                     
+
+E |- nexp : kind
+E |- nexp' : kind
+------------------------ :: bounded_le
+E |- nexp <= nexp'                  
+
+E |- nexp : kind
+E |- nexp' : kind
+------------------------ :: bounded_lt
+E |- nexp < nexp'                   
+
+E |- nexp : kind
+E |- nexp' : kind
+------------------------ :: not_equal
+E |- nexp != nexp'      
+
+------------------------------------- :: set
+E |- kid IN { num1 , ... , numn }   
+
+E |- n_constraint
+E |- n_constraint'
+---------------------------------- :: and
+E |- n_constraint & n_constraint' 
+
+
+E |- n_constraint
+E |- n_constraint'
+---------------------------------- :: or
+E |- n_constraint | n_constraint' 
+
+% Buildin apps, records, variants or typedefs
+id ( kind0 , ... , kindn ) -> kind INN E
+E |-a typ_arg0 : kind0 ... E |-a typ_argn : kindn
+---------------------------------------- :: app
+E |- id ( typ_arg0 , ... , typ_argn )
+
+(kid,Bool) INN E
+----------------- :: kid
+E |- kid
+
+--------- :: true
+E |- true              
+
+-------------- :: false
+E |- false
+
+defn E |-a typ_arg : kind :: :: wf_typ_arg :: wfta_
+{{ tex [[E]] \vdash [[typ_arg]] : [[kind]] }}
+by
+
+E |- nexp : kind
+----------------- :: nexp
+E |-a nexp : kind
+
+E |- typ
+--------------- :: typ
+E |-a typ : Type
+
+-------------------- :: order
+E  |-a order : Order
+
+
+E |- n_constraint
+--------------------------- :: bool
+E |-a n_constraint : Bool
+
+
+defn E |- typ :: :: wf_typ :: wft_
+by
+
+( id , Type ) INN E
+---------------------- :: id
+E |- id
+
+( kid , Type ) INN E
+------------------- :: var
+E |- kid            
+
+E |- typ1 ... E |- typn
+E |- typ
+---------------------------------------------------- :: fn
+E |- ( typ1 , ... , typn ) -> typ effectkw effect 
+
+E |- typ1
+E |- typ2
+----------------------------------- :: bidir
+E |- typ1 <-> typ2 effectkw effect
+
+E |- typ1 .... E |- typn
+-------------------------------- :: tup
+E |- ( typ1 , .... , typn )
+
+
+id ( kind1 , ... , kindn ) -> kind INN E
+E |-a typ_arg1 : kind1 ... E |-a typ_argn : kindn
+------------------------------------------ :: app
+E |- id ( typ_arg1 , ... , typ_argn )
+
+
+E , kinded_id1 ...  kinded_idn |- n_constraint
+E , kinded_id1 ...  kinded_idn |- typ
+---------------------------------------------------------- :: exist
+E |- { kinded_id1 ...  kinded_idn , n_constraint . typ }
+
+
+defn E |- id1 : typ1 .. idn : typn :: :: wf_locals :: wfloc_
+{{ com Locals variable list is well-formed }}
+by
+
+------------ :: empty
+E |-
+
+% FIXME. Make sure ISa is using # and not @
+E |- typ 
+E |- id1 : typ1 .. idn : typn
+--------------------------------- :: cons
+E |- id : typ id1 : typ1 .. idn : typn
+
+defn |- E :: :: wf_env :: wfe_
+{{ com Environment is well-formed }}
+by
+
+locals id1 : typ1 .. idn : typn INN E
+E |- id1 : typ1 .. idn : typn
+----------------------------- :: wf
+|- E
+
+embed {{ isa
+code_pred (modes: 
+            wf_nexp:  i ⇒ i => i => bool and
+            wf_n_constraint: i => i => bool and
+            wf_typ : i => i => bool and
+            wf_locals : i => i => bool and
+            wf_env : i => bool )  [show_steps,  show_mode_inference,  show_invalid_clauses] wf_env .
+}}	    
+
+defns typedefns :: '' ::=
+
+defn E |- typ1 ~< typ2  :: :: subtype :: st_
+{{ tex [[E]] \vdash [[typ1]] \lesssim [[typ2]] }}
+by
+
+E |- typ1 ~> n_constraint1
+E |- typ2 ~> n_constraint2
+E , n_constraint1 |= n_constraint2
+---------------------------------------
+E |- typ1 ~< typ2
+
+defn E |- typ1 ~ typ2 :: :: eqtype :: eqt_
+by
+
+%
+% When we say 'E |- exp : typ' we mean that we want the environment of exp to contain E and
+% for typ of exp to be a subtype of typ.
+%
+
+defns checker :: '' ::=
+
+% See infer_lit. bool/num are exact, bin/hex include the length
+defn E |-l lit : typ  :: :: check_lit :: cl_
+{{ tex [[E]] \vdash [[lit]] : [[typ]] }}
+by
+
+---------------- :: unit
+E |-l ( ) : unit
+
+----------------- :: zero
+E |-l bitzero : bit
+
+------------------ :: one
+E |-l bitone : bit
+
+----------- :: true
+E |-l true : bool (true)
+
+------------- :: false
+E |-l false : bool (false)
+
+-------------------- :: num
+E |-l num : atom (num)
+
+default Order order INN E
+nexp = length hex
+-------------------------------------------- :: hex
+E |-l hex  : vector ( nexp , order , :Typ_id: bit )
+
+default Order order INN E
+nexp = length bin
+------------------------------- :: bin
+E |-l bin   : vector ( nexp , order , :Typ_id: bit )
+
+--------------- :: string
+E |-l string1  : string
+
+%----------------- :: undef
+%E | undefined : undefined
+
+---------------- :: real
+E |-l real : real
+
+
+defn E |~ pat : typ ~> bindings :: :: check_pat_s :: cps_
+by
+
+E_of pat |- pat : t_of pat ~> bindings
+E_of pat |- typ' ~< typ
+E ~ E_of pat
+---------------------------- :: check_pat
+E |~ pat : typ ~> bindings
+
+defn E |- pat : typ ~> bindings :: :: check_pat :: cp_
+by
+
+E |-l lit : typ
+----------------:: lit
+E |- lit : typ ~> empty
+
+---------------------- :: wild
+E |- _ : typ ~> empty
+
+
+E |~ pat1 : typ ~> bindings
+E |~ pat2 : typ ~> bindings
+------------------------------ :: or
+E |- pat1 | pat2 : typ ~> bindings
+
+
+E |~ pat : typ ~> bindings
+--------------------------- :: not
+E |- ~ pat : typ ~> empty
+
+E |~ pat : typ ~> bindings
+--------------------------------- :: as
+E |- ( pat as id ) : typ ~> :G_cons: bindings , id : typ 
+
+
+--------------------------- :: id
+E |- id : typ ~> id : typ
+
+% Do we need to do instantiations as we do with function application?
+% FIXME THis is not function application. only constructors
+id : (typ1 , .. , typn ) -> typ INN E
+E |~ pat1 : typ1 ~> bindings1 .. E |~ patn : typn ~> bindingsn
+------------------------------------------- :: app
+E |- id ( pat1 , .. , patn ) : typ ~> bindings1 , .. , bindingsn
+
+
+E |~ pat1 : typ ~> bindings1 ... E |~ patn : typ ~> bindingsn
+------------------------------------------------------------------ :: vector
+E |- [ pat1 , ... , patn ] :  vector ( nexpn , order , typ ) ~> bindings1 , ... , bindingsn
+
+% Relies on mpew2 fix to allow mixing of bounds like this
+</ E |~  pati : vector (nexpi , order , typ ) ~> bindingsi // i IN 1 ... n />
+%E |~ pat1 :  vector ( nexp1 , order , typ )  ~> bindings1 ... E |~ patn : vector ( nexpn , order , typ ) ~> bindingsn
+E |= nexp1 + ... + nexpn == nexp
+------------------------------------------------------------------ :: vector_concat
+E |- pat1 @ ... @ patn  : vector ( nexp, order, typ ) ~> bindings1 , ... , bindingsn
+
+
+
+E |~ pat1 : typ1 ~> bindings1 .. E |~ patn : typn ~> bindingsn
+------------------------------------------- :: tup
+E |- ( pat1 , .. , patn ) : ( typ1 , .. , typn ) ~> bindings1 , .. , bindingsn
+
+
+E |~ pat1 : typ ~> bindings1 ... E |~ patn : typ ~> bindingsn
+------------------------------------------------------------------ :: list
+E |- [|| pat1 , ... , patn ||] : list ( typ ) ~> bindings1 , ... , bindingsn
+
+
+E |~ pat1 : string ~> bindings1 ... E |~ patn : string  ~> bindingsn
+------------------------------------------------------------------ :: string_append
+E |- pat1 ^^ ... ^^ patn  : string ~> bindings1 , ... , bindingsn
+
+
+defn E |- letbind ~> bindings  :: :: check_lb :: cl_
+by
+
+E |~ pat : t_of exp ~> bindings
+E |~ exp : t_of exp
+---------------------------- :: val
+E |- let pat = exp ~> bindings
+
+defn E |- fexp : typ  :: :: check_fexp :: cfe_
+by
+
+{ id : typ' } : typ INN E
+E |~ exp : typ'
+---------------------------- :: fexp
+E |- id = exp : typ
+
+defn E |~ fexp : typ :: :: check_fexp_s :: cfs_
+by
+
+E' |- fexp : typ'
+E' |- typ' ~< typ
+E ~ E'
+---------------- :: fexp
+E |~ fexp : typ
+
+defn E ~ E' :: :: enveq :: enveq_
+{{ tex [[E]] \sim [[E']] }}
+by
+
+%E.locals SUBSET E'.locals
+%E.registers SUBSET E'.registers
+%E.variants SUBSET E'.variants
+%E.records SUBSET E'.records
+%E' , E.constraints |= E'.constraints
+%---------------------------------
+%E ~< E'
+
+% Semantic check
+defn E |~ exp : typ :: :: check_e_s :: ces_
+by
+
+% Which way round is the sub-env?
+% Say we want E , bindings |~ exp2 as in the let rule.
+% We want that the bindings are in E_of exp2 / E'
+
+E_of exp |- exp : t_of exp
+E_of exp |- t_of exp ~< typ
+E ~ E_of exp
+--------------------- :: check_exp
+E |~ exp : typ
+
+% Exact check 
+defn  E |- exp : typ :: :: check_e :: ce_
+by
+
+
+E |~ exp : typ
+--------------------------------- :: block_single
+E |- { exp } : typ 
+
+
+E |~ exp : unit
+E |~ { exp1 ; ... ; expn } : typ 
+--------------------------------- :: block_cons
+E |- { exp ; exp1 ; ... ; expn } : typ 
+
+
+%E |~ exp : typ'
+%E |~ lexp : typ' ~> bindings
+%E , bindings |~ { exp1 ; ... ; expn } : typ
+%--------------------------------- :: block_assign
+%E |- { lexp = exp ; exp1 ; ... ; expn } : typ
+
+
+% Handles mutable / immutable
+id / mut : typ INN E
+---------------------------- :: id
+E |- id : typ
+
+id / enum : typ INN E
+---------------------------- :: enum
+E |- id : typ
+
+id / register : typ INN E
+---------------------------- :: register
+E |- id : typ
+
+id / register : typ INN E
+------------------------------ :: ref
+E |- ref id : register (typ)
+
+
+E |-l lit : typ
+---------------- :: lit
+E |- lit : typ
+
+E |~ exp : typ'
+E |- typ' ~< typ
+-------------------------- :: cast
+E |- ( typ' ) exp : typ
+
+
+% Isabelle
+%     Some (in_typs,ret_typp ) = lookup_fun tan fid;
+%    check_exp_list exps in_typs;
+%    Some ret_typ2 = subst_inst tan ret_typp;
+%    Some env = getEnv tan;
+%    Some t = getType tan;
+%    subtype env ret_typ2 t
+% ==> check_exp (E_aux (E_app fid exps) (_,tan) )"
+id : ( typ1 , .. , typn ) -> typ' INN E
+E |~ exp1 : sigma ( typ1 ) .. E |~ expn : sigma ( typn )
+E |- sigma ( typ' ) ~< typ
+---------------------------------------- :: app
+E |- id ( exp1 , .. , expn ) : typ
+
+% Desugared to normal app
+%---------------------------------------- :: app_infix
+%E |- exp1 id  exp2 : typ
+
+
+E |~ exp1 : typ1 .... E |~ expn : typn
+---------------------------------------- :: tuple
+E |- ( exp1 , .... , expn ) : (typ1 , .... , typn )
+
+
+t_of exp1 ~ { kinded_id1 .. kinded_idn . n_constraint }
+E |~ exp1 : t_of exp1
+E , n_constraint  |~ exp2 : typ
+E , not(n_constraint) |~ exp3 : typ
+---------------------------------------------- :: if
+E |- if exp1 then exp2 else exp3 : typ
+
+%E |~ exp1 : bool
+%E |~ exp2 : typ
+%E |~ exp3 : typ
+%---------------------------------- :: if2
+%E |- if exp1 then exp2 else exp3 : typ
+
+% for 'loops' we have four variants - with/without measure + while/until
+% it seems clunky to have four rules. In the ML code there are 
+% match statements
+% FIXME. Do we add exp1 or the nc for the type for exp1
+E |~ exp1 : bool
+E , assert ( exp1 ) |- exp2 : unit
+------------------------------------------------- :: loop_no_measure
+E |- loop  exp1 exp2 : unit
+
+E |~ exp : int
+E |~ exp1 : bool
+E , assert ( exp1 ) |- exp2 : unit
+------------------------------------------------- :: loop_measure
+E |- loop termination_measure { exp } exp1 exp2 : unit
+
+% Would like the more concise
+%E |~ exp1 : { </ kinded_idi // i /> , n_constraint . nexp }
+
+t_of exp1 ~ { </ kinded_idi // i /> , n_constraint1 . nexp1 }
+E |~ exp1 : t_of exp1
+t_of exp2 ~ { </ kinded_id'i // i /> , n_constraint2 . nexp2 }
+E |~ exp2 : t_of exp2
+E |~ exp3 : int
+%n_constraint = n_constraint1 /\ n_constraint2 /\ nexp1 <= kid /\ kid <= nexp2
+:Env_cons_var: E , </ kinded_idi // i /> , </ kinded_id'i // i /> , n_constraint1 & n_constraint2 , id : range ( nexp1 , nexp2 ) |~ exp4 : unit
+------------------------------------------------------------------------------------------------------- :: for
+E |- foreach ( id from exp1 to exp2 by exp3 in order ) exp4 : unit
+
+E |~ exp1 : typ ... E |~ expn : typ
+nexp' = length [ exp1 , ... , expn ]
+E |= nexp == nexp'
+------------------------------------------------- :: vector
+E |- [ exp1 , ... , expn ] : vector ( nexp , order , typ )
+
+% Desugared by tc to internal function
+%--------------------------- :: vector_access
+%E |- exp [ exp' ] : typ
+
+% Desugared by tc to internal function
+%------------------------------- :: vector_subrange
+%E |- exp [ exp1 .. exp2 ] : typ
+
+% Desugared by tc to internal function
+%-------------------------------- :: vector_update
+%E |- [ exp with exp1 = exp2 ] : typ
+
+% Desugared by tc to internal function
+%------------------------------------------ :: vector_update_subrange
+%E |- [ exp with exp1 .. exp2 = exp3 ] : typ
+
+% Desugared by tc to internal function
+%-------------------- :: vector_append
+%E |- exp1 @ exp2 : typ
+
+
+E |~ exp1 : typ .. E |~ expn : typ
+-------------------------------------------- :: list
+E |- [| exp1 , ..  , expn |] : list ( typ )
+
+
+E |~ exp1 : typ
+E |~ exp2 : list ( typ )
+------------------------ :: cons
+E |- exp1 :: exp2  : list ( typ )
+
+
+E |~ fexp0 : typ ... E |~ fexpn : typ
+-------------------------------------- :: record
+E |- struct { fexp0 , ... , fexpn } : typ
+
+
+E |~ exp : typ
+E |~ fexp0 : typ ... E |~ fexpn : typ
+----------------------------------------------- :: record_update
+E |- { exp with fexp0 , ... , fexpn } : typ
+
+
+E |~ exp : typ'
+{ id : typ } : typ' INN E
+------------------------------- :: field
+E |- exp . id   : typ
+
+
+E |~ exp : typ'
+E |~ pexp1 : ( typ' , typ ) ... E |~ pexpn : ( typ' , typ )
+-------------------------------------------- :: case
+E |- match exp { pexp1 , ... , pexpn } : typ
+
+E |- letbind ~> bindings 
+distinct E , bindings
+E , bindings |~ exp : typ
+------------------------ :: let
+E |- letbind in exp : typ
+
+
+E |~ exp1 : t_of exp1
+E |~ lexp : t_of exp1 ~> bindings
+distinct E , bindings
+E , bindings |~ exp2 : typ
+------------------------------------------ :: assign
+E |- var lexp = exp1 in exp2   : typ
+
+
+%Not required if dealing with type annotated AST.
+%--------------------------- :: sizeof
+%E |- sizeof nexp  : typ
+
+
+% Type of the statement can be anything; type of exp has to be ret type of function
+ret_typ typ' INN E
+E |~ exp : typ'
+--------------------------- :: return 
+E |- return exp  : typ
+
+% Type of the statement can be anything; type of exp has to be unit
+E |~ exp : unit
+--------------------- :: exit
+E |- exit exp : typ
+
+
+E |~ exp : exception
+--------------------- :: throw
+E |- throw exp : typ
+
+E |~ exp : typ
+E |~ pexp1 : ( exception , typ ) ... E |~ pexpn : ( exception , typ )
+------------------------------------------------------------------------- :: try
+E |- try exp catch { pexp1 , ... , pexpn } : typ
+
+
+E |~ exp : bool(n_constraint)
+E |~ exp' : string
+E |= n_constraint 
+--------------------------- :: assert
+E |- assert ( exp , exp' ) : unit
+
+E |~ exp' : typ'
+E |- lexp : typ' ~> bindings
+E , bindings |~ exp : typ
+---------------------------- :: var
+E |- var lexp = exp' in exp : typ
+
+% Not required if dealing with type annotated AST.
+%-------------------------------------- :: constraint
+%E |- constraint n_constraint : typ
+
+
+% Looking at the type on the annotated lexp it seems like it is the type of the bound exp (or sub-expression)
+% so in "x : int = 1" the type-annotation on x is 1 and it is stored in the environment as int
+%
+
+defn E |~ lexp : typ ~> bindings :: :: check_lexp_s :: cles_
+by
+
+E_of lexp |- lexp : t_of lexp ~> bindings
+E |- t_of lexp ~< typ
+E ~ E_of lexp
+--------------------- :: check_exp
+E |~ lexp : typ ~> bindings
+
+
+defn E |- lexp : typ ~> bindings :: :: check_lexp :: cle_
+by
+
+id / mutable NOTIN E
+---------------------------:: id_nb
+E |- id : typ  ~> id : typ
+
+
+id / mutable : typ' INN E
+E |- typ ~< typ'
+---------------------------:: id_b
+E |- id : typ  ~> empty
+
+id / mutable NOTIN E
+-------------------------- :: cast_nb
+E |- ( typ ) id : typ' ~> id : typ
+
+id / mutable : typ'' INN E
+E |- typ ~< typ''
+E |- typ' ~< typ
+---------------------------:: cast_b
+E |- (typ ) id : typ'  ~> id : typ
+
+id / register : typ INN E
+------------------------------- :: reg
+E |- id : typ ~> empty
+
+E |~ exp : register ( typ' )
+E |- typ' ~< typ
+--------------------------------------- :: deref
+E |- deref exp  : typ ~> empty
+
+% Sugar
+%------------------------------------------------- :: memory
+%E |- id ( exp1 , .. , expn ) : typ ~> bindings
+
+
+
+E |~ lexp0 : typ0 ~> bindings0 .. E |~ lexpn : typn ~> bindingsn
+------------------------------------------------------------------------------------ :: tup
+E |- ( lexp0 , .. , lexpn ) : ( typ0 , .. , typn ) ~> bindings0 , .. , bindingsn
+
+% Relies on mpew2 fix
+</ E |~ lexpi : vector ( nexpi , order , typ ) ~> bindingsi // i IN 1 ... n />
+%E |~ lexp1 : vector ( nexp1 , order , typ ) ~> bindings1 ... E |~ lexpn : vector ( nexpn , order , typ ) ~> bindingsn
+E |= nexp == nexp1 + ... + nexpn
+--------------------------------------------------------------------------------------- :: vector_concat
+E |- lexp1 @ ... @ lexpn : vector ( nexp , order , typ ) ~> bindings1 , ... , bindingsn
+
+% Bounds check?
+E |~ lexp : vector ( nexp , order , typ ) ~> bindings
+E |~ exp : int
+----------------------------------------- :: vector
+E |- lexp [ exp ]  : typ ~> bindings
+
+% Bounds check is optional in Sail so should we do it here?
+E |~ lexp : vector ( nexp' , order , typ ) ~> bindings
+E |~ exp1 : int
+E |~ exp2 : int
+------------------------------------------------------------ :: vector_range
+E |- lexp [ exp1 .. exp2 ] : vector ( nexp , order , typ ) ~> bindings
+
+
+%E |- lexp : { id : typ } 
+% FIXME
+------------------------------------- :: field
+E |- lexp . id  : typ ~> bindings
+
+
+defn E |~ pexp : ( typ' , typ ) :: :: check_pexp :: cpe_
+by
+
+E |~ pat : typ' ~> bindings
+distinct E , bindings
+E , bindings |~ exp : typ
+------------------------ :: exp
+E |~ pat -> exp : ( typ' , typ )
+
+E |~ pat : typ' ~> bindings
+distinct E , bindings
+E , bindings |~ exp1 : bool
+E , bindings |~ exp2 : typ
+--------------------------------------------- :: when
+E |~ pat when exp1 -> exp2 : ( typ' , typ )
+
+% The environment on the def contains any new bindings introduced by the def
+% Scattered defns have been gathered. No. Have the types in E been gathered?
+defns definitions :: '' ::=
+
+defn E |- type_def :: :: check_typedef :: ctd_
+by
+
+defn E |- scattered_def :: :: check_scattered :: csc_
+by
+
+defn E |- funcl : typquant typ :: :: check_funcl :: cfcl_
+by
+
+E , typquant |~ pat : ( typ1 , ... , typn ) ~> bindings
+E , typquant , bindings |~ exp : typ
+ ----------------------------------- :: exp
+E |- id pat = exp : typquant ( typ1 , ... , typn ) -> typ effectkw effect
+
+
+E |~ exp1 : bool
+E , typquant |~ pat : ( typ1 , ... , typn ) ~> bindings
+E , typquant , bindings |- typ
+--------------------------------------- :: when
+E |- id ( pat when exp1 ) = exp : typquant ( typ1 , ... , typn ) -> typ effectkw effect
+
+
+defn E |-d fundef :: :: check_fundef :: cfd_
+{{ tex [[E]] \vdash [[fundef]] }}
+by
+
+id : typquant typ INN E
+E |- id pexp_funcl1 : typquant typ ... E |- id pexp_funcln : typquant typ
+------------------------------------------------------------------------ :: none
+E |-d function rec_opt :Typ_annot_opt_none: effect_opt id pexp_funcl1 and ... and id pexp_funcln
+
+
+E |- funcl1 : typquant typ ... E |- funcln : typquant typ
+------------------------------------------------------------------------ :: tannot
+E |-d function rec_opt typquant typ effect_opt funcl1 and ... and funcln
+
+
+defn  E |- def  :: :: check_def :: cd_
+by
+
+% wf
+----------------- :: type
+E |- type_def            
+
+E |-d fundef
+------------------------------------------------------------------------ :: fundef
+E |- :DEF_fundef: fundef
+
+% check letbind
+---------------- :: val
+E |- letbind          
+
+% wf
+------------------ :: spec
+E |- val_spec             
+
+% wf
+------------------------ :: default
+E |- default_spec  
+
+% wf / check_funcl
+------------------------ :: scattered
+E |- scattered_def 
+
+% wf
+-------------------- :: reg_def
+E  |- dec_spec 
+
+%E |- mapdef               
+%E |- fix prec num id                                    :: :: fixity
+%E |-  overload id [ id1 ; ... ; idn ]                   :: :: overload
+%E | 'termination_measure' id pat = exp                 :: :: measure
+%E | 'termination_measure' id loop_measure1 , .. , loop_measuren :: :: loop_measures
+%E |- fundef1 .. fundefn                                 :: I :: internal_mutrec
+%E |- $ string1 string2 l                                :: :: pragma
+
+
+
+
