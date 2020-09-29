@@ -1,6 +1,8 @@
-theory Env
-  imports AstUtils
+theory SailEnv
+  imports SailASTUtils
 begin
+
+section \<open>Sail Environment\<close>
 
 (* From sail/src/type_check.ml
 type env =

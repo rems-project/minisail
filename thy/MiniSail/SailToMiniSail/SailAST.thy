@@ -3,6 +3,8 @@ theory SailAST
 imports Main Native_Word.Uint32
 begin
 
+section \<open>Sail AST\<close>
+
 type_synonym string = String.literal
 
 hide_const id

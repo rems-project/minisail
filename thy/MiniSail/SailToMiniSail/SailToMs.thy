@@ -1,11 +1,9 @@
 theory SailToMs
-imports Utils Env AstUtils ShowAST MiniSailAST   "HOL-Library.Debug" 
+imports Utils SailEnv SailASTUtils ShowAST MiniSailAST   "HOL-Library.Debug" 
 begin
 
 
-text \<open>
-Convert from Sail to MiniSail. 
-\<close>
+chapter\<open>Convert from Sail to MiniSail\<close>
 
 
 type_synonym xa=x
@@ -121,7 +119,7 @@ inductive v_conv :: "env \<Rightarrow> xmap \<Rightarrow> exp \<Rightarrow> \<Th
 
 | v_conv_varI:"\<lbrakk> 
    trace ''v_conv_varI'';
-   Some xa = Env.lookup xm idd;
+   Some xa = SailEnv.lookup xm idd;
    Some t = lookup_local_id_env env idd;
    b_of_typ t ba;
    trace (''v_conv_varI end'' @ (cf ba))
@@ -597,7 +595,7 @@ expand_lit_litI: "\<lbrakk>
 (*   (i2,xa) = mk_fresh_x i1   *)
 | expand_lit_varI: "\<lbrakk> 
   trace ''expand_lit_varI'' ;
-  Some xa = Env.lookup xmap idd 
+  Some xa = SailEnv.lookup xmap idd 
 \<rbrakk> \<Longrightarrow>
   expand_lit i1 env xmap (  (  (( (P_id _ idd) ) ) # pm_pat , sa ) # pm) xp [ ( [(pm_pat, AS_let xa (AE_val (V_var xp)) sa)],None)] [(idd,xa)] i1"
 

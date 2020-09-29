@@ -2,6 +2,7 @@ theory MiniSailAST
 imports Main "HOL-Library.FSet"
 begin
 
+section \<open>MiniSail AST\<close>
 
 type_synonym num_nat = nat
 

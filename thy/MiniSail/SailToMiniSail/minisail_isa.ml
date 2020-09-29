@@ -56,6 +56,17 @@ let test_bit x n =  Z.testbit x (Z.to_int n);;
 
 end;; (*struct Bits_Integer*)
 
+module Fun : sig
+  val id : 'a -> 'a
+  val comp : ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
+end = struct
+
+let rec id x = (fun xa -> xa) x;;
+
+let rec comp f g = (fun x -> f (g x));;
+
+end;; (*struct Fun*)
+
 module HOL : sig
   type 'a equal = {equal : 'a -> 'a -> bool}
   val equal : 'a equal -> 'a -> 'a -> bool
@@ -68,6 +79,29 @@ let equal _A = _A.equal;;
 let rec eq _A a b = equal _A a b;;
 
 end;; (*struct HOL*)
+
+module Option : sig
+  val equal_optiona : 'a HOL.equal -> 'a option -> 'a option -> bool
+  val equal_option : 'a HOL.equal -> ('a option) HOL.equal
+  val bind : 'a option -> ('a -> 'b option) -> 'b option
+  val map_option : ('a -> 'b) -> 'a option -> 'b option
+end = struct
+
+let rec equal_optiona _A x0 x1 = match x0, x1 with None, Some x2 -> false
+                           | Some x2, None -> false
+                           | Some x2, Some y2 -> HOL.eq _A x2 y2
+                           | None, None -> true;;
+
+let rec equal_option _A =
+  ({HOL.equal = equal_optiona _A} : ('a option) HOL.equal);;
+
+let rec bind x0 f = match x0, f with None, f -> None
+               | Some x, f -> f x;;
+
+let rec map_option f x1 = match f, x1 with f, None -> None
+                     | f, Some x2 -> Some (f x2);;
+
+end;; (*struct Option*)
 
 module Product_Type : sig
   val equal_proda : 'a HOL.equal -> 'b HOL.equal -> 'a * 'b -> 'a * 'b -> bool
@@ -102,29 +136,6 @@ let rec equal_bool p pa = match p, pa with p, true -> p
                      | false, p -> not p;;
 
 end;; (*struct Product_Type*)
-
-module Option : sig
-  val equal_optiona : 'a HOL.equal -> 'a option -> 'a option -> bool
-  val equal_option : 'a HOL.equal -> ('a option) HOL.equal
-  val bind : 'a option -> ('a -> 'b option) -> 'b option
-  val map_option : ('a -> 'b) -> 'a option -> 'b option
-end = struct
-
-let rec equal_optiona _A x0 x1 = match x0, x1 with None, Some x2 -> false
-                           | Some x2, None -> false
-                           | Some x2, Some y2 -> HOL.eq _A x2 y2
-                           | None, None -> true;;
-
-let rec equal_option _A =
-  ({HOL.equal = equal_optiona _A} : ('a option) HOL.equal);;
-
-let rec bind x0 f = match x0, f with None, f -> None
-               | Some x, f -> f x;;
-
-let rec map_option f x1 = match f, x1 with f, None -> None
-                     | f, Some x2 -> Some (f x2);;
-
-end;; (*struct Option*)
 
 module Arith : sig
   type num = One | Bit0 of num | Bit1 of num
@@ -747,6 +758,294 @@ let rec gen_length
 let rec size_list x = gen_length Arith.Zero_nat x;;
 
 end;; (*struct Lista*)
+
+module Set : sig
+  type 'a set = Set of 'a list | Coset of 'a list
+  val insert : 'a HOL.equal -> 'a -> 'a set -> 'a set
+  val member : 'a HOL.equal -> 'a -> 'a set -> bool
+  val bot_set : 'a set
+  val sup_set : 'a HOL.equal -> 'a set -> 'a set -> 'a set
+end = struct
+
+type 'a set = Set of 'a list | Coset of 'a list;;
+
+let rec insert _A
+  x xa1 = match x, xa1 with x, Coset xs -> Coset (Lista.removeAll _A x xs)
+    | x, Set xs -> Set (Lista.insert _A x xs);;
+
+let rec member _A
+  x xa1 = match x, xa1 with x, Coset xs -> not (Lista.member _A xs x)
+    | x, Set xs -> Lista.member _A xs x;;
+
+let bot_set : 'a set = Set [];;
+
+let rec sup_set _A
+  x0 a = match x0, a with
+    Coset xs, a -> Coset (Lista.filter (fun x -> not (member _A x a)) xs)
+    | Set xs, a -> Lista.fold (insert _A) xs a;;
+
+end;; (*struct Set*)
+
+module FSet : sig
+  type 'a fset = Abs_fset of 'a Set.set
+  val bot_fset : 'a fset
+end = struct
+
+type 'a fset = Abs_fset of 'a Set.set;;
+
+let bot_fset : 'a fset = Abs_fset Set.bot_set;;
+
+end;; (*struct FSet*)
+
+module Stringa : sig
+  type char = Chara of bool * bool * bool * bool * bool * bool * bool * bool
+  val equal_chara : char -> char -> bool
+  val equal_char : char HOL.equal
+  val equal_literal : string HOL.equal
+  val integer_of_char : char -> Z.t
+  val implode : char list -> string
+  val char_of_integer : Z.t -> char
+  val explode : string -> char list
+end = struct
+
+type char = Chara of bool * bool * bool * bool * bool * bool * bool * bool;;
+
+let rec equal_chara
+  (Chara (x1, x2, x3, x4, x5, x6, x7, x8))
+    (Chara (y1, y2, y3, y4, y5, y6, y7, y8)) =
+    Product_Type.equal_bool x1 y1 &&
+      (Product_Type.equal_bool x2 y2 &&
+        (Product_Type.equal_bool x3 y3 &&
+          (Product_Type.equal_bool x4 y4 &&
+            (Product_Type.equal_bool x5 y5 &&
+              (Product_Type.equal_bool x6 y6 &&
+                (Product_Type.equal_bool x7 y7 &&
+                  Product_Type.equal_bool x8 y8))))));;
+
+let equal_char = ({HOL.equal = equal_chara} : char HOL.equal);;
+
+let equal_literal =
+  ({HOL.equal = (fun a b -> ((a : string) = b))} : string HOL.equal);;
+
+let rec integer_of_char
+  (Chara (b0, b1, b2, b3, b4, b5, b6, b7)) =
+    Z.add (Z.mul
+            (Z.add
+              (Z.mul
+                (Z.add
+                  (Z.mul
+                    (Z.add
+                      (Z.mul
+                        (Z.add
+                          (Z.mul
+                            (Z.add
+                              (Z.mul
+                                (Z.add
+                                  (Z.mul
+                                    (Arith.of_bool Arith.zero_neq_one_integer
+                                      b7)
+                                    (Z.of_int 2))
+                                  (Arith.of_bool Arith.zero_neq_one_integer b6))
+                                (Z.of_int 2))
+                              (Arith.of_bool Arith.zero_neq_one_integer b5))
+                            (Z.of_int 2))
+                          (Arith.of_bool Arith.zero_neq_one_integer b4))
+                        (Z.of_int 2))
+                      (Arith.of_bool Arith.zero_neq_one_integer b3))
+                    (Z.of_int 2))
+                  (Arith.of_bool Arith.zero_neq_one_integer b2))
+                (Z.of_int 2))
+              (Arith.of_bool Arith.zero_neq_one_integer b1))
+            (Z.of_int 2))
+      (Arith.of_bool Arith.zero_neq_one_integer b0);;
+
+let rec implode
+  cs = (let xs = (Lista.map integer_of_char
+                   cs)
+      and chr k =
+        let l = Z.to_int k
+          in if 0 <= l && l < 128
+          then Char.chr l
+          else failwith "Non-ASCII character in literal"
+      in String.init (List.length xs) (List.nth (List.map chr xs)));;
+
+let rec char_of_integer
+  k = (let (q0, b0) = Arith.bit_cut_integer k in
+       let (q1, b1) = Arith.bit_cut_integer q0 in
+       let (q2, b2) = Arith.bit_cut_integer q1 in
+       let (q3, b3) = Arith.bit_cut_integer q2 in
+       let (q4, b4) = Arith.bit_cut_integer q3 in
+       let (q5, b5) = Arith.bit_cut_integer q4 in
+       let (q6, b6) = Arith.bit_cut_integer q5 in
+       let a = Arith.bit_cut_integer q6 in
+       let (_, aa) = a in
+        Chara (b0, b1, b2, b3, b4, b5, b6, aa));;
+
+let rec explode
+  s = Lista.map char_of_integer
+        (let s = s in let rec exp i l = if i < 0 then l else exp (i - 1) (let k = Char.code (String.get s i) in
+      if k < 128 then Z.of_int k :: l else failwith "Non-ASCII character in literal") in exp (String.length s - 1) []);;
+
+end;; (*struct Stringa*)
+
+module Show : sig
+  type 'a show =
+    {shows_prec : Arith.nat -> 'a -> Stringa.char list -> Stringa.char list;
+      shows_list : 'a list -> Stringa.char list -> Stringa.char list}
+  val shows_prec :
+    'a show -> Arith.nat -> 'a -> Stringa.char list -> Stringa.char list
+  val shows_list : 'a show -> 'a list -> Stringa.char list -> Stringa.char list
+  val shows_prec_list :
+    'a show -> Arith.nat -> 'a list -> Stringa.char list -> Stringa.char list
+  val shows_string : Stringa.char list -> Stringa.char list -> Stringa.char list
+  val shows_sep :
+    ('a -> Stringa.char list -> Stringa.char list) ->
+      (Stringa.char list -> Stringa.char list) ->
+        'a list -> Stringa.char list -> Stringa.char list
+  val shows_list_gen :
+    ('a -> Stringa.char list -> Stringa.char list) ->
+      Stringa.char list ->
+        Stringa.char list ->
+          Stringa.char list ->
+            Stringa.char list ->
+              'a list -> Stringa.char list -> Stringa.char list
+  val showsp_list :
+    (Arith.nat -> 'a -> Stringa.char list -> Stringa.char list) ->
+      Arith.nat -> 'a list -> Stringa.char list -> Stringa.char list
+  val shows_list_list :
+    'a show -> ('a list) list -> Stringa.char list -> Stringa.char list
+  val show_list : 'a show -> ('a list) show
+  val shows_prec_char :
+    Arith.nat -> Stringa.char -> Stringa.char list -> Stringa.char list
+  val shows_pl : Arith.nat -> Stringa.char list -> Stringa.char list
+  val shows_pr : Arith.nat -> Stringa.char list -> Stringa.char list
+  val shows_space : Stringa.char list -> Stringa.char list
+end = struct
+
+type 'a show =
+  {shows_prec : Arith.nat -> 'a -> Stringa.char list -> Stringa.char list;
+    shows_list : 'a list -> Stringa.char list -> Stringa.char list};;
+let shows_prec _A = _A.shows_prec;;
+let shows_list _A = _A.shows_list;;
+
+let rec shows_prec_list _A p xs = shows_list _A xs;;
+
+let rec shows_string x = (fun a -> x @ a);;
+
+let rec shows_sep
+  s sep x2 = match s, sep, x2 with s, sep, [] -> shows_string []
+    | s, sep, [x] -> s x
+    | s, sep, x :: v :: va ->
+        Fun.comp (Fun.comp (s x) sep) (shows_sep s sep (v :: va));;
+
+let rec shows_list_gen
+  showsx e l s r xs =
+    (if Lista.null xs then shows_string e
+      else Fun.comp
+             (Fun.comp (shows_string l) (shows_sep showsx (shows_string s) xs))
+             (shows_string r));;
+
+let rec showsp_list
+  s p xs =
+    shows_list_gen (s Arith.Zero_nat)
+      [Stringa.Chara (true, true, false, true, true, false, true, false);
+        Stringa.Chara (true, false, true, true, true, false, true, false)]
+      [Stringa.Chara (true, true, false, true, true, false, true, false)]
+      [Stringa.Chara (false, false, true, true, false, true, false, false);
+        Stringa.Chara (false, false, false, false, false, true, false, false)]
+      [Stringa.Chara (true, false, true, true, true, false, true, false)] xs;;
+
+let rec shows_list_list _A
+  xss = showsp_list (shows_prec_list _A) Arith.Zero_nat xss;;
+
+let rec show_list _A =
+  ({shows_prec = shows_prec_list _A; shows_list = shows_list_list _A} :
+    ('a list) show);;
+
+let rec shows_prec_char p c = (fun a -> c :: a);;
+
+let rec shows_pl
+  p = (if Arith.less_nat Arith.Zero_nat p
+        then shows_prec_char Arith.Zero_nat
+               (Stringa.Chara
+                 (false, false, false, true, false, true, false, false))
+        else Fun.id);;
+
+let rec shows_pr
+  p = (if Arith.less_nat Arith.Zero_nat p
+        then shows_prec_char Arith.Zero_nat
+               (Stringa.Chara
+                 (true, false, false, true, false, true, false, false))
+        else Fun.id);;
+
+let rec shows_space
+  x = shows_prec_char Arith.Zero_nat
+        (Stringa.Chara (false, false, false, false, false, true, false, false))
+        x;;
+
+end;; (*struct Show*)
+
+module Utils : sig
+  val string_of_digit : Arith.nat -> Stringa.char list
+  val string_of_nat : Arith.nat -> Stringa.char list
+end = struct
+
+let rec string_of_digit
+  n = (if Arith.equal_nat n Arith.Zero_nat
+        then [Stringa.Chara
+                (false, false, false, false, true, true, false, false)]
+        else (if Arith.equal_nat n Arith.one_nat
+               then [Stringa.Chara
+                       (true, false, false, false, true, true, false, false)]
+               else (if Arith.equal_nat n
+                          (Arith.nat_of_num (Arith.Bit0 Arith.One))
+                      then [Stringa.Chara
+                              (false, true, false, false, true, true, false,
+                                false)]
+                      else (if Arith.equal_nat n
+                                 (Arith.nat_of_num (Arith.Bit1 Arith.One))
+                             then [Stringa.Chara
+                                     (true, true, false, false, true, true,
+                                       false, false)]
+                             else (if Arith.equal_nat n
+(Arith.nat_of_num (Arith.Bit0 (Arith.Bit0 Arith.One)))
+                                    then [Stringa.Chara
+    (false, false, true, false, true, true, false, false)]
+                                    else (if Arith.equal_nat n
+       (Arith.nat_of_num (Arith.Bit1 (Arith.Bit0 Arith.One)))
+   then [Stringa.Chara (true, false, true, false, true, true, false, false)]
+   else (if Arith.equal_nat n
+              (Arith.nat_of_num (Arith.Bit0 (Arith.Bit1 Arith.One)))
+          then [Stringa.Chara
+                  (false, true, true, false, true, true, false, false)]
+          else (if Arith.equal_nat n
+                     (Arith.nat_of_num (Arith.Bit1 (Arith.Bit1 Arith.One)))
+                 then [Stringa.Chara
+                         (true, true, true, false, true, true, false, false)]
+                 else (if Arith.equal_nat n
+                            (Arith.nat_of_num
+                              (Arith.Bit0 (Arith.Bit0 (Arith.Bit0 Arith.One))))
+                        then [Stringa.Chara
+                                (false, false, false, true, true, true, false,
+                                  false)]
+                        else [Stringa.Chara
+                                (true, false, false, true, true, true, false,
+                                  false)])))))))));;
+
+let rec string_of_nat
+  n = (if Arith.less_nat n
+            (Arith.nat_of_num (Arith.Bit0 (Arith.Bit1 (Arith.Bit0 Arith.One))))
+        then string_of_digit n
+        else string_of_nat
+               (Arith.divide_nat n
+                 (Arith.nat_of_num
+                   (Arith.Bit0 (Arith.Bit1 (Arith.Bit0 Arith.One))))) @
+               string_of_digit
+                 (Arith.modulo_nat n
+                   (Arith.nat_of_num
+                     (Arith.Bit0 (Arith.Bit1 (Arith.Bit0 Arith.One))))));;
+
+end;; (*struct Utils*)
 
 module SailAST : sig
   type id = Id of string | Operator of string
@@ -1798,18 +2097,7 @@ let rec annot_lexp = function LEXP_id (x11, x12) -> x11
 
 end;; (*struct SailAST*)
 
-module Fun : sig
-  val id : 'a -> 'a
-  val comp : ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
-end = struct
-
-let rec id x = (fun xa -> xa) x;;
-
-let rec comp f g = (fun x -> f (g x));;
-
-end;; (*struct Fun*)
-
-module Env : sig
+module SailEnv : sig
   type mut = Mutable | Immutable
   type 'a env_ext =
     Env_ext of
@@ -2410,295 +2698,7 @@ let rec lookup_register_index_env
     (match lookup_index (registers env) x with None -> None
       | Some a -> Some a);;
 
-end;; (*struct Env*)
-
-module Set : sig
-  type 'a set = Set of 'a list | Coset of 'a list
-  val insert : 'a HOL.equal -> 'a -> 'a set -> 'a set
-  val member : 'a HOL.equal -> 'a -> 'a set -> bool
-  val bot_set : 'a set
-  val sup_set : 'a HOL.equal -> 'a set -> 'a set -> 'a set
-end = struct
-
-type 'a set = Set of 'a list | Coset of 'a list;;
-
-let rec insert _A
-  x xa1 = match x, xa1 with x, Coset xs -> Coset (Lista.removeAll _A x xs)
-    | x, Set xs -> Set (Lista.insert _A x xs);;
-
-let rec member _A
-  x xa1 = match x, xa1 with x, Coset xs -> not (Lista.member _A xs x)
-    | x, Set xs -> Lista.member _A xs x;;
-
-let bot_set : 'a set = Set [];;
-
-let rec sup_set _A
-  x0 a = match x0, a with
-    Coset xs, a -> Coset (Lista.filter (fun x -> not (member _A x a)) xs)
-    | Set xs, a -> Lista.fold (insert _A) xs a;;
-
-end;; (*struct Set*)
-
-module FSet : sig
-  type 'a fset = Abs_fset of 'a Set.set
-  val bot_fset : 'a fset
-end = struct
-
-type 'a fset = Abs_fset of 'a Set.set;;
-
-let bot_fset : 'a fset = Abs_fset Set.bot_set;;
-
-end;; (*struct FSet*)
-
-module Stringa : sig
-  type char = Chara of bool * bool * bool * bool * bool * bool * bool * bool
-  val equal_chara : char -> char -> bool
-  val equal_char : char HOL.equal
-  val equal_literal : string HOL.equal
-  val integer_of_char : char -> Z.t
-  val implode : char list -> string
-  val char_of_integer : Z.t -> char
-  val explode : string -> char list
-end = struct
-
-type char = Chara of bool * bool * bool * bool * bool * bool * bool * bool;;
-
-let rec equal_chara
-  (Chara (x1, x2, x3, x4, x5, x6, x7, x8))
-    (Chara (y1, y2, y3, y4, y5, y6, y7, y8)) =
-    Product_Type.equal_bool x1 y1 &&
-      (Product_Type.equal_bool x2 y2 &&
-        (Product_Type.equal_bool x3 y3 &&
-          (Product_Type.equal_bool x4 y4 &&
-            (Product_Type.equal_bool x5 y5 &&
-              (Product_Type.equal_bool x6 y6 &&
-                (Product_Type.equal_bool x7 y7 &&
-                  Product_Type.equal_bool x8 y8))))));;
-
-let equal_char = ({HOL.equal = equal_chara} : char HOL.equal);;
-
-let equal_literal =
-  ({HOL.equal = (fun a b -> ((a : string) = b))} : string HOL.equal);;
-
-let rec integer_of_char
-  (Chara (b0, b1, b2, b3, b4, b5, b6, b7)) =
-    Z.add (Z.mul
-            (Z.add
-              (Z.mul
-                (Z.add
-                  (Z.mul
-                    (Z.add
-                      (Z.mul
-                        (Z.add
-                          (Z.mul
-                            (Z.add
-                              (Z.mul
-                                (Z.add
-                                  (Z.mul
-                                    (Arith.of_bool Arith.zero_neq_one_integer
-                                      b7)
-                                    (Z.of_int 2))
-                                  (Arith.of_bool Arith.zero_neq_one_integer b6))
-                                (Z.of_int 2))
-                              (Arith.of_bool Arith.zero_neq_one_integer b5))
-                            (Z.of_int 2))
-                          (Arith.of_bool Arith.zero_neq_one_integer b4))
-                        (Z.of_int 2))
-                      (Arith.of_bool Arith.zero_neq_one_integer b3))
-                    (Z.of_int 2))
-                  (Arith.of_bool Arith.zero_neq_one_integer b2))
-                (Z.of_int 2))
-              (Arith.of_bool Arith.zero_neq_one_integer b1))
-            (Z.of_int 2))
-      (Arith.of_bool Arith.zero_neq_one_integer b0);;
-
-let rec implode
-  cs = (let xs = (Lista.map integer_of_char
-                   cs)
-      and chr k =
-        let l = Z.to_int k
-          in if 0 <= l && l < 128
-          then Char.chr l
-          else failwith "Non-ASCII character in literal"
-      in String.init (List.length xs) (List.nth (List.map chr xs)));;
-
-let rec char_of_integer
-  k = (let (q0, b0) = Arith.bit_cut_integer k in
-       let (q1, b1) = Arith.bit_cut_integer q0 in
-       let (q2, b2) = Arith.bit_cut_integer q1 in
-       let (q3, b3) = Arith.bit_cut_integer q2 in
-       let (q4, b4) = Arith.bit_cut_integer q3 in
-       let (q5, b5) = Arith.bit_cut_integer q4 in
-       let (q6, b6) = Arith.bit_cut_integer q5 in
-       let a = Arith.bit_cut_integer q6 in
-       let (_, aa) = a in
-        Chara (b0, b1, b2, b3, b4, b5, b6, aa));;
-
-let rec explode
-  s = Lista.map char_of_integer
-        (let s = s in let rec exp i l = if i < 0 then l else exp (i - 1) (let k = Char.code (String.get s i) in
-      if k < 128 then Z.of_int k :: l else failwith "Non-ASCII character in literal") in exp (String.length s - 1) []);;
-
-end;; (*struct Stringa*)
-
-module Show : sig
-  type 'a show =
-    {shows_prec : Arith.nat -> 'a -> Stringa.char list -> Stringa.char list;
-      shows_list : 'a list -> Stringa.char list -> Stringa.char list}
-  val shows_prec :
-    'a show -> Arith.nat -> 'a -> Stringa.char list -> Stringa.char list
-  val shows_list : 'a show -> 'a list -> Stringa.char list -> Stringa.char list
-  val shows_prec_list :
-    'a show -> Arith.nat -> 'a list -> Stringa.char list -> Stringa.char list
-  val shows_string : Stringa.char list -> Stringa.char list -> Stringa.char list
-  val shows_sep :
-    ('a -> Stringa.char list -> Stringa.char list) ->
-      (Stringa.char list -> Stringa.char list) ->
-        'a list -> Stringa.char list -> Stringa.char list
-  val shows_list_gen :
-    ('a -> Stringa.char list -> Stringa.char list) ->
-      Stringa.char list ->
-        Stringa.char list ->
-          Stringa.char list ->
-            Stringa.char list ->
-              'a list -> Stringa.char list -> Stringa.char list
-  val showsp_list :
-    (Arith.nat -> 'a -> Stringa.char list -> Stringa.char list) ->
-      Arith.nat -> 'a list -> Stringa.char list -> Stringa.char list
-  val shows_list_list :
-    'a show -> ('a list) list -> Stringa.char list -> Stringa.char list
-  val show_list : 'a show -> ('a list) show
-  val shows_prec_char :
-    Arith.nat -> Stringa.char -> Stringa.char list -> Stringa.char list
-  val shows_pl : Arith.nat -> Stringa.char list -> Stringa.char list
-  val shows_pr : Arith.nat -> Stringa.char list -> Stringa.char list
-  val shows_space : Stringa.char list -> Stringa.char list
-end = struct
-
-type 'a show =
-  {shows_prec : Arith.nat -> 'a -> Stringa.char list -> Stringa.char list;
-    shows_list : 'a list -> Stringa.char list -> Stringa.char list};;
-let shows_prec _A = _A.shows_prec;;
-let shows_list _A = _A.shows_list;;
-
-let rec shows_prec_list _A p xs = shows_list _A xs;;
-
-let rec shows_string x = (fun a -> x @ a);;
-
-let rec shows_sep
-  s sep x2 = match s, sep, x2 with s, sep, [] -> shows_string []
-    | s, sep, [x] -> s x
-    | s, sep, x :: v :: va ->
-        Fun.comp (Fun.comp (s x) sep) (shows_sep s sep (v :: va));;
-
-let rec shows_list_gen
-  showsx e l s r xs =
-    (if Lista.null xs then shows_string e
-      else Fun.comp
-             (Fun.comp (shows_string l) (shows_sep showsx (shows_string s) xs))
-             (shows_string r));;
-
-let rec showsp_list
-  s p xs =
-    shows_list_gen (s Arith.Zero_nat)
-      [Stringa.Chara (true, true, false, true, true, false, true, false);
-        Stringa.Chara (true, false, true, true, true, false, true, false)]
-      [Stringa.Chara (true, true, false, true, true, false, true, false)]
-      [Stringa.Chara (false, false, true, true, false, true, false, false);
-        Stringa.Chara (false, false, false, false, false, true, false, false)]
-      [Stringa.Chara (true, false, true, true, true, false, true, false)] xs;;
-
-let rec shows_list_list _A
-  xss = showsp_list (shows_prec_list _A) Arith.Zero_nat xss;;
-
-let rec show_list _A =
-  ({shows_prec = shows_prec_list _A; shows_list = shows_list_list _A} :
-    ('a list) show);;
-
-let rec shows_prec_char p c = (fun a -> c :: a);;
-
-let rec shows_pl
-  p = (if Arith.less_nat Arith.Zero_nat p
-        then shows_prec_char Arith.Zero_nat
-               (Stringa.Chara
-                 (false, false, false, true, false, true, false, false))
-        else Fun.id);;
-
-let rec shows_pr
-  p = (if Arith.less_nat Arith.Zero_nat p
-        then shows_prec_char Arith.Zero_nat
-               (Stringa.Chara
-                 (true, false, false, true, false, true, false, false))
-        else Fun.id);;
-
-let rec shows_space
-  x = shows_prec_char Arith.Zero_nat
-        (Stringa.Chara (false, false, false, false, false, true, false, false))
-        x;;
-
-end;; (*struct Show*)
-
-module Utils : sig
-  val string_of_digit : Arith.nat -> Stringa.char list
-  val string_of_nat : Arith.nat -> Stringa.char list
-end = struct
-
-let rec string_of_digit
-  n = (if Arith.equal_nat n Arith.Zero_nat
-        then [Stringa.Chara
-                (false, false, false, false, true, true, false, false)]
-        else (if Arith.equal_nat n Arith.one_nat
-               then [Stringa.Chara
-                       (true, false, false, false, true, true, false, false)]
-               else (if Arith.equal_nat n
-                          (Arith.nat_of_num (Arith.Bit0 Arith.One))
-                      then [Stringa.Chara
-                              (false, true, false, false, true, true, false,
-                                false)]
-                      else (if Arith.equal_nat n
-                                 (Arith.nat_of_num (Arith.Bit1 Arith.One))
-                             then [Stringa.Chara
-                                     (true, true, false, false, true, true,
-                                       false, false)]
-                             else (if Arith.equal_nat n
-(Arith.nat_of_num (Arith.Bit0 (Arith.Bit0 Arith.One)))
-                                    then [Stringa.Chara
-    (false, false, true, false, true, true, false, false)]
-                                    else (if Arith.equal_nat n
-       (Arith.nat_of_num (Arith.Bit1 (Arith.Bit0 Arith.One)))
-   then [Stringa.Chara (true, false, true, false, true, true, false, false)]
-   else (if Arith.equal_nat n
-              (Arith.nat_of_num (Arith.Bit0 (Arith.Bit1 Arith.One)))
-          then [Stringa.Chara
-                  (false, true, true, false, true, true, false, false)]
-          else (if Arith.equal_nat n
-                     (Arith.nat_of_num (Arith.Bit1 (Arith.Bit1 Arith.One)))
-                 then [Stringa.Chara
-                         (true, true, true, false, true, true, false, false)]
-                 else (if Arith.equal_nat n
-                            (Arith.nat_of_num
-                              (Arith.Bit0 (Arith.Bit0 (Arith.Bit0 Arith.One))))
-                        then [Stringa.Chara
-                                (false, false, false, true, true, true, false,
-                                  false)]
-                        else [Stringa.Chara
-                                (true, false, false, true, true, true, false,
-                                  false)])))))))));;
-
-let rec string_of_nat
-  n = (if Arith.less_nat n
-            (Arith.nat_of_num (Arith.Bit0 (Arith.Bit1 (Arith.Bit0 Arith.One))))
-        then string_of_digit n
-        else string_of_nat
-               (Arith.divide_nat n
-                 (Arith.nat_of_num
-                   (Arith.Bit0 (Arith.Bit1 (Arith.Bit0 Arith.One))))) @
-               string_of_digit
-                 (Arith.modulo_nat n
-                   (Arith.nat_of_num
-                     (Arith.Bit0 (Arith.Bit1 (Arith.Bit0 Arith.One))))));;
-
-end;; (*struct Utils*)
+end;; (*struct SailEnv*)
 
 module Show_Instances : sig
   val showsp_prod :
@@ -2823,12 +2823,6 @@ let rec shows_prec_nat x = showsp_nat x;;
 end;; (*struct Show_Instances*)
 
 module ShowAST : sig
-  val showsp_mut :
-    Arith.nat -> Env.mut -> Stringa.char list -> Stringa.char list
-  val shows_prec_mut :
-    Arith.nat -> Env.mut -> Stringa.char list -> Stringa.char list
-  val shows_list_mut : Env.mut list -> Stringa.char list -> Stringa.char list
-  val show_mut : Env.mut Show.show
   val showsp_literal :
     Arith.nat -> string -> Stringa.char list -> Stringa.char list
   val showsp_id :
@@ -2864,6 +2858,13 @@ module ShowAST : sig
   val shows_list_typ :
     SailAST.typ list -> Stringa.char list -> Stringa.char list
   val show_typ : SailAST.typ Show.show
+  val showsp_mut :
+    Arith.nat -> SailEnv.mut -> Stringa.char list -> Stringa.char list
+  val shows_prec_mut :
+    Arith.nat -> SailEnv.mut -> Stringa.char list -> Stringa.char list
+  val shows_list_mut :
+    SailEnv.mut list -> Stringa.char list -> Stringa.char list
+  val show_mut : SailEnv.mut Show.show
   val showsp_quant_item :
     Arith.nat -> SailAST.quant_item -> Stringa.char list -> Stringa.char list
   val showsp_typquant :
@@ -2886,43 +2887,11 @@ module ShowAST : sig
     Arith.nat -> SailAST.kind -> Stringa.char list -> Stringa.char list
   val shows_prec_kid :
     Arith.nat -> SailAST.kid -> Stringa.char list -> Stringa.char list
-  val show_env : unit Env.env_ext -> Stringa.char list
-  val show_tannot : unit Env.tannot_ext option -> Stringa.char list
+  val show_env : unit SailEnv.env_ext -> Stringa.char list
+  val show_tannot : unit SailEnv.tannot_ext option -> Stringa.char list
   val shows_prec_n_constraint :
     Arith.nat -> SailAST.n_constraint -> Stringa.char list -> Stringa.char list
 end = struct
-
-let rec showsp_mut
-  p x1 = match p, x1 with
-    p, Env.Immutable ->
-      Show.shows_string
-        [Stringa.Chara (true, false, false, true, false, false, true, false);
-          Stringa.Chara (true, false, true, true, false, true, true, false);
-          Stringa.Chara (true, false, true, true, false, true, true, false);
-          Stringa.Chara (true, false, true, false, true, true, true, false);
-          Stringa.Chara (false, false, true, false, true, true, true, false);
-          Stringa.Chara (true, false, false, false, false, true, true, false);
-          Stringa.Chara (false, true, false, false, false, true, true, false);
-          Stringa.Chara (false, false, true, true, false, true, true, false);
-          Stringa.Chara (true, false, true, false, false, true, true, false)]
-    | p, Env.Mutable ->
-        Show.shows_string
-          [Stringa.Chara (true, false, true, true, false, false, true, false);
-            Stringa.Chara (true, false, true, false, true, true, true, false);
-            Stringa.Chara (false, false, true, false, true, true, true, false);
-            Stringa.Chara (true, false, false, false, false, true, true, false);
-            Stringa.Chara (false, true, false, false, false, true, true, false);
-            Stringa.Chara (false, false, true, true, false, true, true, false);
-            Stringa.Chara
-              (true, false, true, false, false, true, true, false)];;
-
-let rec shows_prec_mut x = showsp_mut x;;
-
-let rec shows_list_mut x = Show.showsp_list shows_prec_mut Arith.Zero_nat x;;
-
-let show_mut =
-  ({Show.shows_prec = shows_prec_mut; Show.shows_list = shows_list_mut} :
-    Env.mut Show.show);;
 
 let rec showsp_literal p n = Show.shows_string (Stringa.explode n);;
 
@@ -4266,6 +4235,38 @@ let show_typ =
   ({Show.shows_prec = shows_prec_typ; Show.shows_list = shows_list_typ} :
     SailAST.typ Show.show);;
 
+let rec showsp_mut
+  p x1 = match p, x1 with
+    p, SailEnv.Immutable ->
+      Show.shows_string
+        [Stringa.Chara (true, false, false, true, false, false, true, false);
+          Stringa.Chara (true, false, true, true, false, true, true, false);
+          Stringa.Chara (true, false, true, true, false, true, true, false);
+          Stringa.Chara (true, false, true, false, true, true, true, false);
+          Stringa.Chara (false, false, true, false, true, true, true, false);
+          Stringa.Chara (true, false, false, false, false, true, true, false);
+          Stringa.Chara (false, true, false, false, false, true, true, false);
+          Stringa.Chara (false, false, true, true, false, true, true, false);
+          Stringa.Chara (true, false, true, false, false, true, true, false)]
+    | p, SailEnv.Mutable ->
+        Show.shows_string
+          [Stringa.Chara (true, false, true, true, false, false, true, false);
+            Stringa.Chara (true, false, true, false, true, true, true, false);
+            Stringa.Chara (false, false, true, false, true, true, true, false);
+            Stringa.Chara (true, false, false, false, false, true, true, false);
+            Stringa.Chara (false, true, false, false, false, true, true, false);
+            Stringa.Chara (false, false, true, true, false, true, true, false);
+            Stringa.Chara
+              (true, false, true, false, false, true, true, false)];;
+
+let rec shows_prec_mut x = showsp_mut x;;
+
+let rec shows_list_mut x = Show.showsp_list shows_prec_mut Arith.Zero_nat x;;
+
+let show_mut =
+  ({Show.shows_prec = shows_prec_mut; Show.shows_list = shows_list_mut} :
+    SailEnv.mut Show.show);;
+
 let rec showsp_quant_item
   p x1 = match p, x1 with
     p, SailAST.QI_constant x ->
@@ -4474,7 +4475,7 @@ let rec show_env
                     Arith.Zero_nat t [] @
                     [Stringa.Chara
                        (false, false, false, false, false, true, false, false)])
-            (Env.locals env) @
+            (SailEnv.locals env) @
             [Stringa.Chara
                (false, true, false, true, false, false, false, false)] @
               [Stringa.Chara
@@ -4507,7 +4508,7 @@ let rec show_env
                           [Stringa.Chara
                              (false, false, false, false, false, true, false,
                                false)])
-                  (Env.typ_vars env) @
+                  (SailEnv.typ_vars env) @
                   [Stringa.Chara
                      (false, true, false, true, false, false, false, false)] @
                     [Stringa.Chara
@@ -4547,7 +4548,7 @@ let rec show_env
                                 [Stringa.Chara
                                    (false, false, false, false, false, true,
                                      false, false)])
-                        (Env.top_val_specs env) @
+                        (SailEnv.top_val_specs env) @
                         [Stringa.Chara
                            (false, true, false, true, false, false, false,
                              false)] @
@@ -4595,7 +4596,7 @@ false, false)] @
                                       Arith.Zero_nat t [] @
                                       [Stringa.Chara
  (false, false, false, false, false, true, false, false)])
-                              (Env.variants env) @
+                              (SailEnv.variants env) @
                               [Stringa.Chara
                                  (false, true, false, true, false, false, false,
                                    false)] @
@@ -4635,7 +4636,7 @@ false, false)] @
     (Show.show_list (Show_Instances.show_prod show_id show_typ)) Arith.Zero_nat
     t [] @
     [Stringa.Chara (false, false, false, false, false, true, false, false)])
-                                    (Env.records env) @
+                                    (SailEnv.records env) @
                                     [Stringa.Chara
                                        (false, true, false, true, false, false,
  false, false)] @
@@ -4657,7 +4658,7 @@ Lista.maps
           shows_prec_typ_arg Arith.Zero_nat ta [] @
             [Stringa.Chara
                (false, false, false, false, false, true, false, false)])
-  (Env.typ_synonyms env);;
+  (SailEnv.typ_synonyms env);;
 
 let rec show_tannot
   = function
@@ -4685,7 +4686,7 @@ let rec show_tannot
           Stringa.Chara (false, true, false, true, true, true, false, false);
           Stringa.Chara
             (false, false, false, false, false, true, false, false)] @
-          (match Env.tannot_instantiations t
+          (match SailEnv.tannot_instantiations t
             with None ->
               [Stringa.Chara
                  (false, false, false, true, false, true, false, false);
@@ -4727,13 +4728,13 @@ let rec show_tannot
                   (false, true, false, true, true, true, false, false);
                 Stringa.Chara
                   (false, false, false, false, false, true, false, false)] @
-                shows_prec_typ Arith.Zero_nat (Env.tannot_typ t) [];;
+                shows_prec_typ Arith.Zero_nat (SailEnv.tannot_typ t) [];;
 
 let rec shows_prec_n_constraint x = showsp_n_constraint x;;
 
 end;; (*struct ShowAST*)
 
-module AstUtils : sig
+module SailASTUtils : sig
   val int_typ : SailAST.typ
   val unit_typ : SailAST.typ
   val collect_pat : 'a SailAST.pat -> SailAST.id list
@@ -4784,7 +4785,7 @@ and collect_letbind
 
 let bool_all_typ : SailAST.typ = SailAST.Typ_id (SailAST.Id "bool");;
 
-end;; (*struct AstUtils*)
+end;; (*struct SailASTUtils*)
 
 module MiniSailAST : sig
   type sort = Sort of Stringa.char list * (Stringa.char list) list
@@ -4987,21 +4988,23 @@ module SailToMs : sig
   val option_map : ('a -> 'b option) -> 'a list -> 'b list
   val mk_xxx : SailAST.quant_item list -> (SailAST.kid * SailAST.kind) list
   val mk_match_aux :
-    (((unit Env.tannot_ext option) SailAST.pat list * MiniSailAST.s) list *
+    (((unit SailEnv.tannot_ext option) SailAST.pat list * MiniSailAST.s) list *
       (Stringa.char list * MiniSailAST.x) option) list ->
       MiniSailAST.s list -> MiniSailAST.branch_list
   val mk_match :
     MiniSailAST.x ->
-      (((unit Env.tannot_ext option) SailAST.pat list * MiniSailAST.s) list *
+      (((unit SailEnv.tannot_ext option) SailAST.pat list *
+         MiniSailAST.s) list *
         (Stringa.char list * MiniSailAST.x) option) list ->
         MiniSailAST.s list -> MiniSailAST.s
   val mk_id_map :
-    (unit Env.tannot_ext option) SailAST.pexp list ->
+    (unit SailEnv.tannot_ext option) SailAST.pexp list ->
       (SailAST.id * MiniSailAST.x) list
   val lctx_apply : lctx -> MiniSailAST.s -> MiniSailAST.s
   val mk_switch :
     MiniSailAST.x ->
-      (((unit Env.tannot_ext option) SailAST.pat list * MiniSailAST.s) list *
+      (((unit SailEnv.tannot_ext option) SailAST.pat list *
+         MiniSailAST.s) list *
         (lctx * MiniSailAST.x) option) list ->
         MiniSailAST.s list -> MiniSailAST.s
   val mk_type_vars :
@@ -5014,24 +5017,25 @@ module SailToMs : sig
       SailAST.kid -> MiniSailAST.ce option
   val mk_fresh_x : Arith.nat -> Arith.nat * MiniSailAST.x
   val mk_pm_list :
-    unit Env.env_ext ->
+    unit SailEnv.env_ext ->
       SailAST.id ->
-        (((unit Env.tannot_ext option) SailAST.pat list * MiniSailAST.s) list *
+        (((unit SailEnv.tannot_ext option) SailAST.pat list *
+           MiniSailAST.s) list *
           (Stringa.char list * MiniSailAST.x) option) list ->
           (SailAST.typ * MiniSailAST.x) list ->
-            (((unit Env.tannot_ext option) SailAST.pat list *
+            (((unit SailEnv.tannot_ext option) SailAST.pat list *
                MiniSailAST.s) list *
               (SailAST.typ * MiniSailAST.x) list) list
   val extract_tan :
-    unit Env.tannot_ext option ->
-      (unit Env.tannot_ext option) SailAST.funcl list ->
-        unit Env.tannot_ext option
+    unit SailEnv.tannot_ext option ->
+      (unit SailEnv.tannot_ext option) SailAST.funcl list ->
+        unit SailEnv.tannot_ext option
   val get_len_i_o : SailAST.typ -> MiniSailAST.v Predicate.pred
   val get_len_lit : SailAST.lit -> MiniSailAST.v
   val b_of_typ_i_o : SailAST.typ -> MiniSailAST.b Predicate.pred
   val extract_pexp :
-    (unit Env.tannot_ext option) SailAST.funcl list ->
-      (unit Env.tannot_ext option) SailAST.pexp_funcl list
+    (unit SailEnv.tannot_ext option) SailAST.funcl list ->
+      (unit SailEnv.tannot_ext option) SailAST.pexp_funcl list
   val lit_conv_i_o : SailAST.lit -> MiniSailAST.l Predicate.pred
   val c_bool_conv_i_i_i_o_o_o :
     (SailAST.kid * (SailAST.kind * MiniSailAST.ce)) list ->
@@ -5060,11 +5064,11 @@ module SailToMs : sig
     (SailAST.kid * (SailAST.kind * MiniSailAST.ce)) list ->
       SailAST.typ -> MiniSailAST.tau Predicate.pred
   val add_to_pmctor :
-    (((unit Env.tannot_ext option) SailAST.pat list * MiniSailAST.s) list *
+    (((unit SailEnv.tannot_ext option) SailAST.pat list * MiniSailAST.s) list *
       (Stringa.char list * MiniSailAST.x) option) list ->
       (Stringa.char list * MiniSailAST.x) option ->
-        (unit Env.tannot_ext option) SailAST.pat list * MiniSailAST.s ->
-          (((unit Env.tannot_ext option) SailAST.pat list *
+        (unit SailEnv.tannot_ext option) SailAST.pat list * MiniSailAST.s ->
+          (((unit SailEnv.tannot_ext option) SailAST.pat list *
              MiniSailAST.s) list *
             (Stringa.char list * MiniSailAST.x) option) list
   val mk_fresh_many : Arith.nat -> Arith.nat -> Arith.nat * MiniSailAST.x list
@@ -5079,16 +5083,17 @@ module SailToMs : sig
       SailAST.typ ->
         (MiniSailAST.b * (MiniSailAST.c * MiniSailAST.tau)) Predicate.pred
   val variant_conv_i_i_o :
-    unit Env.env_ext ->
+    unit SailEnv.env_ext ->
       SailAST.type_union list ->
         ((Stringa.char list * MiniSailAST.tau) list) Predicate.pred
   val expand_ctor_i_i_i_i_i_o_o_o :
     Arith.nat ->
-      unit Env.env_ext ->
-        ((unit Env.tannot_ext option) SailAST.pat list * MiniSailAST.s) list ->
+      unit SailEnv.env_ext ->
+        ((unit SailEnv.tannot_ext option) SailAST.pat list *
+          MiniSailAST.s) list ->
           SailAST.id ->
             MiniSailAST.x ->
-              ((((unit Env.tannot_ext option) SailAST.pat list *
+              ((((unit SailEnv.tannot_ext option) SailAST.pat list *
                   MiniSailAST.s) list *
                  (Stringa.char list * MiniSailAST.x) option) list *
                 ((SailAST.id * MiniSailAST.x) list * Arith.nat))
@@ -5096,10 +5101,11 @@ module SailToMs : sig
   val fresh_vars_list : Arith.nat -> Arith.nat -> Arith.nat * MiniSailAST.x list
   val expand_tuple_i_i_i_i_o_o_o :
     Arith.nat ->
-      ((unit Env.tannot_ext option) SailAST.pat list * MiniSailAST.s) list ->
+      ((unit SailEnv.tannot_ext option) SailAST.pat list *
+        MiniSailAST.s) list ->
         Arith.nat ->
           MiniSailAST.x ->
-            (((unit Env.tannot_ext option) SailAST.pat list *
+            (((unit SailEnv.tannot_ext option) SailAST.pat list *
                MiniSailAST.s) list *
               (MiniSailAST.x list * Arith.nat))
               Predicate.pred
@@ -5107,16 +5113,16 @@ module SailToMs : sig
     Arith.nat ->
       MiniSailAST.x ->
         MiniSailAST.x ->
-          (unit Env.tannot_ext option) SailAST.pat list ->
+          (unit SailEnv.tannot_ext option) SailAST.pat list ->
             (lctx * (MiniSailAST.x * Arith.nat)) Predicate.pred
   val expand_lit_i_i_i_i_i_o_o_o :
     Arith.nat ->
-      unit Env.env_ext ->
+      unit SailEnv.env_ext ->
         (SailAST.id * MiniSailAST.x) list ->
-          ((unit Env.tannot_ext option) SailAST.pat list *
+          ((unit SailEnv.tannot_ext option) SailAST.pat list *
             MiniSailAST.s) list ->
             MiniSailAST.x ->
-              ((((unit Env.tannot_ext option) SailAST.pat list *
+              ((((unit SailEnv.tannot_ext option) SailAST.pat list *
                   MiniSailAST.s) list *
                  (lctx * MiniSailAST.x) option) list *
                 ((SailAST.id * MiniSailAST.x) list * Arith.nat))
@@ -5129,30 +5135,30 @@ module SailToMs : sig
   val is_literal_base : SailAST.typ -> bool
   val conv_pattern_matrix_i_i_i_i_i_o_o :
     Arith.nat ->
-      unit Env.env_ext ->
+      unit SailEnv.env_ext ->
         (SailAST.id * MiniSailAST.x) list ->
-          ((unit Env.tannot_ext option) SailAST.pat list *
+          ((unit SailEnv.tannot_ext option) SailAST.pat list *
             MiniSailAST.s) list ->
             (SailAST.typ * MiniSailAST.x) list ->
               (MiniSailAST.s * Arith.nat) Predicate.pred
   val conv_pattern_matrix_list_i_i_i_i_o_o :
     Arith.nat ->
-      unit Env.env_ext ->
+      unit SailEnv.env_ext ->
         (SailAST.id * MiniSailAST.x) list ->
-          (((unit Env.tannot_ext option) SailAST.pat list *
+          (((unit SailEnv.tannot_ext option) SailAST.pat list *
              MiniSailAST.s) list *
             (SailAST.typ * MiniSailAST.x) list) list ->
             (MiniSailAST.s list * Arith.nat) Predicate.pred
   val v_conv_i_i_i_o_o_o :
-    unit Env.env_ext ->
+    unit SailEnv.env_ext ->
       (SailAST.id * MiniSailAST.x) list ->
-        (unit Env.tannot_ext option) SailAST.exp ->
+        (unit SailEnv.tannot_ext option) SailAST.exp ->
           (MiniSailAST.type_def list * (MiniSailAST.gamma * MiniSailAST.v))
             Predicate.pred
   val e_conv_i_i_i_i_o_o_o_o_o_o_o :
     Arith.nat ->
       (SailAST.id * MiniSailAST.x) list ->
-        (unit Env.tannot_ext option) SailAST.exp ->
+        (unit SailEnv.tannot_ext option) SailAST.exp ->
           MiniSailAST.x ->
             (MiniSailAST.type_def list *
               (MiniSailAST.fun_def list *
@@ -5163,7 +5169,7 @@ module SailToMs : sig
   val e_conv_list_i_i_i_i_o_o_o_o_o_o_o :
     Arith.nat ->
       (SailAST.id * MiniSailAST.x) list ->
-        (unit Env.tannot_ext option) SailAST.exp list ->
+        (unit SailEnv.tannot_ext option) SailAST.exp list ->
           MiniSailAST.x ->
             (MiniSailAST.type_def list *
               (MiniSailAST.fun_def list *
@@ -5173,18 +5179,18 @@ module SailToMs : sig
               Predicate.pred
   val pexp_list_conv_i_i_i_i_i_o_o :
     Arith.nat ->
-      unit Env.env_ext ->
+      unit SailEnv.env_ext ->
         (SailAST.id * MiniSailAST.x) list ->
-          (unit Env.tannot_ext option) SailAST.pexp list ->
+          (unit SailEnv.tannot_ext option) SailAST.pexp list ->
             MiniSailAST.x ->
-              (((unit Env.tannot_ext option) SailAST.pat list *
+              (((unit SailEnv.tannot_ext option) SailAST.pat list *
                  MiniSailAST.s) list *
                 Arith.nat)
                 Predicate.pred
   val s_conv_i_i_i_o_o_o_o_o_o_o :
     Arith.nat ->
       (SailAST.id * MiniSailAST.x) list ->
-        (unit Env.tannot_ext option) SailAST.exp ->
+        (unit SailEnv.tannot_ext option) SailAST.exp ->
           (MiniSailAST.type_def list *
             (MiniSailAST.fun_def list *
               (MiniSailAST.bv FSet.fset *
@@ -5192,15 +5198,16 @@ module SailToMs : sig
                   (MiniSailAST.delta * (MiniSailAST.s * Arith.nat))))))
             Predicate.pred
   val funcl_conv_i_i_i_o :
-    unit Env.env_ext ->
+    unit SailEnv.env_ext ->
       (SailAST.kid * (SailAST.kind * MiniSailAST.ce)) list ->
-        (unit Env.tannot_ext option) SailAST.pexp_funcl list ->
+        (unit SailEnv.tannot_ext option) SailAST.pexp_funcl list ->
           MiniSailAST.s Predicate.pred
   val lookup_fun_typ :
-    unit Env.env_ext -> string -> (SailAST.typquant * SailAST.typ) option
+    unit SailEnv.env_ext -> string -> (SailAST.typquant * SailAST.typ) option
   val def_conv_i_i_o :
-    unit Env.env_ext ->
-      (unit Env.tannot_ext option) SailAST.def -> (ms_def option) Predicate.pred
+    unit SailEnv.env_ext ->
+      (unit SailEnv.tannot_ext option) SailAST.def ->
+        (ms_def option) Predicate.pred
 end = struct
 
 type lctx = L_hole | L_continue | L_val of MiniSailAST.v |
@@ -5304,7 +5311,7 @@ let rec mk_id_map
                          (Arith.times_nat
                            (Arith.nat_of_num (Arith.Bit0 Arith.One)) n)
                          Arith.one_nat)))
-         (Lista.maps AstUtils.collect_pexp ps);;
+         (Lista.maps SailASTUtils.collect_pexp ps);;
 
 let rec lctx_apply
   x0 s = match x0, s with L_hole, s -> s
@@ -5374,11 +5381,13 @@ let rec mk_pm_list
         (match a with (pm, None) -> (pm, bss)
           | (pm, Some (dc, xa)) ->
             (match
-              Env.lookup_variant_env env tyid (SailAST.Id (Stringa.implode dc))
+              SailEnv.lookup_variant_env env tyid
+                (SailAST.Id (Stringa.implode dc))
               with None ->
                 (let Some _ =
-                   Env.lookup_enum_env env (SailAST.Id (Stringa.implode dc)) in
-                  (pm, (AstUtils.unit_typ, xa) :: bss))
+                   SailEnv.lookup_enum_env env (SailAST.Id (Stringa.implode dc))
+                   in
+                  (pm, (SailASTUtils.unit_typ, xa) :: bss))
               | Some typ -> (pm, (typ, xa) :: bss))))
       pmctor;;
 
@@ -5462,7 +5471,7 @@ let rec b_of_typ_i_o
   x = Predicate.sup_pred
         (Predicate.bind (Predicate.single x)
           (fun xa ->
-            (if SailAST.equal_typa xa AstUtils.unit_typ
+            (if SailAST.equal_typa xa SailASTUtils.unit_typ
               then Predicate.single MiniSailAST.B_unit
               else Predicate.bot_pred)))
         (Predicate.sup_pred
@@ -6290,7 +6299,7 @@ let rec t_conv_raw_i_i_i_o_o_o_o
     Predicate.sup_pred
       (Predicate.bind (Predicate.single (x, (xa, xb)))
         (fun (_, (xc, ce)) ->
-          (if SailAST.equal_typa xc AstUtils.unit_typ
+          (if SailAST.equal_typa xc SailASTUtils.unit_typ
             then Predicate.single
                    ([], (MiniSailAST.GNil,
                           (MiniSailAST.B_unit,
@@ -6301,7 +6310,7 @@ let rec t_conv_raw_i_i_i_o_o_o_o
       (Predicate.sup_pred
         (Predicate.bind (Predicate.single (x, (xa, xb)))
           (fun (_, (xc, _)) ->
-            (if SailAST.equal_typa xc AstUtils.int_typ
+            (if SailAST.equal_typa xc SailASTUtils.int_typ
               then Predicate.single
                      ([], (MiniSailAST.GNil,
                             (MiniSailAST.B_int, MiniSailAST.C_true)))
@@ -6309,7 +6318,7 @@ let rec t_conv_raw_i_i_i_o_o_o_o
         (Predicate.sup_pred
           (Predicate.bind (Predicate.single (x, (xa, xb)))
             (fun (_, (xc, _)) ->
-              (if SailAST.equal_typa xc AstUtils.bool_all_typ
+              (if SailAST.equal_typa xc SailASTUtils.bool_all_typ
                 then Predicate.single
                        ([], (MiniSailAST.GNil,
                               (MiniSailAST.B_bool, MiniSailAST.C_true)))
@@ -7030,16 +7039,17 @@ let rec def_funtyp_i_i_o_o_o
                         (Lista.map
                           (fun aa ->
                             (match aa
-                              with (_, (SailAST.K_int, _)) -> AstUtils.int_typ
+                              with (_, (SailAST.K_int, _)) ->
+                                SailASTUtils.int_typ
                               | (_, (SailAST.K_bool, _)) ->
-                                AstUtils.bool_all_typ))
+                                SailASTUtils.bool_all_typ))
                           xb))
                       (fun xaa ->
                         Predicate.bind
                           (eq_o_i
                             (if Arith.equal_nat (Lista.size_list xaa)
                                   Arith.Zero_nat
-                              then AstUtils.unit_typ
+                              then SailASTUtils.unit_typ
                               else (if Arith.equal_nat (Lista.size_list xaa)
  Arith.one_nat
                                      then Lista.hd xaa
@@ -7330,7 +7340,7 @@ let rec expand_ctor_i_i_i_i_i_o_o_o
                        (fun () ->
                          Predicate.bind
                            (eq_i_i (Option.equal_option SailAST.equal_typ) None
-                             (Env.lookup_enum_env env idd))
+                             (SailEnv.lookup_enum_env env idd))
                            (fun () ->
                              Predicate.single
                                ([([(pm_pat, sa)], None)], ([], n1))))
@@ -7427,7 +7437,8 @@ let rec expand_ctor_i_i_i_i_i_o_o_o
                                    false)]))
                          (fun () ->
                            Predicate.bind
-                             (eq_o_i (Env.lookup_enum_env env (SailAST.Id dc)))
+                             (eq_o_i
+                               (SailEnv.lookup_enum_env env (SailAST.Id dc)))
                              (fun aa ->
                                (match aa with None -> Predicate.bot_pred
                                  | Some _ ->
@@ -8656,7 +8667,7 @@ let rec expand_lit_i_i_i_i_i_o_o_o
                                  false)]))
                        (fun () ->
                          Predicate.bind
-                           (eq_o_i (Env.lookup SailAST.equal_id xmap idd))
+                           (eq_o_i (SailEnv.lookup SailAST.equal_id xmap idd))
                            (fun aa ->
                              (match aa with None -> Predicate.bot_pred
                                | Some xa ->
@@ -9917,12 +9928,13 @@ let rec v_conv_i_i_i_o_o_o
                           (true, false, false, true, false, false, true,
                             false)]))
                   (fun () ->
-                    Predicate.bind (eq_o_i (Env.lookup SailAST.equal_id xm idd))
+                    Predicate.bind
+                      (eq_o_i (SailEnv.lookup SailAST.equal_id xm idd))
                       (fun aa ->
                         (match aa with None -> Predicate.bot_pred
                           | Some xa ->
                             Predicate.bind
-                              (eq_o_i (Env.lookup_local_id_env env idd))
+                              (eq_o_i (SailEnv.lookup_local_id_env env idd))
                               (fun ab ->
                                 (match ab with None -> Predicate.bot_pred
                                   | Some t ->
@@ -10032,7 +10044,7 @@ Predicate.bind
                               false)]))
                     (fun () ->
                       Predicate.bind
-                        (eq_o_i (Env.lookup_enum_env env (SailAST.Id enum)))
+                        (eq_o_i (SailEnv.lookup_enum_env env (SailAST.Id enum)))
                         (fun aa ->
                           (match aa with None -> Predicate.bot_pred
                             | Some SailAST.Typ_internal_unknown ->
@@ -10238,7 +10250,7 @@ let rec e_conv_i_i_i_i_o_o_o_o_o_o_o
                      (true, false, true, true, true, true, false, false)] @
                   Show_Instances.shows_prec_nat Arith.Zero_nat n [])))
             (fun () ->
-              Predicate.bind (eq_o_i (Env.get_env_exp e))
+              Predicate.bind (eq_o_i (SailEnv.get_env_exp e))
                 (fun a ->
                   (match a with None -> Predicate.bot_pred
                     | Some ea ->
@@ -10344,12 +10356,13 @@ let rec e_conv_i_i_i_i_o_o_o_o_o_o_o
                              false)] @
                         Show_Instances.shows_prec_nat Arith.Zero_nat n [])))
                   (fun () ->
-                    Predicate.bind (eq_o_i (Env.get_env tan))
+                    Predicate.bind (eq_o_i (SailEnv.get_env tan))
                       (fun aa ->
                         (match aa with None -> Predicate.bot_pred
                           | Some env ->
                             Predicate.bind
-                              (eq_o_i (Env.lookup_register_index_env env reg))
+                              (eq_o_i
+                                (SailEnv.lookup_register_index_env env reg))
                               (fun ab ->
                                 (match ab with None -> Predicate.bot_pred
                                   | Some regi ->
@@ -10372,7 +10385,7 @@ let rec e_conv_i_i_i_i_o_o_o_o_o_o_o
      Stringa.Chara (true, false, true, true, true, true, false, false)] @
     Show_Instances.shows_prec_nat Arith.Zero_nat regi [])))
                                       (fun () ->
-Predicate.bind (eq_o_i (Env.lookup_register_env env reg))
+Predicate.bind (eq_o_i (SailEnv.lookup_register_env env reg))
   (fun ac ->
     (match ac with None -> Predicate.bot_pred
       | Some typ ->
@@ -11463,13 +11476,14 @@ and s_conv_i_i_i_o_o_o_o_o_o_o
                               (tan, SailAST.LEXP_id (_, regid), e)))
                   -> Predicate.bind (eq_o_i (mk_fresh_x n1))
                        (fun (n2, xa) ->
-                         Predicate.bind (eq_o_i (Env.get_env tan))
+                         Predicate.bind (eq_o_i (SailEnv.get_env tan))
                            (fun aa ->
                              (match aa with None -> Predicate.bot_pred
                                | Some env ->
                                  Predicate.bind
                                    (eq_o_i
-                                     (Env.lookup_register_index_env env regid))
+                                     (SailEnv.lookup_register_index_env env
+                                       regid))
                                    (fun ab ->
                                      (match ab with None -> Predicate.bot_pred
                                        | Some regi ->
@@ -11639,7 +11653,8 @@ and s_conv_i_i_i_o_o_o_o_o_o_o
                            (fun () ->
                              Predicate.bind (eq_o_i (mk_fresh_x i1))
                                (fun (i2, xa) ->
-                                 Predicate.bind (eq_o_i (Env.type_of_exp e1))
+                                 Predicate.bind
+                                   (eq_o_i (SailEnv.type_of_exp e1))
                                    (fun aa ->
                                      (match aa with None -> Predicate.bot_pred
                                        | Some t ->
@@ -11650,7 +11665,7 @@ and s_conv_i_i_i_o_o_o_o_o_o_o
           Stringa.Chara (true, false, true, true, true, true, false, false)] @
          ShowAST.shows_prec_typ Arith.Zero_nat t [])))
    (fun () ->
-     Predicate.bind (eq_o_i (Env.get_env tan))
+     Predicate.bind (eq_o_i (SailEnv.get_env tan))
        (fun ab ->
          (match ab with None -> Predicate.bot_pred
            | Some env ->
@@ -11868,14 +11883,14 @@ and s_conv_i_i_i_o_o_o_o_o_o_o
                               Show_Instances.shows_prec_nat Arith.Zero_nat i1
                                 [])))
                         (fun () ->
-                          Predicate.bind (eq_o_i (Env.get_env tan))
+                          Predicate.bind (eq_o_i (SailEnv.get_env tan))
                             (fun aa ->
                               (match aa with None -> Predicate.bot_pred
                                 | Some env ->
                                   Predicate.bind (eq_o_i (mk_fresh_x i1))
                                     (fun (i2, xa) ->
                                       Predicate.bind
-(eq_o_i (Env.type_of_exp ep))
+(eq_o_i (SailEnv.type_of_exp ep))
 (fun ab ->
   (match ab with None -> Predicate.bot_pred
     | Some t ->
@@ -12094,7 +12109,7 @@ let rec funcl_conv_i_i_i_o
               (fun xd ->
                 Predicate.bind (eq_o_i (mk_id_map xd))
                   (fun xba ->
-                    Predicate.bind (eq_o_i (Env.type_of_pexp (Lista.hd xd)))
+                    Predicate.bind (eq_o_i (SailEnv.type_of_pexp (Lista.hd xd)))
                       (fun a ->
                         (match a with None -> Predicate.bot_pred
                           | Some t ->
@@ -12185,7 +12200,7 @@ Predicate.bind (conv_pattern_matrix_i_i_i_i_i_o_o i4 env xba pm [(t, xa)])
             (xa, MiniSailAST.AE_snd (MiniSailAST.V_var (mk_x Arith.one_nat)),
               sa)))))))))))));;
 
-let rec lookup_fun_typ env f = Env.get_val_spec_env env (SailAST.Id f);;
+let rec lookup_fun_typ env f = SailEnv.get_val_spec_env env (SailAST.Id f);;
 
 let rec def_conv_i_i_o
   x xa =
@@ -12202,7 +12217,7 @@ let rec def_conv_i_i_o
                           fcls)))
               -> Predicate.bind (eq_o_i (extract_tan tan fcls))
                    (fun xb ->
-                     Predicate.bind (eq_o_i (Env.get_env xb))
+                     Predicate.bind (eq_o_i (SailEnv.get_env xb))
                        (fun aa ->
                          (match aa with None -> Predicate.bot_pred
                            | Some env ->
@@ -12388,7 +12403,8 @@ let rec def_conv_i_i_o
                   -> Predicate.bind
                        (eq_o_i
                          (Lista.map
-                           (fun aa -> SailAST.Tu_ty_id (AstUtils.unit_typ, aa))
+                           (fun aa ->
+                             SailAST.Tu_ty_id (SailASTUtils.unit_typ, aa))
                            id_list))
                        (fun xb ->
                          Predicate.bind (variant_conv_i_i_o env xb)
@@ -12576,7 +12592,7 @@ module Validator : sig
     SailAST.n_constraint -> SailAST.n_constraint -> SailAST.n_constraint
   val trace : Stringa.char list -> bool
   val env_of :
-    (unit Env.tannot_ext option) SailAST.exp -> unit Env.env_ext option
+    (unit SailEnv.tannot_ext option) SailAST.exp -> unit SailEnv.env_ext option
   val eq_i_i : 'a HOL.equal -> 'a -> 'a -> unit Predicate.pred
   val eq_o_i : 'a -> 'a Predicate.pred
   val nc_and :
@@ -12585,9 +12601,9 @@ module Validator : sig
   val nc_not : SailAST.n_constraint -> SailAST.n_constraint
   val integer_of_int2 : Arith.int -> Z.t
   val check_lit_i_i_i :
-    unit Env.env_ext -> SailAST.lit -> SailAST.typ -> unit Predicate.pred
+    unit SailEnv.env_ext -> SailAST.lit -> SailAST.typ -> unit Predicate.pred
   val normalise_i_i_o :
-    unit Env.env_ext -> SailAST.typ -> SailAST.typ Predicate.pred
+    unit SailEnv.env_ext -> SailAST.typ -> SailAST.typ Predicate.pred
   val nc_and_list : SailAST.n_constraint list -> SailAST.n_constraint
   val match_nexp_i_i_o :
     SailAST.nexp -> SailAST.nexp -> (SailAST.n_constraint list) Predicate.pred
@@ -12612,73 +12628,76 @@ module Validator : sig
     SailAST.typ list ->
       SailAST.typ list -> (SailAST.n_constraint list) Predicate.pred
   val subtype_i_i_i :
-    unit Env.env_ext -> SailAST.typ -> SailAST.typ -> unit Predicate.pred
+    unit SailEnv.env_ext -> SailAST.typ -> SailAST.typ -> unit Predicate.pred
   val check_pat_i_o :
-    (unit Env.tannot_ext option) SailAST.pat ->
-      ((SailAST.id * (Env.mut * SailAST.typ)) list) Predicate.pred
+    (unit SailEnv.tannot_ext option) SailAST.pat ->
+      ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
   val check_pat_list_i_o :
-    (unit Env.tannot_ext option) SailAST.pat list ->
-      ((SailAST.id * (Env.mut * SailAST.typ)) list) Predicate.pred
-  val subenv_i_i : unit Env.env_ext -> unit Env.env_ext -> unit Predicate.pred
+    (unit SailEnv.tannot_ext option) SailAST.pat list ->
+      ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
+  val subenv_i_i :
+    unit SailEnv.env_ext -> unit SailEnv.env_ext -> unit Predicate.pred
   val locals_in :
-    unit Env.env_ext -> (SailAST.id * (Env.mut * SailAST.typ)) list -> bool
+    unit SailEnv.env_ext ->
+      (SailAST.id * (SailEnv.mut * SailAST.typ)) list -> bool
   val check_local_binds_i_i :
-    (unit Env.tannot_ext option) SailAST.exp list ->
-      (SailAST.id * (Env.mut * SailAST.typ)) list -> unit Predicate.pred
+    (unit SailEnv.tannot_ext option) SailAST.exp list ->
+      (SailAST.id * (SailEnv.mut * SailAST.typ)) list -> unit Predicate.pred
   val subtype_exp_i_i :
-    (unit Env.tannot_ext option) SailAST.exp ->
+    (unit SailEnv.tannot_ext option) SailAST.exp ->
       SailAST.typ -> unit Predicate.pred
   val subtype_tan_i_i :
-    SailAST.typ -> unit Env.tannot_ext option -> unit Predicate.pred
+    SailAST.typ -> unit SailEnv.tannot_ext option -> unit Predicate.pred
   val check_lexp_vector_list_i_i_i :
-    (unit Env.tannot_ext option) SailAST.lexp list ->
+    (unit SailEnv.tannot_ext option) SailAST.lexp list ->
       SailAST.order -> SailAST.typ -> unit Predicate.pred
   val add_locals :
-    unit Env.env_ext ->
-      (SailAST.id * (Env.mut * SailAST.typ)) list -> unit Env.env_ext
+    unit SailEnv.env_ext ->
+      (SailAST.id * (SailEnv.mut * SailAST.typ)) list -> unit SailEnv.env_ext
   val check_letbind_i_o :
-    (unit Env.tannot_ext option) SailAST.letbind ->
-      ((SailAST.id * (Env.mut * SailAST.typ)) list) Predicate.pred
+    (unit SailEnv.tannot_ext option) SailAST.letbind ->
+      ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
   val check_exp_i_o :
-    (unit Env.tannot_ext option) SailAST.exp ->
-      ((SailAST.id * (Env.mut * SailAST.typ)) list) Predicate.pred
+    (unit SailEnv.tannot_ext option) SailAST.exp ->
+      ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
   val check_pexp_i :
-    (unit Env.tannot_ext option) SailAST.pexp -> unit Predicate.pred
+    (unit SailEnv.tannot_ext option) SailAST.pexp -> unit Predicate.pred
   val check_pexps_i :
-    (unit Env.tannot_ext option) SailAST.pexp list -> unit Predicate.pred
+    (unit SailEnv.tannot_ext option) SailAST.pexp list -> unit Predicate.pred
   val check_exp_typ_i_i :
-    (unit Env.tannot_ext option) SailAST.exp ->
+    (unit SailEnv.tannot_ext option) SailAST.exp ->
       SailAST.typ -> unit Predicate.pred
   val check_fexp_i_i :
-    (unit Env.tannot_ext option) SailAST.fexp ->
+    (unit SailEnv.tannot_ext option) SailAST.fexp ->
       SailAST.typ -> unit Predicate.pred
   val check_fexp_list_i_i :
-    (unit Env.tannot_ext option) SailAST.fexp list ->
+    (unit SailEnv.tannot_ext option) SailAST.fexp list ->
       SailAST.typ -> unit Predicate.pred
   val check_lexp_i_o :
-    (unit Env.tannot_ext option) SailAST.lexp ->
-      ((SailAST.id * (Env.mut * SailAST.typ)) list) Predicate.pred
+    (unit SailEnv.tannot_ext option) SailAST.lexp ->
+      ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
   val check_lexp_list_i_o :
-    (unit Env.tannot_ext option) SailAST.lexp list ->
-      ((SailAST.id * (Env.mut * SailAST.typ)) list) Predicate.pred
+    (unit SailEnv.tannot_ext option) SailAST.lexp list ->
+      ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
   val check_exp_list_i_i :
-    (unit Env.tannot_ext option) SailAST.exp list ->
+    (unit SailEnv.tannot_ext option) SailAST.exp list ->
       SailAST.typ list -> unit Predicate.pred
   val check_exp_typ_env_i_i_i :
-    unit Env.env_ext ->
-      (unit Env.tannot_ext option) SailAST.exp ->
+    unit SailEnv.env_ext ->
+      (unit SailEnv.tannot_ext option) SailAST.exp ->
         SailAST.typ -> unit Predicate.pred
   val check_funcls_i_i :
-    (unit Env.tannot_ext option) SailAST.funcl list ->
+    (unit SailEnv.tannot_ext option) SailAST.funcl list ->
       SailAST.tannot_opt -> unit Predicate.pred
   val check_sd_i_i :
-    unit Env.env_ext ->
-      (unit Env.tannot_ext option) SailAST.scattered_def -> unit Predicate.pred
+    unit SailEnv.env_ext ->
+      (unit SailEnv.tannot_ext option) SailAST.scattered_def ->
+        unit Predicate.pred
   val check_def_i_i :
-    unit Env.env_ext ->
-      (unit Env.tannot_ext option) SailAST.def -> unit Predicate.pred
+    unit SailEnv.env_ext ->
+      (unit SailEnv.tannot_ext option) SailAST.def -> unit Predicate.pred
   val check_def :
-    unit Env.env_ext -> (unit Env.tannot_ext option) SailAST.def -> bool
+    unit SailEnv.env_ext -> (unit SailEnv.tannot_ext option) SailAST.def -> bool
 end = struct
 
 let rec mk_id x = SailAST.Id (Stringa.implode x);;
@@ -12687,7 +12706,7 @@ let rec nc_or nc1 nc2 = SailAST.NC_or (nc1, nc2);;
 
 let rec trace s = (let _ = Utils2.trace (Stringa.implode s) in true);;
 
-let rec env_of exp = Env.get_env (SailAST.annot_e exp);;
+let rec env_of exp = SailEnv.get_env (SailAST.annot_e exp);;
 
 let rec eq_i_i _A
   xa xb =
@@ -14531,7 +14550,7 @@ let rec subtype_i_i_i
     Lista.maps (fun xd -> ShowAST.shows_prec_n_constraint Arith.Zero_nat xd [])
       xc)))
                                       (fun () ->
-Predicate.bind (Predicate.if_pred (Env.prove env (nc_and_list xc)))
+Predicate.bind (Predicate.if_pred (SailEnv.prove env (nc_and_list xc)))
   (fun () -> Predicate.single ()))))))))));;
 
 let rec check_pat_i_o
@@ -14540,7 +14559,7 @@ let rec check_pat_i_o
            (fun a ->
              (match a
                with SailAST.P_lit (tan, lit) ->
-                 Predicate.bind (eq_o_i (Env.get tan))
+                 Predicate.bind (eq_o_i (SailEnv.get tan))
                    (fun aa ->
                      (match aa with None -> Predicate.bot_pred
                        | Some (env, t) ->
@@ -14671,13 +14690,13 @@ let rec check_pat_i_o
                            | SailAST.P_id (tan, x) ->
                              Predicate.bind
                                (eq_i_i (Option.equal_option SailAST.equal_typ)
-                                 None (Env.lookup_enum tan x))
+                                 None (SailEnv.lookup_enum tan x))
                                (fun () ->
-                                 Predicate.bind (eq_o_i (Env.get tan))
+                                 Predicate.bind (eq_o_i (SailEnv.get tan))
                                    (fun aa ->
                                      (match aa with None -> Predicate.bot_pred
                                        | Some (_, t) ->
- Predicate.single [(x, (Env.Immutable, t))])))
+ Predicate.single [(x, (SailEnv.Immutable, t))])))
                            | SailAST.P_var (_, _, _) -> Predicate.bot_pred
                            | SailAST.P_app (_, _, _) -> Predicate.bot_pred
                            | SailAST.P_vector (_, _) -> Predicate.bot_pred
@@ -14699,12 +14718,12 @@ let rec check_pat_i_o
                              | SailAST.P_as (_, _, _) -> Predicate.bot_pred
                              | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
                              | SailAST.P_id (tan, x) ->
-                               Predicate.bind (eq_o_i (Env.get tan))
+                               Predicate.bind (eq_o_i (SailEnv.get tan))
                                  (fun aa ->
                                    (match aa with None -> Predicate.bot_pred
                                      | Some (env, t1) ->
                                        Predicate.bind
- (eq_o_i (Env.lookup_enum tan x))
+ (eq_o_i (SailEnv.lookup_enum tan x))
  (fun ab ->
    (match ab with None -> Predicate.bot_pred
      | Some t2 ->
@@ -14951,7 +14970,7 @@ let rec subenv_i_i
 let rec locals_in
   uu x1 = match uu, x1 with uu, [] -> true
     | env, (x, (mut, typ)) :: gs ->
-        (match Env.lookup_local_id_env env x with None -> false
+        (match SailEnv.lookup_local_id_env env x with None -> false
           | Some _ -> locals_in env gs);;
 
 let rec check_local_binds_i_i
@@ -14967,7 +14986,7 @@ let rec check_local_binds_i_i
             | (exp :: exps, bindings) ->
               Predicate.bind (check_local_binds_i_i exps bindings)
                 (fun () ->
-                  Predicate.bind (eq_o_i (Env.get_env_exp exp))
+                  Predicate.bind (eq_o_i (SailEnv.get_env_exp exp))
                     (fun aa ->
                       (match aa with None -> Predicate.bot_pred
                         | Some env ->
@@ -14979,11 +14998,11 @@ let rec subtype_exp_i_i
   x xa =
     Predicate.bind (Predicate.single (x, xa))
       (fun (exp, typ2) ->
-        Predicate.bind (eq_o_i (Env.get_env_exp exp))
+        Predicate.bind (eq_o_i (SailEnv.get_env_exp exp))
           (fun a ->
             (match a with None -> Predicate.bot_pred
               | Some env ->
-                Predicate.bind (eq_o_i (Env.type_of_exp exp))
+                Predicate.bind (eq_o_i (SailEnv.type_of_exp exp))
                   (fun aa ->
                     (match aa with None -> Predicate.bot_pred
                       | Some typ1 ->
@@ -14994,11 +15013,11 @@ let rec subtype_tan_i_i
   x xa =
     Predicate.bind (Predicate.single (x, xa))
       (fun (t, tan) ->
-        Predicate.bind (eq_o_i (Env.get_env tan))
+        Predicate.bind (eq_o_i (SailEnv.get_env tan))
           (fun a ->
             (match a with None -> Predicate.bot_pred
               | Some env ->
-                Predicate.bind (eq_o_i (Env.get_type tan))
+                Predicate.bind (eq_o_i (SailEnv.get_type tan))
                   (fun aa ->
                     (match aa with None -> Predicate.bot_pred
                       | Some ta ->
@@ -15018,12 +15037,12 @@ let rec check_lexp_vector_list_i_i_i
             | (lexp :: lexps, (order, typ)) ->
               Predicate.bind (check_lexp_vector_list_i_i_i lexps order typ)
                 (fun () ->
-                  Predicate.bind (eq_o_i (Env.type_of_lexp lexp))
+                  Predicate.bind (eq_o_i (SailEnv.type_of_lexp lexp))
                     (fun aa ->
                       (match aa with None -> Predicate.bot_pred
                         | Some t ->
                           Predicate.bind
-                            (eq_o_i (Env.deconstruct_vector_type t))
+                            (eq_o_i (SailEnv.deconstruct_vector_type t))
                             (fun ab ->
                               (match ab with None -> Predicate.bot_pred
                                 | Some (_, (ordera, typa)) ->
@@ -15048,7 +15067,7 @@ and check_exp_i_o
              (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
                | SailAST.E_id (_, _) -> Predicate.bot_pred
                | SailAST.E_lit (tan, lit) ->
-                 Predicate.bind (eq_o_i (Env.get tan))
+                 Predicate.bind (eq_o_i (SailEnv.get tan))
                    (fun aa ->
                      (match aa with None -> Predicate.bot_pred
                        | Some (env, t) ->
@@ -15123,11 +15142,11 @@ and check_exp_i_o
                              (true, false, false, true, false, false, true,
                                false)]))
                      (fun () ->
-                       Predicate.bind (eq_o_i (Env.get tan))
+                       Predicate.bind (eq_o_i (SailEnv.get tan))
                          (fun aa ->
                            (match aa with None -> Predicate.bot_pred
                              | Some (env, t2) ->
-                               Predicate.bind (eq_o_i (Env.lookup_id tan x))
+                               Predicate.bind (eq_o_i (SailEnv.lookup_id tan x))
                                  (fun ab ->
                                    (match ab with None -> Predicate.bot_pred
                                      | Some t1 ->
@@ -15178,7 +15197,7 @@ and check_exp_i_o
                    | SailAST.E_app (_, _, _) -> Predicate.bot_pred
                    | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
                    | SailAST.E_tuple (tan, exps) ->
-                     Predicate.bind (eq_o_i (Env.get tan))
+                     Predicate.bind (eq_o_i (SailEnv.get tan))
                        (fun aa ->
                          (match aa with None -> Predicate.bot_pred
                            | Some (_, t) ->
@@ -15434,21 +15453,22 @@ true, false);
  Stringa.Chara (true, false, true, false, false, true, true, false);
  Stringa.Chara (false, false, true, false, true, true, true, false)]))
                                    (fun () ->
-                                     Predicate.bind (eq_o_i (Env.get tan))
+                                     Predicate.bind (eq_o_i (SailEnv.get tan))
                                        (fun aa ->
  (match aa with None -> Predicate.bot_pred
    | Some (_, t) ->
-     Predicate.bind (eq_o_i (Env.lookup_fun tan fid))
+     Predicate.bind (eq_o_i (SailEnv.lookup_fun tan fid))
        (fun ab ->
          (match ab with None -> Predicate.bot_pred
            | Some (in_typs, rett_typ) ->
-             Predicate.bind (eq_o_i (Env.subst_inst_list tan in_typs))
+             Predicate.bind (eq_o_i (SailEnv.subst_inst_list tan in_typs))
                (fun ac ->
                  (match ac with None -> Predicate.bot_pred
                    | Some in_typs2 ->
                      Predicate.bind (check_exp_list_i_i exps in_typs2)
                        (fun () ->
-                         Predicate.bind (eq_o_i (Env.subst_inst tan rett_typ))
+                         Predicate.bind
+                           (eq_o_i (SailEnv.subst_inst tan rett_typ))
                            (fun ad ->
                              (match ad with None -> Predicate.bot_pred
                                | Some ret_typ2 ->
@@ -15548,7 +15568,7 @@ true, false);
                          | SailAST.E_list (_, _) -> Predicate.bot_pred
                          | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
                          | SailAST.E_record (tan, fexp_list) ->
-                           Predicate.bind (eq_o_i (Env.get tan))
+                           Predicate.bind (eq_o_i (SailEnv.get tan))
                              (fun aa ->
                                (match aa with None -> Predicate.bot_pred
                                  | Some (_, typ) ->
@@ -15609,7 +15629,7 @@ true, false);
                            | SailAST.E_record_update (tan, exp, fexp_list) ->
                              Predicate.bind (check_exp_i_o exp)
                                (fun _ ->
-                                 Predicate.bind (eq_o_i (Env.get tan))
+                                 Predicate.bind (eq_o_i (SailEnv.get tan))
                                    (fun aa ->
                                      (match aa with None -> Predicate.bot_pred
                                        | Some (_, typ) ->
@@ -15671,20 +15691,20 @@ true, false);
                              | SailAST.E_field (tan, exp, fid) ->
                                Predicate.bind (check_exp_i_o exp)
                                  (fun _ ->
-                                   Predicate.bind (eq_o_i (Env.get tan))
+                                   Predicate.bind (eq_o_i (SailEnv.get tan))
                                      (fun aa ->
                                        (match aa with None -> Predicate.bot_pred
  | Some (env, t1) ->
-   Predicate.bind (eq_o_i (Env.type_of_exp exp))
+   Predicate.bind (eq_o_i (SailEnv.type_of_exp exp))
      (fun ab ->
        (match ab with None -> Predicate.bot_pred
          | Some rtype ->
-           Predicate.bind (eq_o_i (Env.deconstruct_record_type rtype))
+           Predicate.bind (eq_o_i (SailEnv.deconstruct_record_type rtype))
              (fun ac ->
                (match ac with None -> Predicate.bot_pred
                  | Some recid ->
                    Predicate.bind
-                     (eq_o_i (Env.lookup_record_field_env env recid fid))
+                     (eq_o_i (SailEnv.lookup_record_field_env env recid fid))
                      (fun ad ->
                        (match ad with None -> Predicate.bot_pred
                          | Some t2 ->
@@ -15750,7 +15770,7 @@ true, false);
                                  Predicate.bot_pred
                                | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
                                | SailAST.E_return (tan, exp) ->
-                                 Predicate.bind (eq_o_i (Env.ret_type tan))
+                                 Predicate.bind (eq_o_i (SailEnv.ret_type tan))
                                    (fun aa ->
                                      (match aa with None -> Predicate.bot_pred
                                        | Some r_typ ->
@@ -15820,7 +15840,8 @@ true, false);
                                  | SailAST.E_return (_, _) -> Predicate.bot_pred
                                  | SailAST.E_exit (_, exp) ->
                                    Predicate.bind
-                                     (check_exp_typ_i_i exp AstUtils.unit_typ)
+                                     (check_exp_typ_i_i exp
+                                       SailASTUtils.unit_typ)
                                      (fun () -> Predicate.single [])
                                  | SailAST.E_ref (_, _) -> Predicate.bot_pred
                                  | SailAST.E_throw (_, _) -> Predicate.bot_pred
@@ -16048,7 +16069,7 @@ true, false);
                                        | SailAST.E_exit (_, _) ->
  Predicate.bot_pred
                                        | SailAST.E_ref (tan, x) ->
- Predicate.bind (eq_o_i (Env.lookup_register tan x))
+ Predicate.bind (eq_o_i (SailEnv.lookup_register tan x))
    (fun aa ->
      (match aa with None -> Predicate.bot_pred
        | Some t1 ->
@@ -16085,11 +16106,11 @@ true, false);
  | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
  | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
  | SailAST.E_vector (tan, exps) ->
-   Predicate.bind (eq_o_i (Env.get tan))
+   Predicate.bind (eq_o_i (SailEnv.get tan))
      (fun aa ->
        (match aa with None -> Predicate.bot_pred
          | Some (env, _) ->
-           Predicate.bind (eq_o_i (Env.is_vector_type tan))
+           Predicate.bind (eq_o_i (SailEnv.is_vector_type tan))
              (fun ab ->
                (match ab with None -> Predicate.bot_pred
                  | Some (len, (_, typ)) ->
@@ -16099,7 +16120,7 @@ true, false);
                      (fun () ->
                        Predicate.bind
                          (Predicate.if_pred
-                           (Env.prove env
+                           (SailEnv.prove env
                              (SailAST.NC_equal
                                (SailAST.Nexp_constant
                                   (integer_of_int2
@@ -16152,7 +16173,7 @@ true, false);
    | SailAST.E_vector_update_subrange (_, _, _, _, _) -> Predicate.bot_pred
    | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
    | SailAST.E_list (tan, exps) ->
-     Predicate.bind (eq_o_i (Env.is_list_type tan))
+     Predicate.bind (eq_o_i (SailEnv.is_list_type tan))
        (fun aa ->
          (match aa with None -> Predicate.bot_pred
            | Some elem_typ ->
@@ -16200,13 +16221,13 @@ true, false);
      | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
      | SailAST.E_list (_, _) -> Predicate.bot_pred
      | SailAST.E_cons (tan, exp1, exp2) ->
-       Predicate.bind (eq_o_i (Env.get tan))
+       Predicate.bind (eq_o_i (SailEnv.get tan))
          (fun aa ->
            (match aa with None -> Predicate.bot_pred
              | Some (_, t) ->
                Predicate.bind (check_exp_typ_i_i exp2 t)
                  (fun () ->
-                   Predicate.bind (eq_o_i (Env.is_list_type tan))
+                   Predicate.bind (eq_o_i (SailEnv.is_list_type tan))
                      (fun ab ->
                        (match ab with None -> Predicate.bot_pred
                          | Some elem_typ ->
@@ -16280,7 +16301,7 @@ true, false);
                  Stringa.Chara
                    (true, false, false, true, false, false, true, false)]))
            (fun () ->
-             Predicate.bind (eq_o_i (Env.get tan))
+             Predicate.bind (eq_o_i (SailEnv.get tan))
                (fun aa ->
                  (match aa with None -> Predicate.bot_pred
                    | Some (env, t1) ->
@@ -16315,24 +16336,24 @@ true, false);
          | SailAST.E_if (tan, exp1, exp2, exp3) ->
            Predicate.bind (check_exp_i_o exp1)
              (fun _ ->
-               Predicate.bind (eq_o_i (Env.get tan))
+               Predicate.bind (eq_o_i (SailEnv.get tan))
                  (fun aa ->
                    (match aa with None -> Predicate.bot_pred
                      | Some (env, t) ->
-                       Predicate.bind (eq_o_i (Env.type_of_exp exp1))
+                       Predicate.bind (eq_o_i (SailEnv.type_of_exp exp1))
                          (fun ab ->
                            (match ab with None -> Predicate.bot_pred
                              | Some t_exp1 ->
                                Predicate.bind
-                                 (eq_o_i (Env.deconstruct_bool_type t_exp1))
+                                 (eq_o_i (SailEnv.deconstruct_bool_type t_exp1))
                                  (fun ac ->
                                    (match ac with None -> Predicate.bot_pred
                                      | Some nc ->
                                        Predicate.bind
- (check_exp_typ_env_i_i_i (Env.add_constraint nc env) exp2 t)
+ (check_exp_typ_env_i_i_i (SailEnv.add_constraint nc env) exp2 t)
  (fun () ->
    Predicate.bind
-     (check_exp_typ_env_i_i_i (Env.add_constraint (nc_not nc) env) exp3 t)
+     (check_exp_typ_env_i_i_i (SailEnv.add_constraint (nc_not nc) env) exp3 t)
      (fun () -> Predicate.single [])))))))))
          | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
          | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
@@ -16409,11 +16430,11 @@ true, false);
                (fun _ ->
                  Predicate.bind (check_exp_i_o exp2)
                    (fun _ ->
-                     Predicate.bind (eq_o_i (Env.get tan))
+                     Predicate.bind (eq_o_i (SailEnv.get tan))
                        (fun aa ->
                          (match aa with None -> Predicate.bot_pred
                            | Some (env, t1) ->
-                             Predicate.bind (eq_o_i (Env.type_of_exp exp1))
+                             Predicate.bind (eq_o_i (SailEnv.type_of_exp exp1))
                                (fun ab ->
                                  (match ab with None -> Predicate.bot_pred
                                    | Some t2 ->
@@ -16565,22 +16586,22 @@ true, false);
                      (fun _ ->
                        Predicate.bind (check_exp_i_o exp2)
                          (fun _ ->
-                           Predicate.bind (eq_o_i (Env.get tan))
+                           Predicate.bind (eq_o_i (SailEnv.get tan))
                              (fun aa ->
                                (match aa with None -> Predicate.bot_pred
                                  | Some (env, _) ->
                                    Predicate.bind
-                                     (eq_o_i (Env.type_of_exp exp1))
+                                     (eq_o_i (SailEnv.type_of_exp exp1))
                                      (fun ab ->
                                        (match ab with None -> Predicate.bot_pred
  | Some t1 ->
-   Predicate.bind (eq_o_i (Env.deconstruct_bool_type t1))
+   Predicate.bind (eq_o_i (SailEnv.deconstruct_bool_type t1))
      (fun ac ->
        (match ac with None -> Predicate.bot_pred
          | Some nc ->
            Predicate.bind
-             (check_exp_typ_env_i_i_i (Env.add_constraint nc env) exp2
-               AstUtils.unit_typ)
+             (check_exp_typ_env_i_i_i (SailEnv.add_constraint nc env) exp2
+               SailASTUtils.unit_typ)
              (fun () -> Predicate.single [])))))))))
                  | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
                  | SailAST.E_vector (_, _) -> Predicate.bot_pred
@@ -16623,16 +16644,18 @@ true, false);
                    | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
                    | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
                    | SailAST.E_for (_, _, exp1, exp2, exp3, _, exp4) ->
-                     Predicate.bind (check_exp_typ_i_i exp1 AstUtils.int_typ)
+                     Predicate.bind
+                       (check_exp_typ_i_i exp1 SailASTUtils.int_typ)
                        (fun () ->
                          Predicate.bind
-                           (check_exp_typ_i_i exp2 AstUtils.int_typ)
+                           (check_exp_typ_i_i exp2 SailASTUtils.int_typ)
                            (fun () ->
                              Predicate.bind
-                               (check_exp_typ_i_i exp3 AstUtils.int_typ)
+                               (check_exp_typ_i_i exp3 SailASTUtils.int_typ)
                                (fun () ->
                                  Predicate.bind
-                                   (check_exp_typ_i_i exp4 AstUtils.unit_typ)
+                                   (check_exp_typ_i_i exp4
+                                     SailASTUtils.unit_typ)
                                    (fun () -> Predicate.single []))))
                    | SailAST.E_vector (_, _) -> Predicate.bot_pred
                    | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
@@ -16667,7 +16690,7 @@ true, false);
                  (fun a ->
                    (match a with SailAST.E_block (_, []) -> Predicate.bot_pred
                      | SailAST.E_block (tan, [exp]) ->
-                       Predicate.bind (eq_o_i (Env.get tan))
+                       Predicate.bind (eq_o_i (SailEnv.get tan))
                          (fun aa ->
                            (match aa with None -> Predicate.bot_pred
                              | Some (_, t) ->
@@ -16739,7 +16762,8 @@ true, false);
                      (match a with SailAST.E_block (_, []) -> Predicate.bot_pred
                        | SailAST.E_block (_, [_]) -> Predicate.bot_pred
                        | SailAST.E_block (tan, exp1 :: exp2 :: exps) ->
-                         Predicate.bind (subtype_exp_i_i exp1 AstUtils.unit_typ)
+                         Predicate.bind
+                           (subtype_exp_i_i exp1 SailASTUtils.unit_typ)
                            (fun () ->
                              Predicate.bind (check_exp_i_o exp1)
                                (fun x ->
@@ -16830,7 +16854,7 @@ true, false);
                          Predicate.bind (check_exp_i_o assert_exp)
                            (fun _ ->
                              Predicate.bind
-                               (eq_o_i (Env.type_of_exp assert_exp))
+                               (eq_o_i (SailEnv.type_of_exp assert_exp))
                                (fun aa ->
                                  (match aa with None -> Predicate.bot_pred
                                    | Some _ -> Predicate.single [])))
@@ -16937,16 +16961,16 @@ and check_fexp_i_i
   xa xb =
     Predicate.bind (Predicate.single (xa, xb))
       (fun (SailAST.FE_Fexp (_, x, exp), rtyp) ->
-        Predicate.bind (eq_o_i (Env.deconstruct_record_type rtyp))
+        Predicate.bind (eq_o_i (SailEnv.deconstruct_record_type rtyp))
           (fun a ->
             (match a with None -> Predicate.bot_pred
               | Some recid ->
-                Predicate.bind (eq_o_i (Env.get_env_exp exp))
+                Predicate.bind (eq_o_i (SailEnv.get_env_exp exp))
                   (fun aa ->
                     (match aa with None -> Predicate.bot_pred
                       | Some env ->
                         Predicate.bind
-                          (eq_o_i (Env.lookup_record_field_env env recid x))
+                          (eq_o_i (SailEnv.lookup_record_field_env env recid x))
                           (fun ab ->
                             (match ab with None -> Predicate.bot_pred
                               | Some t2 ->
@@ -17022,13 +17046,14 @@ and check_lexp_i_o
                    (fun () ->
                      Predicate.bind
                        (eq_i_i (Option.equal_option SailAST.equal_typ) None
-                         (Env.lookup_mutable tan x))
+                         (SailEnv.lookup_mutable tan x))
                        (fun () ->
-                         Predicate.bind (eq_o_i (Env.get tan))
+                         Predicate.bind (eq_o_i (SailEnv.get tan))
                            (fun aa ->
                              (match aa with None -> Predicate.bot_pred
                                | Some (_, t) ->
-                                 Predicate.single [(x, (Env.Mutable, t))]))))
+                                 Predicate.single
+                                   [(x, (SailEnv.Mutable, t))]))))
                | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
                | SailAST.LEXP_memory (_, _, _) -> Predicate.bot_pred
                | SailAST.LEXP_cast (_, _, _) -> Predicate.bot_pred
@@ -17176,12 +17201,12 @@ and check_lexp_i_o
                                  (true, true, false, true, false, true, true,
                                    false)]))
                          (fun () ->
-                           Predicate.bind (eq_o_i (Env.get tan))
+                           Predicate.bind (eq_o_i (SailEnv.get tan))
                              (fun aa ->
                                (match aa with None -> Predicate.bot_pred
                                  | Some (env, t1) ->
                                    Predicate.bind
-                                     (eq_o_i (Env.lookup_mutable tan x))
+                                     (eq_o_i (SailEnv.lookup_mutable tan x))
                                      (fun ab ->
                                        (match ab with None -> Predicate.bot_pred
  | Some t2 ->
@@ -17238,16 +17263,16 @@ and check_lexp_i_o
                    | SailAST.LEXP_cast (tan, t2, x) ->
                      Predicate.bind
                        (eq_i_i (Option.equal_option SailAST.equal_typ) None
-                         (Env.lookup_mutable tan x))
+                         (SailEnv.lookup_mutable tan x))
                        (fun () ->
-                         Predicate.bind (eq_o_i (Env.get tan))
+                         Predicate.bind (eq_o_i (SailEnv.get tan))
                            (fun aa ->
                              (match aa with None -> Predicate.bot_pred
                                | Some (env, t) ->
                                  Predicate.bind (subtype_i_i_i env t2 t)
                                    (fun () ->
                                      Predicate.single
-                                       [(x, (Env.Mutable, t2))]))))
+                                       [(x, (SailEnv.Mutable, t2))]))))
                    | SailAST.LEXP_tup (_, _) -> Predicate.bot_pred
                    | SailAST.LEXP_vector_concat (_, _) -> Predicate.bot_pred
                    | SailAST.LEXP_vector (_, _, _) -> Predicate.bot_pred
@@ -17261,14 +17286,14 @@ and check_lexp_i_o
                      | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
                      | SailAST.LEXP_memory (_, _, _) -> Predicate.bot_pred
                      | SailAST.LEXP_cast (tan, t, x) ->
-                       Predicate.bind (eq_o_i (Env.get tan))
+                       Predicate.bind (eq_o_i (SailEnv.get tan))
                          (fun aa ->
                            (match aa with None -> Predicate.bot_pred
                              | Some (env, ta) ->
                                Predicate.bind (subtype_i_i_i env ta t)
                                  (fun () ->
                                    Predicate.bind
-                                     (eq_o_i (Env.lookup_mutable tan x))
+                                     (eq_o_i (SailEnv.lookup_mutable tan x))
                                      (fun ab ->
                                        (match ab with None -> Predicate.bot_pred
  | Some taa ->
@@ -17284,18 +17309,18 @@ and check_lexp_i_o
                    (fun a ->
                      (match a with SailAST.LEXP_id (_, _) -> Predicate.bot_pred
                        | SailAST.LEXP_deref (tan, exp) ->
-                         Predicate.bind (eq_o_i (Env.get tan))
+                         Predicate.bind (eq_o_i (SailEnv.get tan))
                            (fun aa ->
                              (match aa with None -> Predicate.bot_pred
                                | Some (_, _) ->
                                  Predicate.bind (check_exp_i_o exp)
                                    (fun _ ->
                                      Predicate.bind
-                                       (eq_o_i (Env.type_of_exp exp))
+                                       (eq_o_i (SailEnv.type_of_exp exp))
                                        (fun ab ->
  (match ab with None -> Predicate.bot_pred
    | Some t ->
-     Predicate.bind (eq_o_i (Env.deconstruct_register_type t))
+     Predicate.bind (eq_o_i (SailEnv.deconstruct_register_type t))
        (fun ac ->
          (match ac with None -> Predicate.bot_pred
            | Some t1 ->
@@ -17367,14 +17392,14 @@ and check_lexp_i_o
                                      (true, false, false, true, false, false,
                                        true, false)]))
                              (fun () ->
-                               Predicate.bind (eq_o_i (Env.get tan))
+                               Predicate.bind (eq_o_i (SailEnv.get tan))
                                  (fun aa ->
                                    (match aa with None -> Predicate.bot_pred
                                      | Some (_, _) ->
                                        Predicate.bind
  (check_lexp_list_i_o lexps)
  (fun x ->
-   Predicate.bind (eq_o_i (Lista.those (Lista.map Env.type_of_lexp lexps)))
+   Predicate.bind (eq_o_i (Lista.those (Lista.map SailEnv.type_of_lexp lexps)))
      (fun ab ->
        (match ab with None -> Predicate.bot_pred
          | Some ts1 ->
@@ -17526,7 +17551,7 @@ true, false);
  true, false)]))
                                (fun () ->
                                  Predicate.bind
-                                   (eq_o_i (Env.is_vector_type tan))
+                                   (eq_o_i (SailEnv.is_vector_type tan))
                                    (fun aa ->
                                      (match aa with None -> Predicate.bot_pred
                                        | Some (_, (order, typ)) ->
@@ -17615,11 +17640,11 @@ true, false);
    Stringa.Chara (false, true, false, false, true, true, false, false)]))
                                      (fun () ->
                                        Predicate.bind
- (check_exp_typ_i_i exp AstUtils.int_typ)
+ (check_exp_typ_i_i exp SailASTUtils.int_typ)
  (fun () ->
    Predicate.bind (check_lexp_i_o lexp)
      (fun x ->
-       Predicate.bind (eq_o_i (Env.get tan))
+       Predicate.bind (eq_o_i (SailEnv.get tan))
          (fun aa ->
            (match aa with None -> Predicate.bot_pred
              | Some (_, typ) ->
@@ -17675,7 +17700,7 @@ true, false);
                           (true, false, true, true, true, true, false, false)] @
                        ShowAST.shows_prec_typ Arith.Zero_nat typ [])))
                  (fun () ->
-                   Predicate.bind (eq_o_i (Env.type_of_lexp lexp))
+                   Predicate.bind (eq_o_i (SailEnv.type_of_lexp lexp))
                      (fun ab ->
                        (match ab with None -> Predicate.bot_pred
                          | Some t ->
@@ -17766,7 +17791,7 @@ false, false)] @
                                    ShowAST.shows_prec_typ Arith.Zero_nat t [])))
                              (fun () ->
                                Predicate.bind
-                                 (eq_o_i (Env.deconstruct_vector_type t))
+                                 (eq_o_i (SailEnv.deconstruct_vector_type t))
                                  (fun ac ->
                                    (match ac with None -> Predicate.bot_pred
                                      | Some (_, (_, typb)) ->
@@ -17794,26 +17819,28 @@ false, false)] @
                                | SailAST.LEXP_vector_range
                                    (tan, lexp, exp1, exp2)
                                  -> Predicate.bind
-                                      (check_exp_typ_i_i exp1 AstUtils.int_typ)
+                                      (check_exp_typ_i_i exp1
+SailASTUtils.int_typ)
                                       (fun () ->
-Predicate.bind (check_exp_typ_i_i exp2 AstUtils.int_typ)
+Predicate.bind (check_exp_typ_i_i exp2 SailASTUtils.int_typ)
   (fun () ->
     Predicate.bind (check_lexp_i_o lexp)
       (fun _ ->
-        Predicate.bind (eq_o_i (Env.get tan))
+        Predicate.bind (eq_o_i (SailEnv.get tan))
           (fun aa ->
             (match aa with None -> Predicate.bot_pred
               | Some (_, t2) ->
-                Predicate.bind (eq_o_i (Env.type_of_lexp lexp))
+                Predicate.bind (eq_o_i (SailEnv.type_of_lexp lexp))
                   (fun ab ->
                     (match ab with None -> Predicate.bot_pred
                       | Some t1 ->
-                        Predicate.bind (eq_o_i (Env.deconstruct_vector_type t1))
+                        Predicate.bind
+                          (eq_o_i (SailEnv.deconstruct_vector_type t1))
                           (fun ac ->
                             (match ac with None -> Predicate.bot_pred
                               | Some (_, (order, typ)) ->
                                 Predicate.bind
-                                  (eq_o_i (Env.deconstruct_vector_type t2))
+                                  (eq_o_i (SailEnv.deconstruct_vector_type t2))
                                   (fun ad ->
                                     (match ad with None -> Predicate.bot_pred
                                       | Some (_, (ordera, typb)) ->
@@ -17973,7 +18000,7 @@ and check_exp_typ_env_i_i_i
       (fun (env, (exp, typ)) ->
         Predicate.bind (check_exp_i_o exp)
           (fun _ ->
-            Predicate.bind (eq_o_i (Env.get_e exp))
+            Predicate.bind (eq_o_i (SailEnv.get_e exp))
               (fun a ->
                 (match a with None -> Predicate.bot_pred
                   | Some (e, t) ->

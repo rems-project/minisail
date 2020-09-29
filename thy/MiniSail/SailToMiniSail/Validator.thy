@@ -1,6 +1,8 @@
 theory Validator
-imports Env Native_Word.Uint32 AstUtils ShowAST  "HOL-Library.Debug"
+imports SailEnv Native_Word.Uint32 SailASTUtils ShowAST  "HOL-Library.Debug"
 begin
+
+chapter \<open>Sail Validator\<close>
 
 (* We use the nesting for aux params; different from MS+. Any preference? *)
 

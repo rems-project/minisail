@@ -1,13 +1,20 @@
 session "MiniSail" = "HOL" +
-  description {* Formalisation of MiniSail *}
+  description \<open>Formalisation of MiniSail\<close>
   options [document = pdf, document_output = "output"]
   sessions   
      "Nominal2"
      "HOL-Eisbach" 
+     "Native_Word"
+     "Show"
+ directories
+   "Safety"
+   "SailToMiniSail"
   theories [document = false]
     "Nominal2.Nominal2"
-    "Explorer"
+    "Safety/Explorer"
+    "Native_Word.Uint32"
   theories
-    MiniSail
+    "Safety/Safety"
+    "SailToMiniSail/CodeGen" 
   document_files
     "root.tex"

@@ -1,9 +1,9 @@
 theory ShowAST
 (* From https://www.isa-afp.org/entries/Show.html *)
-imports  Env AstUtils "Show.Show" "Show.Show_Instances"
+imports  SailEnv SailASTUtils "Show.Show" "Show.Show_Instances"
 begin
 
-section \<open>Setup\<close>
+section \<open>Show AST Setup\<close>
 
 subsection \<open>Integer\<close>
 

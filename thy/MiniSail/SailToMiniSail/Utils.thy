@@ -2,6 +2,8 @@ theory Utils
   imports Main  Native_Word.Uint32
 begin
 
+section \<open>Conversion Utilities\<close>
+
 (* Borrowed from AFP library *)
 fun string_of_digit :: "nat \<Rightarrow> string"
 where

@@ -1,7 +1,8 @@
-theory AstUtils
+theory SailASTUtils
   imports  SailAST
 begin
 
+section \<open>AST Utils\<close>
 
 definition unit_typ where
   "unit_typ \<equiv> ( (Typ_id  ( (id  (STR ''unit'')) )) )"
