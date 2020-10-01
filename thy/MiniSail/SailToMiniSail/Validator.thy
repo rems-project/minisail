@@ -167,6 +167,9 @@ match_arg_typ: "match t1 t2 ms \<Longrightarrow> match_arg ( (A_typ t1) ) ( (A_t
 | match_varI: "\<lbrakk>  eq_kid kid1 kid2 
 \<rbrakk> \<Longrightarrow> match ( (Typ_var kid1) ) ( (Typ_var kid2) ) []"
 
+| match_var_leftI: " match ( (Typ_var kid1) ) _ []"
+
+| match_var_rightI: " match _ ( (Typ_var kid2) ) []"
 
 | match_tupleI: "\<lbrakk> match_list ts1 ts2 bs
 \<rbrakk> \<Longrightarrow> match ( (Typ_tup ts1)) ( (Typ_tup ts2)) bs"
@@ -323,6 +326,11 @@ fun integer_of_int2 :: "int \<Rightarrow> integer" where
 
 inductive check_lit :: "env \<Rightarrow> lit \<Rightarrow> typ \<Rightarrow> bool" where
 check_lit_unitI: "check_lit env ( L_unit ) ( (Typ_id ( (id (STR ''unit'')) ) ) )" 
+
+| check_lit_realI: "check_lit env ( L_real _  ) ( (Typ_id ( (id (STR ''real'')) ) ) )" 
+
+(* FIXME Should check typ is mono? *)
+| check_lit_undefI: "check_lit env  L_undef typ " 
 
 | check_lit_numI: "check_lit env ( (L_num num)  ) ( (Typ_app ( (id (STR ''atom''))  ) 
      [( (A_nexp ( (Nexp_constant num)  ))  ) ] )  )"
@@ -1019,16 +1027,8 @@ code_pred (modes: i \<Rightarrow> i \<Rightarrow> bool)  [show_steps,  show_mode
 
 inductive check_def :: "env \<Rightarrow> tannot def \<Rightarrow> bool" ( " _ \<turnstile> _ " ) where
 
-
-(* FIXME Check wellformedness? *)
-check_typedefI:
-  "check_def env (DEF_type tdef)"
-
-|check_fundefI:
+check_fundefI:
  "\<lbrakk> trace ''check_fundefI'' ; check_funcls funcls tannot_opt \<rbrakk> \<Longrightarrow> check_def e (DEF_fundef (  (FD_function _ rec_opt tannot_opt effect_top funcls )  ))"
-
-(* FIXME. Don't expect these *)
-|check_mapdefI: "check_def env (DEF_mapdef md )"
 
 (* FIXME Addings bindings to E to be available later *)
 | check_letbindI:
@@ -1036,18 +1036,23 @@ check_typedefI:
     check_letbind  letbind bindings
 \<rbrakk> \<Longrightarrow> check_def e (DEF_val letbind)"
 
-(* FIXME perhaps check that the valspec/typscheme/type is wf? *)
+(* FIXME Check wellformedness? *)
+| check_typedefI: "check_def env (DEF_type tdef)"
 | check_valspecI:  "check_def env (DEF_spec _)"
 
+(* Pass these. These have already been handled by Sail type checker or are sugar *)
 | check_fixityI:  "check_def env (DEF_fixity _ _ _)"
 | check_overloadI:  "check_def env (DEF_overload _ _)"
 | check_set_orderI:  "check_def env (DEF_default ( _ ))"
-| check_sdI: "check_sd env sd \<Longrightarrow> check_def env (DEF_scattered sd )"
 | check_measureI:  "check_def env (DEF_measure _ _ _)"
 | check_loop_measureI:  "check_def env (DEF_loop_measures _ _ )"
 | check_reg_decI:  "check_def env (DEF_reg_dec _)"
 | check_internal_mutrecI:  "check_def env (DEF_internal_mutrec _)"
 | check_pragmaI:  "check_def env (DEF_pragma _ _)"
+
+(* FIXME. Don't expect these *)
+(*|check_mapdefI: "check_def env (DEF_mapdef md )"
+| check_sdI: "check_sd env sd \<Longrightarrow> check_def env (DEF_scattered sd )"*)
 
 code_pred (modes: i \<Rightarrow> i \<Rightarrow> bool)  [show_steps,  show_mode_inference,  show_invalid_clauses] check_def .
 
@@ -1080,6 +1085,15 @@ values "{ xx . check_exp
 )]),(  E { locals = (Id("z"),) : (Typ_app((Id("atom"),),[((A_nexp((Nexp_var((Var("'_z"),)),)),))]),);  ; typ_vars =  (Var("'_z"),)=K_int,(Var("'_z#0"),)=K_int; C = }(Typ_id((Id("int"),)),)))
 ),None)),(  E { locals = ;  ; typ_vars =  ; C = }(Typ_fn([((Typ_id((Id("int"),)),))],(Typ_id((Id("int"),)),),Effect_aux(Effect_set([]),)),))))]),None)))
 *)
+
+definition real_typ where
+  "real_typ \<equiv> ( (Typ_id  ( (id  (STR ''real'')) )) )"
+
+values "{x . subtype emptyEnv real_typ real_typ }"
+
+values "{x . subtype emptyEnv unit_typ (Typ_var (var (STR ''a''))) }"
+
+values "{b . match  unit_typ (Typ_var (var (STR ''a''))) b }"
 
 code_printing
   constant Debug.trace \<rightharpoonup> (OCaml) "Utils2.trace _"

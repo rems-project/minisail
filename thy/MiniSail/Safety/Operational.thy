@@ -158,10 +158,10 @@ inductive_cases delta_sim_elims[elim!]:
   "\<Theta> \<turnstile> ((u,v)#ds) \<sim> D"
 
 
-text {* A typing judgement that combines typing of the statement, the store and the condition that functions are well-formed *}
+text \<open>A typing judgement that combines typing of the statement, the store and the condition that definitions are well-typed\<close>
 inductive config_type ::  "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<Delta> \<Rightarrow> \<delta> \<Rightarrow> s \<Rightarrow> \<tau> \<Rightarrow>  bool"   ("_ ; _ ; _ \<turnstile> \<langle> _ , _ \<rangle> \<Leftarrow> _ " [50, 50, 50] 50)  where 
 config_typeI: "\<lbrakk> \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta> \<turnstile> s \<Leftarrow> \<tau>; 
-                (\<forall> fd \<in> set \<Phi>. check_fundef \<Theta> \<Phi> fd) ;
+                (\<forall> fd \<in> set \<Phi>. \<Theta> ; \<Phi> \<turnstile> fd) ;
                 \<Theta>  \<turnstile> \<delta> \<sim> \<Delta> \<rbrakk>
                 \<Longrightarrow> \<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta>  , s \<rangle> \<Leftarrow>  \<tau>"
 equivariance config_type

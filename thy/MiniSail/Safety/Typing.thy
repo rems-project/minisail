@@ -520,11 +520,11 @@ next
   then show ?case by auto
 qed
 
-inductive check_fundef :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> fun_def \<Rightarrow> bool" where
+inductive check_fundef :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> fun_def \<Rightarrow> bool" ( " _ ; _ \<turnstile> _ " ) where
 check_fundefI: "\<lbrakk>
   check_funtypq \<Theta> \<Phi> ft 
 \<rbrakk>  \<Longrightarrow> 
-  check_fundef \<Theta> \<Phi> ((AF_fundef f ft))"
+  \<Theta> ; \<Phi> \<turnstile> (AF_fundef f ft)"
 
 equivariance check_fundef
 nominal_inductive check_fundef .
