@@ -1,4 +1,5 @@
 open Ast
+open Ast_defs
 open Minisail_isa
 open Type_check
 
@@ -7,14 +8,16 @@ open PPrintCombinators
 open Sail_pp
 
    
-let opt_dtc_check  = ref false
+let opt_validate  = ref false
+let opt_convert : string option ref = ref None
+let opt_dump : string option ref = ref None
 
 let check_def env n i sdef =
   Printf.eprintf "Checking def %d/%d:\n" i n;
   PPrintEngine.ToChannel.compact stderr ((pp_def sdef) ^^ string "\n");
   let def = Convert.convert_def env sdef in 
   let (Set.Set res) = Predicate.set_of_pred
-             {equal=fun x y -> (x == y)} (Validator.check_def_i_i Minisail_isa.Env.emptyEnv def) in
+             {equal=fun x y -> (x == y)} (Validator.check_def_i_i Minisail_isa.SailEnv.emptyEnv def) in
   match res with
     [] -> Printf.eprintf "Failed. No derivations.\n\n";
           (*          ToChannel.pretty 1. 80 stderr (Sail_pp.pp_raw_def sdef); *)
@@ -23,7 +26,7 @@ let check_def env n i sdef =
   |  xs -> Printf.eprintf "OK.\n\n"
 
                    
-let tc_check env ( (Defs defs) ) : unit = List.iteri (check_def env (List.length defs)) defs
+let tc_check env ast  : unit = List.iteri (check_def env (List.length ast.defs)) ast.defs
 
 
 let opt_dtc_convert = ref false
@@ -47,7 +50,7 @@ let convert_def c env n i sdef =
   PPrintEngine.ToChannel.compact stderr ((pp_def sdef) ^^ string "\n");
   let def = Convert.convert_def env sdef in 
   let (Set.Set res) = Predicate.set_of_pred
-             {equal=fun x y -> (x == y)} (SailToMs.def_conv_i_i_o Minisail_isa.Env.emptyEnv def) in
+             {equal=fun x y -> (x == y)} (SailToMs.def_conv_i_i_o Minisail_isa.SailEnv.emptyEnv def) in
   match res with
     [] -> Printf.eprintf "Failed. No derivations.\n\n";
   (*          ToChannel.pretty 1. 80 stderr (Sail_pp.pp_raw_def sdef);  *)
@@ -59,10 +62,24 @@ let convert_def c env n i sdef =
 
 (* Pretty_print_sail.pp_defs_ott_pp c ast; close_out c) in*)
                    
-let tc_convert env ( (Defs defs) ) : unit =
-  let c = open_out "x.ms" in   
-  let _ = List.iteri (convert_def c env (List.length defs)) defs in
+let tc_convert env  ast fname : unit =
+  let c = open_out fname in   
+  let _ = List.iteri (convert_def c env (List.length ast.defs)) ast.defs in
   close_out c
                                                                                  
   
-let minisail env ast = tc_check env ast    
+let minisail env ast =
+  let _ = match !opt_dump with
+      Some file -> (let c = open_out file in ToChannel.pretty 1. 80 c (pp_raw_defs ast); close_out c)  
+    | None -> () in
+
+  let _ = if ! opt_validate then  tc_check env ast else () in
+  
+  let _ = match !opt_convert with
+      Some file -> tc_convert env ast file
+    | None -> () in
+
+  ()
+
+                                                  
+    

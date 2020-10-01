@@ -2,6 +2,7 @@
 open PPrintEngine
 open PPrintCombinators
 open Ast
+open Ast_defs
 open Type_check
 open Ast_util
    
@@ -515,8 +516,8 @@ and pp_raw_def x = match x with
 | DEF_internal_mutrec(fundef0) -> string "DEF_internal_mutrec" ^^ string "(" ^^ string "[" ^^ separate  (string ";") (List.map (function (fundef0) -> string "(" ^^ pp_raw_fundef fundef0 ^^ string ")") fundef0) ^^ string "]" ^^ string ")"
 | DEF_pragma(string1,string2,l) -> string "DEF_pragma" ^^ string "(" ^^ pp_raw_string string1 ^^ string "," ^^ pp_raw_string string2 ^^ string "," ^^ pp_raw_l l ^^ string ")"
 
-and pp_raw_defs x = match x with
-| Defs(def0) -> string "Defs" ^^ string "(" ^^ string "[" ^^ separate  (string ";") (List.map (function (def0) -> string "(" ^^ pp_raw_def def0 ^^ string ")\n") def0) ^^ string "]" ^^ string ")"
+and pp_raw_defs x = match x.defs with
+| def0 -> string "Defs" ^^ string "(" ^^ string "[" ^^ separate  (string ";") (List.map (function (def0) -> string "(" ^^ pp_raw_def def0 ^^ string ")\n") def0) ^^ string "]" ^^ string ")"
 
 
 let rec pp_n x = string (string_of_int x)
@@ -995,6 +996,6 @@ and pp_def x = match x with
 | DEF_internal_mutrec(fundef0) -> group(separate (break 1) (List.map (function (fundef0) -> pp_fundef fundef0) fundef0))
 | DEF_pragma(string1,string2,l) -> group(string "" ^^ string "$" ^^ break 1 ^^ pp_string string1 ^^ break 1 ^^ pp_string string2 ^^ string "")
 
-and pp_defs x = match x with
-| Defs(def0) -> group(separate (break 1) (List.map (function (def0) -> pp_def def0) def0))
+and pp_defs x = match x.defs with
+| def0 -> group(separate (break 1) (List.map (function (def0) -> pp_def def0) def0))
 

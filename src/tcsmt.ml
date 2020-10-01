@@ -1,6 +1,6 @@
 module A = Ast
 module I = Minisail_isa.SailAST
-module E = Minisail_isa.Env
+module E = Minisail_isa.SailEnv
 
 
 let rec convert_nc = function

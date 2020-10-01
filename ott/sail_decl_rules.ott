@@ -804,6 +804,7 @@ E |- typ ~< typ'
 E |- id : typ  ~> empty
 
 id / mutable NOTIN E
+E |- typ' ~< typ
 -------------------------- :: cast_nb
 E |- ( typ ) id : typ' ~> id : typ
 
@@ -811,7 +812,7 @@ id / mutable : typ'' INN E
 E |- typ ~< typ''
 E |- typ' ~< typ
 ---------------------------:: cast_b
-E |- (typ ) id : typ'  ~> id : typ
+E |- ( typ ) id : typ'  ~> empty
 
 id / register : typ INN E
 ------------------------------- :: reg

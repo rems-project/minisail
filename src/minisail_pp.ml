@@ -1,7 +1,7 @@
 open PPrintEngine
 open PPrintCombinators
 
-open Minisail_isa.Syntax
+open Minisail_isa.MiniSailAST
 module A =  Minisail_isa.Arith 
 
 let rec nat_to_int = function
@@ -9,7 +9,7 @@ let rec nat_to_int = function
   | A.Suc n -> ((nat_to_int n) + 1)
    
 let pp_x = function
-    Abs_x (Atom (_, n)) -> string "x" ^^ (string (string_of_int (nat_to_int  n)))
+    (Atoma (_, n)) -> string "x" ^^ (string (string_of_int (nat_to_int  n)))
 
 let pp_id x = string (Minisail_isa.Stringa.implode x)
 
