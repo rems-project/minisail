@@ -116,6 +116,8 @@ definition nc_not :: "n_constraint \<Rightarrow> n_constraint" where
 definition nc_between :: "nexp \<Rightarrow> nexp \<Rightarrow> nexp \<Rightarrow> n_constraint" where
  "nc_between n1 n n2 = nc_and ( (NC_bounded_le n1 n) ) ( (NC_bounded_ge n n1) )"
 
+definition nc_ge_zero :: "nexp \<Rightarrow> n_constraint" where
+ "nc_ge_zero  n  =  ( (NC_bounded_ge n (Nexp_constant 0) ))"
 
 definition nc_bool_equiv :: "n_constraint \<Rightarrow> n_constraint \<Rightarrow> n_constraint" where
  "nc_bool_equiv nc1 nc2 = (nc_or (nc_and nc1 nc2) (nc_and (nc_not nc1) (nc_not nc2)))"
@@ -180,13 +182,19 @@ match_arg_typ: "match t1 t2 ms \<Longrightarrow> match_arg ( (A_typ t1) ) ( (A_t
 
 | match_intI2: "
   match  ( (Typ_app ( (id (STR ''atom'')) ) _) ) 
-                  ( (Typ_id ( (id (STR ''int'')) )) ) [ (NC_true) ]"
+                  ( (Typ_id ( (id (STR ''int'')) )) ) [ (NC_true) ]"                       
 
 | match_nat1I: "
   match ( (Typ_app ( (id (STR ''atom'')) ) [ (A_nexp nexp )] )) ( (Typ_id ( (id (STR ''nat'')) )) )  [ nc_pos nexp ]" 
 
 | match_nat2I: "
-  match ( (Typ_id ( (id (STR ''nat'')) )) ) ( (Typ_app ( (id (STR ''atom'')) ) _ ) ) []" (* What goes here? ne \<ge> 0 ?? *)
+  match (Typ_id ( (id (STR ''nat'')) ))  (Typ_app ( (id (STR ''atom'')) )[ A_nexp nexp ] ) []" (* What goes here? ne \<ge> 0 ?? *)
+
+| match_nat_range: "
+  match 
+         ( (Typ_app ( (id (STR ''range'')) ) [( (A_nexp ne1) ),( (A_nexp ne2) )]) ) 
+         (Typ_id ( (id (STR ''nat'')) ))  
+         [ nc_ge_zero ne1, nc_ge_zero ne2 ]"
 
 (* FIXME. Wrong *)
 | match_range1I: "
@@ -533,18 +541,26 @@ check_lexp_id_notbI:"\<lbrakk>
    trace (''check_lexp_id_bI subtype ok'')
 \<rbrakk> \<Longrightarrow> \<turnstile> ( (LEXP_id tan x)  ) \<leadsto> []" 
 
-(* FIXME Are the subtype checks the right way around? *)
+(* 
+   We need the following to work: 
+            y : nat = 10 : range(0,10)
+            y : range(1,100) = 100
+   The type on the annot is the type of rhs, this needs to be the lowest type.
+   If y is already registered as a mutable, then it is the highest type, otherwise its the cast.
+
+  *)
 | check_lexp_cast_notbI:"\<lbrakk> 
    Some (env,t') = get tan;
    None = lookup_mutable tan x;
-   subtype env t2 t'
-\<rbrakk> \<Longrightarrow> \<turnstile> ( (LEXP_cast tan t2 x)  ) \<leadsto> [ (x,Mutable,t2) ]" 
+   subtype env t' t
+\<rbrakk> \<Longrightarrow> \<turnstile> ( (LEXP_cast tan t x)  ) \<leadsto> [ (x,Mutable,t) ]" 
 
+(* FIXME swap these around too *)
 | check_lexp_cast_bI:"\<lbrakk> 
    Some (env,t') = get tan; 
    Some t'' = lookup_mutable tan x;  
-   subtype env t t'';
-   subtype env t' t
+   subtype env t' t;
+   subtype env t t''
 \<rbrakk> \<Longrightarrow> check_lexp ( (LEXP_cast tan t x)  ) []" 
 
 | check_lexp_derefI: "\<lbrakk>

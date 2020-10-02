@@ -12612,6 +12612,7 @@ module Validator : sig
   val match_nc_i_i_o :
     SailAST.n_constraint ->
       SailAST.n_constraint -> (SailAST.n_constraint list) Predicate.pred
+  val nc_ge_zero : SailAST.nexp -> SailAST.n_constraint
   val nc_between :
     SailAST.nexp -> SailAST.nexp -> SailAST.nexp -> SailAST.n_constraint
   val eq_kid_i_i : SailAST.kid -> SailAST.kid -> unit Predicate.pred
@@ -13593,6 +13594,8 @@ let rec match_nc_i_i_o
     Predicate.bind (Predicate.single (x, xa))
       (fun (nc1, nc2) -> Predicate.single [nc_bool_equiv nc1 nc2]);;
 
+let rec nc_ge_zero n = SailAST.NC_bounded_ge (n, SailAST.Nexp_constant Z.zero);;
+
 let rec nc_between
   n1 n n2 =
     nc_and (SailAST.NC_bounded_le (n1, n)) (SailAST.NC_bounded_ge (n, n1));;
@@ -13997,11 +14000,31 @@ let rec match_i_i_o
                                   | (SailAST.Typ_id (SailAST.Id _),
                                       SailAST.Typ_tup _)
                                     -> Predicate.bot_pred
+                                  | (SailAST.Typ_id (SailAST.Id _),
+                                      SailAST.Typ_app (SailAST.Id _, []))
+                                    -> Predicate.bot_pred
                                   | (SailAST.Typ_id (SailAST.Id xb),
-                                      SailAST.Typ_app (SailAST.Id xaa, _))
+                                      SailAST.Typ_app
+(SailAST.Id xaa, [SailAST.A_nexp _]))
                                     -> (if ((xaa : string) = "atom") &&
      ((xb : string) = "nat")
  then Predicate.single [] else Predicate.bot_pred)
+                                  | (SailAST.Typ_id (SailAST.Id _),
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_nexp _ :: _ :: _))
+                                    -> Predicate.bot_pred
+                                  | (SailAST.Typ_id (SailAST.Id _),
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_typ _ :: _))
+                                    -> Predicate.bot_pred
+                                  | (SailAST.Typ_id (SailAST.Id _),
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_order _ :: _))
+                                    -> Predicate.bot_pred
+                                  | (SailAST.Typ_id (SailAST.Id _),
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_bool _ :: _))
+                                    -> Predicate.bot_pred
                                   | (SailAST.Typ_id (SailAST.Id _),
                                       SailAST.Typ_app (SailAST.Operator _, _))
                                     -> Predicate.bot_pred
@@ -14040,80 +14063,61 @@ let rec match_i_i_o
                                       Predicate.bot_pred
                                     | (SailAST.Typ_app
  (SailAST.Id _, [SailAST.A_nexp _]),
+_)
+                                      -> Predicate.bot_pred
+                                    | (SailAST.Typ_app
+ (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
 SailAST.Typ_internal_unknown)
                                       -> Predicate.bot_pred
                                     | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
-SailAST.Typ_id _)
+ (SailAST.Id xb, [SailAST.A_nexp ne1; SailAST.A_nexp ne2]),
+SailAST.Typ_id (SailAST.Id xaa))
+                                      -> (if ((xaa : string) = "nat") &&
+       ((xb : string) = "range")
+   then Predicate.single [nc_ge_zero ne1; nc_ge_zero ne2]
+   else Predicate.bot_pred)
+                                    | (SailAST.Typ_app
+ (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+SailAST.Typ_id (SailAST.Operator _))
                                       -> Predicate.bot_pred
                                     | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
+ (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
 SailAST.Typ_var _)
                                       -> Predicate.bot_pred
                                     | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
+ (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
 SailAST.Typ_fn (_, _, _))
                                       -> Predicate.bot_pred
                                     | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
+ (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
 SailAST.Typ_bidir (_, _, _))
                                       -> Predicate.bot_pred
                                     | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
+ (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
 SailAST.Typ_tup _)
                                       -> Predicate.bot_pred
                                     | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
-SailAST.Typ_app (SailAST.Id _, []))
+ (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+SailAST.Typ_app (_, _))
                                       -> Predicate.bot_pred
                                     | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
-SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]))
-                                      -> Predicate.bot_pred
-                                    | (SailAST.Typ_app
- (SailAST.Id xb, [SailAST.A_nexp ne]),
-SailAST.Typ_app (SailAST.Id xaa, [SailAST.A_nexp ne1; SailAST.A_nexp ne2]))
-                                      -> (if ((xaa : string) = "range") &&
-       ((xb : string) = "atom")
-   then Predicate.single [nc_between ne1 ne ne2] else Predicate.bot_pred)
-                                    | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
-SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_nexp _ :: _ :: _))
-                                      -> Predicate.bot_pred
-                                    | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
-SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_typ _ :: _))
-                                      -> Predicate.bot_pred
-                                    | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
-SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_order _ :: _))
-                                      -> Predicate.bot_pred
-                                    | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
-SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_bool _ :: _))
-                                      -> Predicate.bot_pred
-                                    | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
-SailAST.Typ_app (SailAST.Id _, SailAST.A_typ _ :: _))
-                                      -> Predicate.bot_pred
-                                    | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
-SailAST.Typ_app (SailAST.Id _, SailAST.A_order _ :: _))
-                                      -> Predicate.bot_pred
-                                    | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
-SailAST.Typ_app (SailAST.Id _, SailAST.A_bool _ :: _))
-                                      -> Predicate.bot_pred
-                                    | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
-SailAST.Typ_app (SailAST.Operator _, _))
-                                      -> Predicate.bot_pred
-                                    | (SailAST.Typ_app
- (SailAST.Id _, [SailAST.A_nexp _]),
+ (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
 SailAST.Typ_exist (_, _, _))
                                       -> Predicate.bot_pred
                                     | (SailAST.Typ_app
- (SailAST.Id _, SailAST.A_nexp _ :: _ :: _),
+ (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_nexp _ :: _ :: _),
+_)
+                                      -> Predicate.bot_pred
+                                    | (SailAST.Typ_app
+ (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_typ _ :: _),
+_)
+                                      -> Predicate.bot_pred
+                                    | (SailAST.Typ_app
+ (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_order _ :: _),
+_)
+                                      -> Predicate.bot_pred
+                                    | (SailAST.Typ_app
+ (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_bool _ :: _),
 _)
                                       -> Predicate.bot_pred
                                     | (SailAST.Typ_app
@@ -14152,77 +14156,78 @@ Predicate.bot_pred
                                       | (SailAST.Typ_app (SailAST.Id _, []), _)
 -> Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]), _) -> Predicate.bot_pred
-                                      |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
   SailAST.Typ_internal_unknown)
 -> Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
-  SailAST.Typ_id _)
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]), SailAST.Typ_id _) ->
+Predicate.bot_pred
+                                      |
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]), SailAST.Typ_var _) ->
+Predicate.bot_pred
+                                      |
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]), SailAST.Typ_fn (_, _, _))
 -> Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
-  SailAST.Typ_var _)
--> Predicate.bot_pred
-                                      |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
-  SailAST.Typ_fn (_, _, _))
--> Predicate.bot_pred
-                                      |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
   SailAST.Typ_bidir (_, _, _))
 -> Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
-  SailAST.Typ_tup _)
--> Predicate.bot_pred
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]), SailAST.Typ_tup _) ->
+Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
   SailAST.Typ_app (SailAST.Id _, []))
 -> Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id xb, [SailAST.A_nexp ne1; SailAST.A_nexp ne2]),
-  SailAST.Typ_app (SailAST.Id xaa, [SailAST.A_nexp ne]))
--> (if ((xaa : string) = "atom") && ((xb : string) = "range")
-     then Predicate.single [nc_between ne1 ne ne2] else Predicate.bot_pred)
-                                      |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
-  SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: _ :: _))
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
+  SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]))
 -> Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+(SailAST.Typ_app (SailAST.Id xb, [SailAST.A_nexp ne]),
+  SailAST.Typ_app (SailAST.Id xaa, [SailAST.A_nexp ne1; SailAST.A_nexp ne2]))
+-> (if ((xaa : string) = "range") && ((xb : string) = "atom")
+     then Predicate.single [nc_between ne1 ne ne2] else Predicate.bot_pred)
+                                      |
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
+  SailAST.Typ_app
+    (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_nexp _ :: _ :: _))
+-> Predicate.bot_pred
+                                      |
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
+  SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_typ _ :: _))
+-> Predicate.bot_pred
+                                      |
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
+  SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_order _ :: _))
+-> Predicate.bot_pred
+                                      |
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
+  SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_bool _ :: _))
+-> Predicate.bot_pred
+                                      |
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
   SailAST.Typ_app (SailAST.Id _, SailAST.A_typ _ :: _))
 -> Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
   SailAST.Typ_app (SailAST.Id _, SailAST.A_order _ :: _))
 -> Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
   SailAST.Typ_app (SailAST.Id _, SailAST.A_bool _ :: _))
 -> Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
   SailAST.Typ_app (SailAST.Operator _, _))
 -> Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+(SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]),
   SailAST.Typ_exist (_, _, _))
 -> Predicate.bot_pred
                                       |
-(SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_nexp _ :: _ :: _),
-  _)
--> Predicate.bot_pred
-                                      |
-(SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_typ _ :: _), _) ->
+(SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: _ :: _), _) ->
 Predicate.bot_pred
-                                      |
-(SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_order _ :: _), _)
--> Predicate.bot_pred
-                                      |
-(SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_bool _ :: _), _)
--> Predicate.bot_pred
                                       |
 (SailAST.Typ_app (SailAST.Id _, SailAST.A_typ _ :: _), _) -> Predicate.bot_pred
                                       |
@@ -14249,12 +14254,8 @@ with (SailAST.Typ_internal_unknown, _) -> Predicate.bot_pred
 | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
     SailAST.Typ_internal_unknown)
   -> Predicate.bot_pred
-| (SailAST.Typ_app (SailAST.Id xb, [SailAST.A_nexp _; SailAST.A_nexp _]),
-    SailAST.Typ_id (SailAST.Id xaa))
-  -> (if ((xaa : string) = "int") && ((xb : string) = "range")
-       then Predicate.single [SailAST.NC_true] else Predicate.bot_pred)
 | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
-    SailAST.Typ_id (SailAST.Operator _))
+    SailAST.Typ_id _)
   -> Predicate.bot_pred
 | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
     SailAST.Typ_var _)
@@ -14269,7 +14270,26 @@ with (SailAST.Typ_internal_unknown, _) -> Predicate.bot_pred
     SailAST.Typ_tup _)
   -> Predicate.bot_pred
 | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
-    SailAST.Typ_app (_, _))
+    SailAST.Typ_app (SailAST.Id _, []))
+  -> Predicate.bot_pred
+| (SailAST.Typ_app (SailAST.Id xb, [SailAST.A_nexp ne1; SailAST.A_nexp ne2]),
+    SailAST.Typ_app (SailAST.Id xaa, [SailAST.A_nexp ne]))
+  -> (if ((xaa : string) = "atom") && ((xb : string) = "range")
+       then Predicate.single [nc_between ne1 ne ne2] else Predicate.bot_pred)
+| (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+    SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: _ :: _))
+  -> Predicate.bot_pred
+| (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+    SailAST.Typ_app (SailAST.Id _, SailAST.A_typ _ :: _))
+  -> Predicate.bot_pred
+| (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+    SailAST.Typ_app (SailAST.Id _, SailAST.A_order _ :: _))
+  -> Predicate.bot_pred
+| (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+    SailAST.Typ_app (SailAST.Id _, SailAST.A_bool _ :: _))
+  -> Predicate.bot_pred
+| (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+    SailAST.Typ_app (SailAST.Operator _, _))
   -> Predicate.bot_pred
 | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
     SailAST.Typ_exist (_, _, _))
@@ -14302,66 +14322,129 @@ with (SailAST.Typ_internal_unknown, _) -> Predicate.bot_pred
   | (SailAST.Typ_fn (_, _, _), _) -> Predicate.bot_pred
   | (SailAST.Typ_bidir (_, _, _), _) -> Predicate.bot_pred
   | (SailAST.Typ_tup _, _) -> Predicate.bot_pred
-  | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_internal_unknown) ->
+  | (SailAST.Typ_app (SailAST.Id _, []), _) -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _]), _) ->
     Predicate.bot_pred
-  | (SailAST.Typ_app (SailAST.Id xb, _), SailAST.Typ_id (SailAST.Id xaa)) ->
-    (if ((xaa : string) = "bool") && ((xb : string) = "atom_bool")
-      then Predicate.single [SailAST.NC_true] else Predicate.bot_pred)
-  | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_id (SailAST.Operator _)) ->
+  | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+      SailAST.Typ_internal_unknown)
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id xb, [SailAST.A_nexp _; SailAST.A_nexp _]),
+      SailAST.Typ_id (SailAST.Id xaa))
+    -> (if ((xaa : string) = "int") && ((xb : string) = "range")
+         then Predicate.single [SailAST.NC_true] else Predicate.bot_pred)
+  | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+      SailAST.Typ_id (SailAST.Operator _))
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+      SailAST.Typ_var _)
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+      SailAST.Typ_fn (_, _, _))
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+      SailAST.Typ_bidir (_, _, _))
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+      SailAST.Typ_tup _)
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+      SailAST.Typ_app (_, _))
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id _, [SailAST.A_nexp _; SailAST.A_nexp _]),
+      SailAST.Typ_exist (_, _, _))
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app
+       (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_nexp _ :: _ :: _),
+      _)
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_typ _ :: _),
+      _)
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_order _ :: _),
+      _)
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: SailAST.A_bool _ :: _),
+      _)
+    -> Predicate.bot_pred
+  | (SailAST.Typ_app (SailAST.Id _, SailAST.A_typ _ :: _), _) ->
     Predicate.bot_pred
-  | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_var _) -> Predicate.bot_pred
-  | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_fn (_, _, _)) ->
+  | (SailAST.Typ_app (SailAST.Id _, SailAST.A_order _ :: _), _) ->
     Predicate.bot_pred
-  | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_bidir (_, _, _)) ->
-    Predicate.bot_pred
-  | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_tup _) -> Predicate.bot_pred
-  | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_app (_, _)) ->
-    Predicate.bot_pred
-  | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_exist (_, _, _)) ->
+  | (SailAST.Typ_app (SailAST.Id _, SailAST.A_bool _ :: _), _) ->
     Predicate.bot_pred
   | (SailAST.Typ_app (SailAST.Operator _, _), _) -> Predicate.bot_pred
   | (SailAST.Typ_exist (_, _, _), _) -> Predicate.bot_pred)))
-                                    (Predicate.bind (Predicate.single (x, xa))
-                                      (fun a ->
-(match a with (SailAST.Typ_internal_unknown, _) -> Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_internal_unknown) ->
-    Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_id _) -> Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_var _) -> Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_fn (_, _, _)) ->
-    Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_bidir (_, _, _)) ->
-    Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_tup _) -> Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_app (SailAST.Id _, [])) ->
-    Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _),
-      SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: _))
-    -> Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _),
-      SailAST.Typ_app (SailAST.Id _, SailAST.A_typ _ :: _))
-    -> Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _),
-      SailAST.Typ_app (SailAST.Id _, SailAST.A_order _ :: _))
-    -> Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id xb),
-      SailAST.Typ_app (SailAST.Id xaa, [SailAST.A_bool nc]))
-    -> (if ((xaa : string) = "atom_bool") && ((xb : string) = "bool")
-         then Predicate.single [nc] else Predicate.bot_pred)
-  | (SailAST.Typ_id (SailAST.Id _),
-      SailAST.Typ_app (SailAST.Id _, SailAST.A_bool _ :: _ :: _))
-    -> Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_app (SailAST.Operator _, _)) ->
-    Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_exist (_, _, _)) ->
-    Predicate.bot_pred
-  | (SailAST.Typ_id (SailAST.Operator _), _) -> Predicate.bot_pred
-  | (SailAST.Typ_var _, _) -> Predicate.bot_pred
-  | (SailAST.Typ_fn (_, _, _), _) -> Predicate.bot_pred
-  | (SailAST.Typ_bidir (_, _, _), _) -> Predicate.bot_pred
-  | (SailAST.Typ_tup _, _) -> Predicate.bot_pred
-  | (SailAST.Typ_app (_, _), _) -> Predicate.bot_pred
-  | (SailAST.Typ_exist (_, _, _), _) -> Predicate.bot_pred))))))))))))))))))
+                                    (Predicate.sup_pred
+                                      (Predicate.bind (Predicate.single (x, xa))
+(fun a ->
+  (match a with (SailAST.Typ_internal_unknown, _) -> Predicate.bot_pred
+    | (SailAST.Typ_id _, _) -> Predicate.bot_pred
+    | (SailAST.Typ_var _, _) -> Predicate.bot_pred
+    | (SailAST.Typ_fn (_, _, _), _) -> Predicate.bot_pred
+    | (SailAST.Typ_bidir (_, _, _), _) -> Predicate.bot_pred
+    | (SailAST.Typ_tup _, _) -> Predicate.bot_pred
+    | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_internal_unknown) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_app (SailAST.Id xb, _), SailAST.Typ_id (SailAST.Id xaa)) ->
+      (if ((xaa : string) = "bool") && ((xb : string) = "atom_bool")
+        then Predicate.single [SailAST.NC_true] else Predicate.bot_pred)
+    | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_id (SailAST.Operator _))
+      -> Predicate.bot_pred
+    | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_var _) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_fn (_, _, _)) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_bidir (_, _, _)) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_tup _) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_app (_, _)) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_app (SailAST.Id _, _), SailAST.Typ_exist (_, _, _)) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_app (SailAST.Operator _, _), _) -> Predicate.bot_pred
+    | (SailAST.Typ_exist (_, _, _), _) -> Predicate.bot_pred)))
+                                      (Predicate.bind (Predicate.single (x, xa))
+(fun a ->
+  (match a with (SailAST.Typ_internal_unknown, _) -> Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_internal_unknown) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_id _) -> Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_var _) -> Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_fn (_, _, _)) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_bidir (_, _, _)) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_tup _) -> Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_app (SailAST.Id _, [])) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _),
+        SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: _))
+      -> Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _),
+        SailAST.Typ_app (SailAST.Id _, SailAST.A_typ _ :: _))
+      -> Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _),
+        SailAST.Typ_app (SailAST.Id _, SailAST.A_order _ :: _))
+      -> Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id xb),
+        SailAST.Typ_app (SailAST.Id xaa, [SailAST.A_bool nc]))
+      -> (if ((xaa : string) = "atom_bool") && ((xb : string) = "bool")
+           then Predicate.single [nc] else Predicate.bot_pred)
+    | (SailAST.Typ_id (SailAST.Id _),
+        SailAST.Typ_app (SailAST.Id _, SailAST.A_bool _ :: _ :: _))
+      -> Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_app (SailAST.Operator _, _))
+      -> Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Id _), SailAST.Typ_exist (_, _, _)) ->
+      Predicate.bot_pred
+    | (SailAST.Typ_id (SailAST.Operator _), _) -> Predicate.bot_pred
+    | (SailAST.Typ_var _, _) -> Predicate.bot_pred
+    | (SailAST.Typ_fn (_, _, _), _) -> Predicate.bot_pred
+    | (SailAST.Typ_bidir (_, _, _), _) -> Predicate.bot_pred
+    | (SailAST.Typ_tup _, _) -> Predicate.bot_pred
+    | (SailAST.Typ_app (_, _), _) -> Predicate.bot_pred
+    | (SailAST.Typ_exist (_, _, _), _) -> Predicate.bot_pred)))))))))))))))))))
 and match_arg_i_i_o
   x xa =
     Predicate.sup_pred
@@ -17216,7 +17299,7 @@ and check_lexp_i_o
                  (match a with SailAST.LEXP_id (_, _) -> Predicate.bot_pred
                    | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
                    | SailAST.LEXP_memory (_, _, _) -> Predicate.bot_pred
-                   | SailAST.LEXP_cast (tan, t2, x) ->
+                   | SailAST.LEXP_cast (tan, t, x) ->
                      Predicate.bind
                        (eq_i_i (Option.equal_option SailAST.equal_typ) None
                          (SailEnv.lookup_mutable tan x))
@@ -17224,11 +17307,11 @@ and check_lexp_i_o
                          Predicate.bind (eq_o_i (SailEnv.get tan))
                            (fun aa ->
                              (match aa with None -> Predicate.bot_pred
-                               | Some (env, t) ->
-                                 Predicate.bind (subtype_i_i_i env t2 t)
+                               | Some (env, ta) ->
+                                 Predicate.bind (subtype_i_i_i env ta t)
                                    (fun () ->
                                      Predicate.single
-                                       [(x, (SailEnv.Mutable, t2))]))))
+                                       [(x, (SailEnv.Mutable, t))]))))
                    | SailAST.LEXP_tup (_, _) -> Predicate.bot_pred
                    | SailAST.LEXP_vector_concat (_, _) -> Predicate.bot_pred
                    | SailAST.LEXP_vector (_, _, _) -> Predicate.bot_pred
