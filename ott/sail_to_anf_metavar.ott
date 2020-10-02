@@ -1,0 +1,73 @@
+%
+% This contains meta and nonterms that we need for MiniSail that
+% are defined in Sail.ott and for when we want to process
+% the former when not not with the latter
+%
+
+% Do not include k as its used for kid variables
+indexvar q ::=
+  {{ phantom }}
+  {{ com Index variables for meta-lists }}
+
+  
+
+
+% Projection index
+%metavar p ::=
+%  {{ phantom }}
+%  {{ ocaml string }}
+%  {{ lem string }}
+%  {{ hol string }}
+%  {{ isa string }}
+%  {{ com String literals }}
+%  {{ ocamllex ['a'-'z' 'A'-'Z']+ }}
+
+
+
+%metavar id ::= {{ com Identifiers }}
+%  {{ isa string }}
+%  {{ ocaml string }}
+%  {{ ocamllex [a-z]+ }}
+%  {{ coq nat }} {{ coq-equality }}
+  
+%metavar x , z , k , y , w , f , a, bvar {{ tex \hat{[[a]]} }}  ::=
+%  {{ com Identifier }}
+%  {{ ocaml string }}
+%  {{ ocamllex [a-z]+ }}
+
+%metavar ctor {{ tex \dot{[[ctor]]} }} ::= {{ com Constructor }}
+%  {{ isa string }}
+%  {{ ocaml string }}
+%  {{ ocamllex [a-z]+ }}
+
+metavar ctor {{ tex \dot{[[ctor]]} }} ::= {{ com Constructor }}
+  {{ isa string }}
+  {{ ocaml string }}
+  {{ ocamllex [a-z]+ }}
+  {{ coq nat }} {{ coq-equality }}
+
+
+%metavar field  ::= {{ com Record Field }}
+%  {{ isa string }}
+%  {{ ocaml string }}
+%  {{ ocamllex [a-z]+ }}
+
+
+
+
+%metavar kid ::= {{ com Type variable (for now Nat kind only)}}
+
+%metavar q ::= {{ com Predicate }} {{ isa string }} {{ ocaml string }} {{ ocamllex [a-z]+ }}
+
+
+grammar
+
+% Variables - mix of nameless and named. Convention below is that z's are nameless/bound variables.
+% Should this distinction be explicit in the Ott grammar
+%x ,  z , k , f   :: 'V' ::=
+%  | id :: :: Named   {{ isa (VNamed [[id]]) }}
+%  | #0  :: :: Index  {{ isa VIndex }} {{ tex z }}
+%  | EX id :: :: Ex {{ isa VEx }} {{ com Existential/internal variable
+% FIXME - The homs are wrong
+%  | EX z   :: M :: existential {{ tex \widehat{[[x]]} }} {{ com Existential variable }} {{ isa [[z]] }} {{ ocaml [[z]] }}
+

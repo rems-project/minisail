@@ -13,7 +13,7 @@ OTT=~/github/ott_markw/bin/ott
 OTT_MASTER=$(OTT)
 #ott -signal_parse_errors true
 SAILDIR=~/github/sail_minisail
-SAILOTT=$(SAILDIR)/language/sail.ott
+SAILOTT=$(SAILDIR)/language/sail_minisail.ott
 
 all: minisail_anf.pdf  minisail_anf_include.tex ms_to_anf_include.tex sail_to_ms_include.tex minisailplus_include.tex
 

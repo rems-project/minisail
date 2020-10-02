@@ -72,26 +72,27 @@ sigma {{ tex \sigma }} :: 'S_' ::=
 %  | { kinded_id1 ..  kinded_idn . n_constraint } :: :: destruct_bool
 % | sigma ( typ ) :: M :: subst  {{ isa subst_t [[typ]] [[sigma]] }}
 
-mut :: 'Mut_' ::=
+mut_immut :: 'Mut_' ::=
   | mutable :: :: mutable
   | immutable :: :: immutable
 
-%terminals :: '' ::=
+terminals :: '' ::=
+   | ~ :: :: sim {{ tex \sim }}
 %  | INN :: :: member {{ tex \in }}
 %  | |~ :: :: ncdash {{ tex \ncdash }}
   
 formula :: formula_ ::=
   | judgement                               :: :: judgement
   | formula1 .. formulan                    :: :: dots
-  | id / mut : typ INN E                          :: :: lookup_local_var
-           {{ tex [[id]] / [[mut]] : [[typ]] \in [[E]] }}	   
+  | id / mut_immut : typ INN E                          :: :: lookup_local_var
+           {{ tex [[id]] / [[mut_immut]] : [[typ]] \in [[E]] }}	   
   | id / register : typ INN E                          :: :: lookup_register
            {{ tex [[id]] / register : [[typ]] \in [[E]] }}
   | id / enum : typ INN E                          :: :: lookup_enum
            {{ tex [[id]] / enum : [[typ]] \in [[E]] }}
 
-  | id / mut NOTIN E                          :: :: lookup_local_var_not
-           {{ tex [[id]] / [[mut]] \notin [[E]] }}
+  | id / mut_immut NOTIN E                          :: :: lookup_local_var_not
+           {{ tex [[id]] / [[mut_immut]] \notin [[E]] }}
   | ( kid , kind ) INN E                    :: :: type_var_lookup {{ isa Some [[kind]] = lookup_type_var [[E]] [[kid]] }}
   | ( id , kind ) INN E                     :: :: type_id_lookup  {{ isa Some [[kind]] = lookup_type_id [[E]] [[id]] }}
   | { id : typ'' } : typ' INN E             :: :: record_field_type
@@ -109,10 +110,11 @@ formula :: formula_ ::=
   | nexp = length lit :: :: literal_length
   | default Order order INN E :: :: default_order
   | distinct E , bindings :: :: distinct 
-  | typ ~ { </ kinded_idi // i /> . n_constraint } :: :: destruct_bool
+  | { </ kinded_idi // i /> . bool ( n_constraint ) } ~ typ  :: :: destruct_bool
 %           {{ isa (Some ([[kinded_id1 .. kinded_idn]], [[n_constraint]]) = destruct_bool typ)  }}
-  | typ ~ { </ kinded_idi // i /> , n_constraint . nexp } :: :: destruct_numeric
+  | { </ kinded_idi // i /> , n_constraint . atom ( nexp ) } ~ typ :: :: destruct_numeric
 %           {{ isa (Some ([[kinded_id1 .. kinded_idn]], [[n_constraint]], [[nexp]]) = destruct_numeric typ)  }}
+  | E1 = E2 :: :: env_eq
 
 embed {{ isa
 fun lookup_type_id :: "'a E => id => kind option" where
@@ -353,6 +355,10 @@ code_pred (modes:
 
 defns typedefns :: '' ::=
 
+defn E |- typ ~> n_constraint :: :: normalize_typ :: nt_
+by
+
+
 defn E |- typ1 ~< typ2  :: :: subtype :: st_
 {{ tex [[E]] \vdash [[typ1]] \lesssim [[typ2]] }}
 by
@@ -360,7 +366,7 @@ by
 E |- typ1 ~> n_constraint1
 E |- typ2 ~> n_constraint2
 E , n_constraint1 |= n_constraint2
----------------------------------------
+--------------------------------------------- :: subtype
 E |- typ1 ~< typ2
 
 defn E |- typ1 ~ typ2 :: :: eqtype :: eqt_
@@ -565,7 +571,7 @@ E |- { exp ; exp1 ; ... ; expn } : typ
 
 
 % Handles mutable / immutable
-id / mut : typ INN E
+id / mut_immut : typ INN E
 ---------------------------- :: id
 E |- id : typ
 
@@ -616,10 +622,10 @@ E |~ exp1 : typ1 .... E |~ expn : typn
 E |- ( exp1 , .... , expn ) : (typ1 , .... , typn )
 
 
-t_of exp1 ~ { kinded_id1 .. kinded_idn . n_constraint }
+{ </ kinded_idi // i /> . bool ( n_constraint )  } ~ t_of exp1
 E |~ exp1 : t_of exp1
-E , n_constraint  |~ exp2 : typ
-E , not(n_constraint) |~ exp3 : typ
+E , </ kinded_idi // i /> , n_constraint  |~ exp2 : typ
+E , </ kinded_idi // i /> , not(n_constraint) |~ exp3 : typ
 ---------------------------------------------- :: if
 E |- if exp1 then exp2 else exp3 : typ
 
@@ -647,13 +653,14 @@ E |- loop termination_measure { exp } exp1 exp2 : unit
 % Would like the more concise
 %E |~ exp1 : { </ kinded_idi // i /> , n_constraint . nexp }
 
-t_of exp1 ~ { </ kinded_idi // i /> , n_constraint1 . nexp1 }
+{ </ kinded_idi // i /> , n_constraint1 . atom ( nexp1 ) } ~ t_of exp1 
 E |~ exp1 : t_of exp1
-t_of exp2 ~ { </ kinded_id'i // i /> , n_constraint2 . nexp2 }
+{ </ kinded_id'i // i /> , n_constraint2 . atom ( nexp2 ) } ~ t_of exp2
 E |~ exp2 : t_of exp2
 E |~ exp3 : int
 %n_constraint = n_constraint1 /\ n_constraint2 /\ nexp1 <= kid /\ kid <= nexp2
-:Env_cons_var: E , </ kinded_idi // i /> , </ kinded_id'i // i /> , n_constraint1 & n_constraint2 , id : range ( nexp1 , nexp2 ) |~ exp4 : unit
+E' = :Env_cons_var: E , </ kinded_idi // i /> , </ kinded_id'i // i /> , n_constraint1 & n_constraint2 , id : range ( nexp1 , nexp2 )
+E' |~ exp4 : unit
 ------------------------------------------------------------------------------------------------------- :: for
 E |- foreach ( id from exp1 to exp2 by exp3 in order ) exp4 : unit
 

@@ -1,3 +1,6 @@
 thy/MiniSail/Safety/output/document/
 thy/MiniSail/output/document/
-*.thy~
+*~
+*.aux
+*.log
+src/_build
