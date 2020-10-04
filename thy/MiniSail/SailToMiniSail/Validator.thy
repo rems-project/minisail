@@ -511,35 +511,48 @@ inductive subenv :: "env \<Rightarrow> env \<Rightarrow> bool" where
 
 "subenv e1 e2"
 
+definition exception_typ where
+  "exception_typ =  ( (Typ_id ( (id (STR ''exception'')))))"
+
 (* Should I make this more like the Ott definition? *)
-inductive check_exp :: "tannot exp \<Rightarrow> bindings \<Rightarrow> bool" ( "\<turnstile> _ \<leadsto> _") and
-          check_exp_typ :: "tannot exp \<Rightarrow> typ \<Rightarrow> bool" ( "\<turnstile> _ : _ " ) and
-          check_exp_typ_env :: "env \<Rightarrow> tannot exp \<Rightarrow> typ \<Rightarrow> bool" ( " _ \<turnstile> _ : _ " ) and
+inductive check_exp :: "env \<Rightarrow> tannot exp \<Rightarrow> typ \<Rightarrow> bool" ( "_ \<turnstile> _ :  _") and
+          check_exp_s :: "env \<Rightarrow> tannot exp \<Rightarrow> typ \<Rightarrow> bool" ( "_ |~ _ :  _") and
           check_exp_list :: "(tannot exp) list \<Rightarrow> typ list \<Rightarrow> bool" and 
+         
+          check_pexp :: "env \<Rightarrow> tannot pexp \<Rightarrow> typ \<Rightarrow> bool" ( " _ \<turnstile> _ : _ ") and
+          check_pexp_s :: "env \<Rightarrow> tannot pexp \<Rightarrow> typ \<Rightarrow> bool" ( "_ |~  _ : _") and
+          check_pexps :: "tannot pexp list \<Rightarrow> bool" ( "\<turnstile> _")  and
+         
           check_letbind :: "tannot letbind \<Rightarrow> bindings \<Rightarrow> bool" ( "\<turnstile> _ \<leadsto> _") and 
           check_fexp :: "tannot fexp \<Rightarrow> typ \<Rightarrow> bool" ( "\<turnstile> _ <: _ ") and
           check_fexp_list :: "tannot fexp list \<Rightarrow> typ \<Rightarrow> bool" and 
-          check_pexp :: "tannot pexp \<Rightarrow> bool" ( "\<turnstile> _") and
-          check_pexps :: "tannot pexp list \<Rightarrow> bool" ( "\<turnstile> _")  and
-          check_lexp :: "tannot lexp \<Rightarrow> bindings \<Rightarrow> bool"  ( "\<turnstile> _ \<leadsto> _") and
+        
+      
+          check_lexp :: "env \<Rightarrow> tannot lexp \<Rightarrow> typ \<Rightarrow> bindings \<Rightarrow> bool"  ( " _ \<turnstile> _ : _ \<leadsto> _") and
           check_lexp_list :: "(tannot lexp) list \<Rightarrow> bindings \<Rightarrow> bool" and
           check_exp_bindings :: "tannot exp \<Rightarrow> bindings \<Rightarrow> bool" 
 where
 
-check_lexp_id_notbI:"\<lbrakk> 
-   Some (_,t) = get tan; 
+(* FIXME NEed to check env *)
+check_exp_sI: "\<lbrakk>
+     Some (e,t) = env_type_of_exp exp;
+     subtype e t t';
+     e \<turnstile> exp : t
+\<rbrakk> \<Longrightarrow> e' |~ exp : t'"
+
+(* CHECK LEXP *)
+| check_lexp_id_notbI:"\<lbrakk>   
    trace ''check_lexp_id_notbI'';  
    None = lookup_mutable tan x
-\<rbrakk> \<Longrightarrow> \<turnstile> ( (LEXP_id tan x) ) \<leadsto> [ (x,Mutable,t) ]" 
+\<rbrakk> \<Longrightarrow> E \<turnstile> ( (LEXP_id tan x) ) : t \<leadsto> [ (x,Mutable,t) ]" 
 
-| check_lexp_id_bI:"\<lbrakk> 
-   Some (env,t1) = get tan; 
+| check_lexp_id_bI:"\<lbrakk>   
    trace ''check_lexp_id_bI'';
    Some t2 = lookup_mutable tan x;
    trace (''check_lexp_id_bI found mut'' @ show t2);
    subtype env t1 t2;
    trace (''check_lexp_id_bI subtype ok'')
-\<rbrakk> \<Longrightarrow> \<turnstile> ( (LEXP_id tan x)  ) \<leadsto> []" 
+\<rbrakk> \<Longrightarrow> env \<turnstile> ( (LEXP_id tan x)  ) : t1 \<leadsto> []" 
 
 (* 
    We need the following to work: 
@@ -549,27 +562,24 @@ check_lexp_id_notbI:"\<lbrakk>
    If y is already registered as a mutable, then it is the highest type, otherwise its the cast.
 
   *)
-| check_lexp_cast_notbI:"\<lbrakk> 
-   Some (env,t') = get tan;
+| check_lexp_cast_notbI:"\<lbrakk>  
    None = lookup_mutable tan x;
    subtype env t' t
-\<rbrakk> \<Longrightarrow> \<turnstile> ( (LEXP_cast tan t x)  ) \<leadsto> [ (x,Mutable,t) ]" 
+\<rbrakk> \<Longrightarrow> env \<turnstile> ( (LEXP_cast tan t x)  ) : t' \<leadsto> [ (x,Mutable,t) ]" 
 
-(* FIXME swap these around too *)
+
 | check_lexp_cast_bI:"\<lbrakk> 
-   Some (env,t') = get tan; 
    Some t'' = lookup_mutable tan x;  
    subtype env t' t;
    subtype env t t''
-\<rbrakk> \<Longrightarrow> check_lexp ( (LEXP_cast tan t x)  ) []" 
+\<rbrakk> \<Longrightarrow> env \<turnstile> ( (LEXP_cast tan t x)  ) : t' \<leadsto>  []" 
 
-| check_lexp_derefI: "\<lbrakk>
-    Some (env,t2) = get tan;
-    check_exp exp bs;  
-    Some t = type_of_exp exp;
+| check_lexp_derefI: "\<lbrakk>    
+    Some (e,t) = env_type_of_exp exp;
+    e \<turnstile> exp : t;    
     Some t1 = deconstruct_register_type t;  
     subtype_tan t1 tan
-\<rbrakk> \<Longrightarrow> check_lexp ( (LEXP_deref tan exp)) []"
+\<rbrakk> \<Longrightarrow> env \<turnstile> (LEXP_deref tan exp) : t2 \<leadsto>  []"
 
 | check_lexp_list_nilI: "\<lbrakk>
    trace ''check_lexp_list_nilI''
@@ -578,19 +588,20 @@ check_lexp_id_notbI:"\<lbrakk>
 
 | check_lexp_list_consI: "\<lbrakk>
     trace ''check_lexp_list_consI'';
-    check_lexp lexp binding;  
+    Some typ = type_of_lexp lexp;
+    Some env = env_of_lexp lexp;
+    env \<turnstile> lexp : typ \<leadsto> binding;  
     check_lexp_list lexps bindings
 \<rbrakk> \<Longrightarrow>   check_lexp_list (lexp#lexps) (binding@bindings)"
 
 
 | check_lexp_tupI: "\<lbrakk>
-    trace ''check_lexp_tupI'';
-    Some (env,t2) = get tan;
+    trace ''check_lexp_tupI'';  
     check_lexp_list lexps bindings;
     Some ts1 = those (List.map (\<lambda>l. type_of_lexp l) lexps);
     trace (''check_lexp_tupI types='' @ show ts1);
     subtype_tan ( (Typ_tup ts1) ) tan
-\<rbrakk> \<Longrightarrow> check_lexp ( (LEXP_tup tan lexps)) bindings"
+\<rbrakk> \<Longrightarrow> env \<turnstile> (LEXP_tup tan lexps) : t2 \<leadsto>  bindings"
 
 (*
 | check_lexp_tupI: "\<lbrakk>
@@ -604,30 +615,32 @@ check_lexp_id_notbI:"\<lbrakk>
     Some (nexp, order, typ) = is_vector_type tan;
     check_lexp_list lexps bindings;
     check_lexp_vector_list lexps order typ
-\<rbrakk> \<Longrightarrow> check_lexp ( (LEXP_vector_concat tan lexps)) bindings"
+\<rbrakk> \<Longrightarrow> env \<turnstile> (LEXP_vector_concat tan lexps) : t \<leadsto> bindings"
 
 
 | check_lexp_vectorI: "\<lbrakk>
    trace ''check_lexp_vectorI'';
-   Some (_,typ) = get tan;
-   check_lexp lexp bindings;
-   trace ''check_lexp_vectorI 2'';
    Some t = type_of_lexp lexp;
+   Some env2 = env_of_lexp lexp;
+   env \<turnstile> lexp : t \<leadsto> bindings;
+   trace ''check_lexp_vectorI 2''; 
    trace (''check_lexp_vectorI vectype='' @ show t);
    Some (nexp', order, typ) = deconstruct_vector_type t;
    trace (''check_lexp_vectorI typ='' @ show typ);
-   \<turnstile> exp : int_typ
-\<rbrakk> \<Longrightarrow> check_lexp ( (LEXP_vector tan lexp exp) ) bindings"
+   Some (ee,te) = env_type_of_exp exp;
+   ee \<turnstile> exp : te;
+   subtype ee te int_typ
+\<rbrakk> \<Longrightarrow> env \<turnstile> (LEXP_vector tan lexp exp) : typ \<leadsto> bindings"
 
-| check_lexp_vector_rangeI: "\<lbrakk>
-    Some (_,t2) = get tan;
-    \<turnstile> exp1 : int_typ;
-    \<turnstile> exp2 : int_typ;
-    check_lexp lexp bindings ;
+| check_lexp_vector_rangeI: "\<lbrakk>   
+    env |~  exp1 : int_typ;
+    env |~  exp2 : int_typ;
     Some t1 = type_of_lexp lexp;
+    Some env1 = env_of_lexp lexp;
+    env1 \<turnstile> lexp : typ \<leadsto> bindings ;
     Some (nexp', order, typ) = deconstruct_vector_type t1;
     Some (nexp , order, typ) = deconstruct_vector_type t2
-\<rbrakk> \<Longrightarrow> check_lexp ( (LEXP_vector_range tan lexp exp1 exp2) ) []"
+\<rbrakk> \<Longrightarrow> env \<turnstile> ( (LEXP_vector_range tan lexp exp1 exp2) ) : t2 \<leadsto> []"
 
 (* Get type of field x from typ and environment, check exp is a subtype *)
 (* The fexp doesn't have an evironment, the exp inside does *)
@@ -635,9 +648,11 @@ check_lexp_id_notbI:"\<lbrakk>
   Some recid = deconstruct_record_type rtyp;
   Some env = get_env_exp exp;
   Some t2 = lookup_record_field_env env recid x;
-  check_exp_typ exp t2
+  env |~ exp : t2
 \<rbrakk> \<Longrightarrow> check_fexp ( (FE_Fexp tan x exp)) rtyp"
 
+
+(* CHECK FEXP LIST *)
 
 | check_fexp_list_nillI: "check_fexp_list [] _"
 
@@ -647,34 +662,38 @@ check_lexp_id_notbI:"\<lbrakk>
 \<rbrakk> \<Longrightarrow> check_fexp_list (fexp#fexp_list) typ"
 
 (* FIXME *)
-| check_lexp_fieldI: "check_lexp ( (LEXP_field tan lexp fid ) ) []"
+| check_lexp_fieldI: "\<lbrakk>
+   Some env = env_of_lexp lexp;
+   Some typ = type_of_lexp lexp;
+   env \<turnstile> lexp : typ \<leadsto> bindings
+\<rbrakk> \<Longrightarrow>  env' \<turnstile> ( (LEXP_field tan lexp fid ) ) : typ' \<leadsto> []"
+
+(* CHECK EXP *)
 
 (* Value like things *)
 | check_litI: "\<lbrakk>
-   Some (env,t) = get tan ; 
    check_lit env lit t
-\<rbrakk>  \<Longrightarrow> \<turnstile> ( (E_lit tan lit) ) \<leadsto> []"
+\<rbrakk>  \<Longrightarrow> env \<turnstile> ( (E_lit tan lit) ) : t"
 
 | check_idI: "\<lbrakk> 
    trace ''check_idI'';
-   Some (env,t2) = get tan;  
    Some t1 = lookup_id tan x;
    subtype env t1 t2
-\<rbrakk> \<Longrightarrow> \<turnstile> ( (E_id tan x)  ) \<leadsto> []"
+\<rbrakk> \<Longrightarrow> env \<turnstile> ( (E_id tan x)  ) : t2"
 
 (*  subtype env ( (Typ_tup [t1,t2]) ) typ *)
 (* Or do we check_exp the components of the tuple and do as line LEXP_vector? *)
-| check_tupleI: "\<lbrakk> 
-    Some (_,t) = get tan;
+| check_tupleI: "\<lbrakk>   
     ( (Typ_tup typs)) = t;
     check_exp_list exps typs      
-\<rbrakk> \<Longrightarrow> \<turnstile> ( (E_tuple tan exps)   ) \<leadsto> []"
+\<rbrakk> \<Longrightarrow> e  \<turnstile> ( (E_tuple tan exps)   ) : t"
 
 | check_castI: "\<lbrakk>
-   check_exp exp bs;
-   subtype_exp exp t
-\<rbrakk> \<Longrightarrow>  \<turnstile> ( (E_cast tan t exp)   ) \<leadsto> bs"
+   E |~ exp : t;
+   subtype E t t'
+\<rbrakk> \<Longrightarrow>  E \<turnstile> E_cast tan t exp : t'"
 
+(*
 | check_exp_env_typI: 
   "\<lbrakk>  \<turnstile> exp \<leadsto> bs;
      Some (e,t) = get_e exp;    
@@ -686,19 +705,19 @@ check_lexp_id_notbI:"\<lbrakk>
   "\<lbrakk>  \<turnstile> exp \<leadsto> bs;    
      subtype_exp  exp typ
 \<rbrakk> \<Longrightarrow> check_exp_typ exp typ"
-
+*)
 | check_exp_list_nilI: "check_exp_list  [] []"
 
 | check_exp_list_consI: "\<lbrakk>
-   check_exp_typ  exp typ;
+   Some E = env_of_exp exp;
+   E |~  exp : typ;
    check_exp_list  exps typs
 \<rbrakk> \<Longrightarrow> check_exp_list (exp#exps) (typ#typs)"
 
 (* \<open>Check the actual arguments against function arguments and check return type,
    with substutition of instantiations, against 'tan' type\<close>
 *)
-| check_appI: "\<lbrakk>
-    Some (env,t) = get tan;
+| check_appI: "\<lbrakk>   
     Some (in_typs,rett_typ ) = lookup_fun tan fid;
     trace (''E_app '' @ (show_tannot tan));    
     Some in_typs2 = subst_inst_list tan in_typs;
@@ -708,29 +727,26 @@ check_lexp_id_notbI:"\<lbrakk>
     trace ''E_app after subst_inst ret'';  
     trace (''E_app subtype'' @ ''t1='' @ show ret_typ2 @ ''t2='' @ show t);
     subtype_tan ret_typ2 tan
-\<rbrakk> \<Longrightarrow> check_exp ( (E_app tan fid exps)  ) []"
+\<rbrakk> \<Longrightarrow> env \<turnstile> E_app tan fid exps : t"
 
 
 
 | check_recordI: "\<lbrakk>
-   Some (_,typ) = get tan;
    check_fexp_list fexp_list typ   
-\<rbrakk> \<Longrightarrow> check_exp ( (E_record tan fexp_list)  ) []"
+\<rbrakk> \<Longrightarrow> env \<turnstile> E_record tan fexp_list : typ"
 
 | check_record_updateI: "\<lbrakk>
-  \<turnstile> exp \<leadsto> bs ;
-  check_fexp_list fexp_list typ;
-  Some (_,typ) = get tan
-\<rbrakk> \<Longrightarrow> check_exp ( (E_record_update tan exp fexp_list)  ) []"
+  E \<turnstile> exp : typ ;
+  check_fexp_list fexp_list typ 
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_record_update tan exp fexp_list) : typ"
 
-| check_fieldI: "\<lbrakk>
-   Some (env,t1) = get tan;
-   \<turnstile> exp \<leadsto> bs;
+| check_fieldI: "\<lbrakk> 
+   env |~ exp : rtype;
    Some rtype = type_of_exp exp;
    Some recid = deconstruct_record_type rtype;
    Some t2 = lookup_record_field_env env recid fid;
    subtype env t1 t2
-\<rbrakk> \<Longrightarrow> check_exp ( (E_field tan exp fid)  ) []"
+\<rbrakk> \<Longrightarrow> env \<turnstile> (E_field tan exp fid) : t1 "
 
 (* Don't need this as it's sugar
 | check_sizeofI:
@@ -740,34 +756,34 @@ check_lexp_id_notbI:"\<lbrakk>
 (* Type of return stmt can be anything; exp must be return type of function *)
 | check_returnI: "\<lbrakk>
    Some r_typ = ret_type tan;
-   check_exp_typ exp r_typ
-\<rbrakk> \<Longrightarrow> check_exp ( (E_return tan exp)  ) []"
+   E |~ exp : r_typ
+\<rbrakk> \<Longrightarrow> E \<turnstile> E_return tan exp : t"
 
 (* Type of exit can be anything; exp must be unit *)
 | check_exitI: "\<lbrakk> 
-   check_exp_typ exp unit_typ
-\<rbrakk> \<Longrightarrow> check_exp ( (E_exit tan exp)  ) []"
+   E |~ exp :  unit_typ
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_exit tan exp) : typ"
 
 | check_throwI: "\<lbrakk>
-   check_exp_typ exp ( (Typ_id ( (id (STR ''exception'')))))
-\<rbrakk> \<Longrightarrow> check_exp ( (E_throw tan exp) ) []"
+   E |~ exp : exception_typ
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_throw tan exp) : exception_typ"
 
 | check_tryI: "\<lbrakk> 
-   check_exp exp bs;
+   E |~ exp : exception_typ;
    check_pexps pexps
-\<rbrakk> \<Longrightarrow> check_exp ( (E_try tan exp pexps) ) []"
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_try tan exp pexps) : unit_typ"
 
 | check_refI: "\<lbrakk> 
     Some t1 = lookup_register tan x;
     subtype_tan t1 tan
-\<rbrakk> \<Longrightarrow> check_exp ( (E_ref tan x)  ) []"
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_ref tan x) : typ"
 
 | check_vectorI: "\<lbrakk>
     Some (env,_) = get tan;
-    Some (len,ord,typ) = is_vector_type tan;
+    Some (len,ord,typ) = deconstruct_vector_type vec_typ;
     check_exp_list exps (replicate (length exps) typ);
     prove env (nc_eq (nint (integer_of_int2 (int (length exps)))) (len))
-\<rbrakk> \<Longrightarrow> check_exp ( (E_vector tan exps)  ) []"
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_vector tan exps) : vec_typ"
 
 (* These are sugar 
 | check_vector_accessI:
@@ -789,33 +805,30 @@ check_lexp_id_notbI:"\<lbrakk>
 | check_listI: "\<lbrakk> 
   Some elem_typ = is_list_type tan;
   check_exp_list exps (replicate (length exps) elem_typ)
-\<rbrakk> \<Longrightarrow> check_exp ( (E_list tan exps)  ) []"
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_list tan exps) : typ"
 
-| check_list_consI: "\<lbrakk> 
-  Some (_,t) = get tan;
+| check_list_consI: "\<lbrakk>   
   Some elem_typ = is_list_type tan;
   check_exp_list [exp1] [elem_typ];
-  check_exp_typ exp2 t
-\<rbrakk> \<Longrightarrow> check_exp ( (E_cons tan exp1 exp2)  ) []"
+  E |~ exp2 : t
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_cons tan exp1 exp2)   : t "
  
 (* Statement like things - subtype checks *)
 
 | check_letI: "\<lbrakk> 
-     trace ''check_letI'';
-     Some (env,t1) = get tan;             
+     trace ''check_letI'';              
      check_letbind lb bindings;
-     check_exp_typ_env (add_locals env bindings) exp t1       
-\<rbrakk> \<Longrightarrow> check_exp ( (E_let tan lb exp) ) []"
+     (add_locals env bindings) |~ exp : t1       
+\<rbrakk> \<Longrightarrow> env \<turnstile> (E_let tan lb exp)  : t1"
 
 
-| check_ifI: "\<lbrakk> 
-     Some (env,t) = get tan;
-     check_exp exp1 bs1;
+| check_ifI: "\<lbrakk>   
+     env |~ exp1 : bool_all_typ;
      Some t_exp1 = type_of_exp exp1 ;
      Some nc = deconstruct_bool_type t_exp1;
-     (add_constraint nc env) \<turnstile> exp2 : t;
-     (add_constraint (nc_not nc ) env) \<turnstile> exp3 : t
-\<rbrakk> \<Longrightarrow> check_exp ( (E_if tan exp1 exp2 exp3) ) []"
+     (add_constraint nc env) |~ exp2 : t;
+     (add_constraint (nc_not nc ) env) |~ exp3 : t
+\<rbrakk> \<Longrightarrow> env \<turnstile> E_if tan exp1 exp2 exp3 : t"
 
 (* We don't have any information about guard so no flow typing *)
 (*
@@ -828,35 +841,36 @@ check_lexp_id_notbI:"\<lbrakk>
 \<rbrakk> \<Longrightarrow> check_exp ( (E_if exp1 exp2 exp3) tan)"
 *)
 
-| check_varI: "\<lbrakk> 
-     Some (env,t1) = get tan;
-     check_exp exp1 bs1;
-     check_exp exp2 bs2;
-     Some t2 = type_of_exp exp1;
-     subtype env t1 t2
-\<rbrakk> \<Longrightarrow> check_exp ( (E_var tan ( (LEXP_cast typ mvar) _) exp1 exp2) ) []"
+(* FIXME add mvar to E *)
+| check_varI: "\<lbrakk>     
+     E |~ exp1 : typ ;
+     E |~ exp2 : t2
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_var tan ( (LEXP_cast _ typ mvar)) exp1 exp2) : t2"
 
+(*
 | check_assignI:"\<lbrakk>   
      check_exp exp bs;
-     check_lexp lexp bindings   
-\<rbrakk> \<Longrightarrow> check_exp ( (E_assign tan lexp exp ) ) bindings"
+     Some env = env_of_lexp lexp;   
+     Some typ= type_of_lexp lexp;  
+     env \<turnstile> lexp : typ \<leadsto> bindings   
+\<rbrakk> \<Longrightarrow> E \<turnstile> ( (E_assign tan lexp exp ) ) bindings"
+*)
 
 | check_caseI:"\<lbrakk>
     trace ''check_caseI'';
-    check_exp exp bs;
+    Some typ = type_of_exp exp;
+    E |~ exp : typ;
     check_pexps pexps
-\<rbrakk> \<Longrightarrow> check_exp ( (E_case tan exp pexps) ) []"
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_case tan exp pexps)  : t "
 
 
 (* FIXME. See while_0.sail test case *)
-| check_loop1I: "\<lbrakk>
-   Some (env,_) = get tan;
-   check_exp exp1 bs1;
-   check_exp exp2 bs2;
+| check_loop1I: "\<lbrakk>   
+   E |~ exp1 : bool_all_typ; 
    Some t1 = type_of_exp exp1 ;   
    Some nc = deconstruct_bool_type t1;
-   add_constraint nc env \<turnstile> exp2 : unit_typ
-\<rbrakk> \<Longrightarrow> check_exp ( (E_loop tan lp  lm exp1 exp2)  ) []"
+   add_constraint nc E |~ exp2 : unit_typ
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_loop tan lp lm exp1 exp2)  : t "
 
 (*
 | check_loop12: "\<lbrakk>
@@ -874,22 +888,25 @@ check_lexp_id_notbI:"\<lbrakk>
       check exp3 as numeric
       check exp4 as unit_typ with constraint that x is between exp1 exp2 (for up, reversed for down) using new type-level variable for x
  Do we have to deconstruct or just proof something knowing the loop inv *)
-
+(* FIXME *)
 | check_forI: "\<lbrakk>
-    \<turnstile> exp1 : int_typ;
-    \<turnstile> exp2 : int_typ;
-    \<turnstile> exp3 : int_typ;
-    \<turnstile> exp4 : unit_typ
-\<rbrakk> \<Longrightarrow> check_exp ( (E_for tan x exp1 exp2 exp3 ord exp4)  ) []"
+    E |~ exp1 : int_typ;
+    E |~ exp2 : int_typ;
+    E |~ exp3 : int_typ;
+    E |~ exp4 : unit_typ
+\<rbrakk> \<Longrightarrow> E \<turnstile> E_for tan x exp1 exp2 exp3 ord exp4 : unit_typ"
 
 | check_pexps_nilI: "check_pexps []"
-| check_pexps_conI: "\<lbrakk> check_pexp pexp; check_pexps pexps \<rbrakk> \<Longrightarrow> check_pexps (pexp#pexps)"
+| check_pexps_conI: "\<lbrakk> 
+   Some (E,t) = env_type_of_pexp pexp;
+   E \<turnstile> pexp : t; 
+   check_pexps pexps 
+\<rbrakk> \<Longrightarrow> check_pexps (pexp#pexps)"
 
 | check_block_singleI: "\<lbrakk>
-   Some (_,t) = get tan;
-   \<turnstile> exp : t ;   
+   E |~ exp : t ;   
    trace (''block single t='' @ show t)
-\<rbrakk> \<Longrightarrow> check_exp ( (E_block tan [exp]) ) []"
+\<rbrakk> \<Longrightarrow> E \<turnstile> ( (E_block tan [exp]) ) : t "
 
 (*
 | check_block_cons_assignI:"\<lbrakk>                                    
@@ -901,60 +918,57 @@ check_lexp_id_notbI:"\<lbrakk>
 \<rbrakk> \<Longrightarrow> check_exp ( (E_block ( exp1#exp2#exps)) tan)"
 *)
 | check_block_consI:"\<lbrakk> 
-     check_exp exp1 bindings ;
-     subtype_exp exp1 unit_typ;
-     check_local_binds (exp2#exps) bindings;
-     check_exp ( (E_block tan (exp2#exps)) ) bs
-\<rbrakk> \<Longrightarrow> check_exp ( (E_block tan (exp1#exp2#exps)) ) []"
+     E \<turnstile> exp1 : unit_typ ;    
+     E \<turnstile> E_block tan (exp2#exps) : t
+\<rbrakk> \<Longrightarrow> E \<turnstile> E_block tan (exp1#exp2#exps) : t"
 
 (* FIXME need to check constraint is in env *)
 | check_assertI: "\<lbrakk>
-   check_exp assert_exp bs;
+   E |~ assert_exp : t;
    Some t = type_of_exp assert_exp
-\<rbrakk> \<Longrightarrow> check_exp ( (E_assert tan assert_exp msg_exp) ) []"
+\<rbrakk> \<Longrightarrow> E \<turnstile> E_assert tan assert_exp msg_exp : _"
 
 (*   (case get_env_exp exp of None \<Rightarrow> trace ''No tan'' | Some env \<Rightarrow> trace (''letbindI '' @ (show_env env))); *)
 | check_letbindI:"\<lbrakk>   
+     Some (E,t) = env_type_of_exp exp;
      check_pat pat bindings;  
-     check_exp exp bs
+     E |~ exp : t 
 \<rbrakk> \<Longrightarrow> 
      check_letbind ( (LB_val tan pat exp) ) bindings "
 
-(* FIXME - Add subtype check *)
+(* FIXME - Add subtype check; add bindings to E *)
 | check_pexpI:"\<lbrakk>   
      trace ''check_pexpI'';
      Some env = env_of exp;
      check_pat pat bindings;
      locals_in env bindings;  
-     check_exp exp bs
-\<rbrakk> \<Longrightarrow> check_pexp ( (Pat_exp tan pat exp) ) "
+     env |~ exp : typ
+\<rbrakk> \<Longrightarrow> E \<turnstile> (Pat_exp tan pat exp) : typ "
 
 (* FIXME expg needs to be bool *)
 | check_pexp_whenI:"\<lbrakk>   
      Some env = env_of exp;
      check_pat pat bindings;
      locals_in env bindings;   
-     check_exp exp bs;
+     env |~ exp : typ;
      locals_in envg bindings;
      Some envg = env_of expg;
-     check_exp expg bsg
- 
-\<rbrakk> \<Longrightarrow> check_pexp ( (Pat_when tan pat expg exp) )"
+     envg |~ expg : bool_all_typ 
+\<rbrakk> \<Longrightarrow> E \<turnstile> (Pat_when tan pat expg exp) : typ"
 
 
 
 code_pred (modes: 
-       check_exp: i \<Rightarrow> o \<Rightarrow> bool and
+       check_exp: i \<Rightarrow>  i \<Rightarrow> i  \<Rightarrow> bool and
        check_letbind: i \<Rightarrow> o \<Rightarrow> bool and
-       check_pexp : i \<Rightarrow> bool and
+       check_pexp : i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> bool and
        check_pexps : i \<Rightarrow> bool and
        check_fexp : i \<Rightarrow> i  \<Rightarrow> bool and
        check_fexp_list : i \<Rightarrow> i \<Rightarrow> bool and
        check_exp_list : i \<Rightarrow> i \<Rightarrow> bool and
        check_lexp : i \<Rightarrow> o \<Rightarrow> bool and
-       check_lexp_list : i \<Rightarrow> o \<Rightarrow> bool and
-       check_exp_typ : i \<Rightarrow> i \<Rightarrow> bool and
-       check_exp_typ_env : i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> bool
+       check_lexp_list : i \<Rightarrow> o \<Rightarrow> bool 
+    
 )  [show_steps,  show_mode_inference,  show_invalid_clauses] check_exp .
 
 (* FIXME - NEed to expand synonyms in the above *)
@@ -963,8 +977,9 @@ value "True"
 
 values "{x . subtype emptyEnv unit_typ unit_typ }"
 
-values "{ x. check_exp 
-              ( (E_lit  (set_type None unit_typ )  L_unit))  x }"
+values "{ True . check_lit emptyEnv  L_unit  unit_typ }"
+
+values "{ True . check_exp emptyEnv  (E_lit (set_type None unit_typ) L_unit) unit_typ }"
 
 value "add_local (set_type None (bool_typ True))
                                  ( (id (STR ''x'')) ) (bool_typ True)"
@@ -1017,10 +1032,11 @@ check_funcls_emptyI: " trace ''check_funcls_emptyI'' \<Longrightarrow> check_fun
 
 
 | check_funcls_consI: "\<lbrakk>
+    Some (e,t) = env_type_of_pexp pexp;
     trace ''check_funcls_consI'';
     check_funcls fs to;
     trace ''check_funcl'';
-    check_pexp pexp
+    check_pexp e pexp t
 \<rbrakk> \<Longrightarrow> check_funcls (( (FCL_Funcl _ fid ((PEXP_funcl pexp)  ))  )#fs) to"
 
 subsection \<open>Definitions\<close>
@@ -1028,7 +1044,8 @@ subsection \<open>Definitions\<close>
 inductive check_sd :: "env \<Rightarrow> tannot scattered_def \<Rightarrow> bool" where
 "check_sd env ( (SD_function ro to eo fid) tan)" 
 | "\<lbrakk>
-    check_pexp pexp
+    Some (e,t) = env_type_of_pexp pexp;
+    check_pexp e pexp t
 \<rbrakk> \<Longrightarrow> check_sd env ( (SD_funcl tan ((FCL_Funcl ftan fid (PEXP_funcl pexp)) )) )"
 
 | "check_sd env ( (SD_variant tan tyid tq) )"

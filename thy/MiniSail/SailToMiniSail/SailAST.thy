@@ -212,8 +212,8 @@ and 'a lexp =  \<comment> \<open>lvalue expression\<close>
 and 'a fexp =  \<comment> \<open>field expression\<close>
    FE_Fexp "'a annot" "id" "'a exp"  
 and 'a pexp =  \<comment> \<open>pattern match\<close>
-   Pat_exp "'a annot" "'a pat" "'a exp"  
- | Pat_when "'a annot" "'a pat" "'a exp" "'a exp"  
+   Pat_exp  ( annot_pexp :  "'a annot" ) "'a pat" "'a exp"  
+ | Pat_when ( annot_pexp : "'a annot" ) "'a pat" "'a exp" "'a exp"  
 and 'a letbind =  \<comment> \<open>let binding\<close>
    LB_val (annot_letbind : "'a annot") "'a pat" "'a exp"   \<comment> \<open>let, implicit type ($'a pat$ must be total)\<close>
 

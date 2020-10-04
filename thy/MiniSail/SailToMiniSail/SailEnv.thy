@@ -90,6 +90,10 @@ fun get_tan_e :: "tannot exp \<Rightarrow> tannot" where
 fun get_tan_pat :: "tannot pat \<Rightarrow> tannot" where
   "get_tan_pat exp = annot_pat exp"
 
+fun get_tan_pexp :: "tannot pexp \<Rightarrow> tannot" where
+  "get_tan_pexp pexp  = annot_pexp pexp"
+
+
 fun get_tan_lexp :: "tannot lexp \<Rightarrow> tannot" where
   "get_tan_lexp lexp = annot_lexp lexp"
 
@@ -98,6 +102,16 @@ fun get_tan_letbind :: "tannot letbind \<Rightarrow> tannot" where
 
 fun type_of_exp :: "tannot exp \<Rightarrow> typ option" where
   "type_of_exp exp = get_type (get_tan_e exp)"
+
+fun env_type_of_exp :: "tannot exp \<Rightarrow> (env*typ) option" where
+   "env_type_of_exp exp = (case get_type (get_tan_e exp) of
+                            None \<Rightarrow> None | Some t \<Rightarrow> (case get_env (get_tan_e exp) of
+                                                         None \<Rightarrow> None | Some e \<Rightarrow> Some (e,t)))"
+
+fun env_type_of_pexp :: "tannot pexp \<Rightarrow> (env*typ) option" where
+   "env_type_of_pexp exp = (case get_type (get_tan_pexp exp) of
+                            None \<Rightarrow> None | Some t \<Rightarrow> (case get_env (get_tan_pexp exp) of
+                                                         None \<Rightarrow> None | Some e \<Rightarrow> Some (e,t)))"
 
 fun type_of_pat :: "tannot pat \<Rightarrow> typ option" where
   "type_of_pat pat  = get_type (get_tan_pat pat)"
@@ -122,6 +136,15 @@ primrec set_type :: "tannot \<Rightarrow> typ \<Rightarrow> tannot" where
 
 fun type_of_lexp :: "tannot lexp \<Rightarrow> typ option" where
   "type_of_lexp lexp = get_type (get_tan_lexp lexp)"
+
+fun env_of_lexp :: "tannot lexp \<Rightarrow> env option" where
+  "env_of_lexp lexp = get_env (get_tan_lexp lexp)"
+
+fun get_tan_exp :: "tannot exp \<Rightarrow> tannot" where
+  "get_tan_exp exp = annot_e exp"
+
+fun env_of_exp :: "tannot exp \<Rightarrow> env option" where
+  "env_of_exp lexp = get_env (get_tan_exp lexp)"
 
 section \<open>Generic Lookup\<close>
 fun lookup :: "('a*'b) list \<Rightarrow> 'a \<Rightarrow> 'b option" where
@@ -275,6 +298,11 @@ fun is_list_type :: "tannot \<Rightarrow> typ option" where
   "is_list_type None = None"
 | "is_list_type (Some t) = (case tannot_typ t of
                                  ( (Typ_app ( (id ( app_id ))) [ ( (A_typ typ)) ])) \<Rightarrow> (if app_id = STR ''list'' then Some typ else None) | _ \<Rightarrow> None)"
+
+fun deconstruct_list_type :: "typ \<Rightarrow> typ option" where
+  "deconstruct_list_type (Typ_app ( (id ( app_id ))) [ ( (A_typ typ)) ]) = (if app_id = STR ''list'' then Some typ else None)"
+| "deconstruct_list_type _ = None"
+
 
 (* FIXME. Is this complete? *)
 fun deconstruct_bool_type :: "typ \<Rightarrow> n_constraint option" where
