@@ -1342,11 +1342,13 @@ abbreviation
   "env1 \<equiv> emptyEnv \<lparr> locals := [  (( (id (STR ''x'')) ),Immutable, (bool_typ True)) ] , typ_vars := [( (var STR ''n'') , 
                     K_int  )] \<rparr>"
 
+abbreviation "tan0 \<equiv>  (set_type None unit_typ)"
+
 abbreviation "tan1 \<equiv> ( add_local (set_type None unit_typ)  ( (id (STR ''x'')) ) (unit_typ)  )"
 
 abbreviation "tan2 \<equiv> ( add_local (set_type None int_typ)  ( (id (STR ''x'')) ) (unit_typ)  )"
 
-abbreviation "pexp1 \<equiv> ( (Pat_exp unk ( (P_id (set_type None unit_typ) ( (id (STR ''x''))) )) ( (E_id tan1 ( (id (STR ''x'')) )) 
+abbreviation "pexp1 \<equiv> ( (Pat_exp tan0 ( (P_id (set_type None unit_typ) ( (id (STR ''x''))) )) ( (E_id tan1 ( (id (STR ''x'')) )) 
   )))"
 
 abbreviation "pexp2 \<equiv> ( (Pat_exp unk ( (P_typ (set_type None unit_typ) unit_typ  

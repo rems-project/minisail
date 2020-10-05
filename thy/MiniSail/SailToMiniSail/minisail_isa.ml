@@ -1193,7 +1193,7 @@ module SailAST : sig
     | DEF_internal_mutrec of 'a fundef list | DEF_pragma of string * string
   val annot_e : 'a exp -> 'a
   val annot_pat : 'a pat -> 'a
-  val annot_lexp : 'a lexp -> 'a
+  val annot_pexp : 'a pexp -> 'a
 end = struct
 
 type id = Id of string | Operator of string;;
@@ -2085,15 +2085,8 @@ let rec annot_pat = function P_lit (x11, x12) -> x11
                     | P_cons (x141, x142, x143) -> x141
                     | P_string_append (x151, x152) -> x151;;
 
-let rec annot_lexp = function LEXP_id (x11, x12) -> x11
-                     | LEXP_deref (x21, x22) -> x21
-                     | LEXP_memory (x31, x32, x33) -> x31
-                     | LEXP_cast (x41, x42, x43) -> x41
-                     | LEXP_tup (x51, x52) -> x51
-                     | LEXP_vector_concat (x61, x62) -> x61
-                     | LEXP_vector (x71, x72, x73) -> x71
-                     | LEXP_vector_range (x81, x82, x83, x84) -> x81
-                     | LEXP_field (x91, x92, x93) -> x91;;
+let rec annot_pexp = function Pat_exp (x11, x12, x13) -> x11
+                     | Pat_when (x21, x22, x23, x24) -> x21;;
 
 end;; (*struct SailAST*)
 
@@ -2120,8 +2113,6 @@ module SailEnv : sig
   val tannot_env : 'a tannot_ext -> unit env_ext
   val get : unit tannot_ext option -> (unit env_ext * SailAST.typ) option
   val bind : ('a -> 'b) -> 'a option -> 'b option
-  val get_e :
-    (unit tannot_ext option) SailAST.exp -> (unit env_ext * SailAST.typ) option
   val constraints : 'a env_ext -> SailAST.n_constraint list
   val prover :
     'a env_ext ->
@@ -2144,16 +2135,10 @@ module SailEnv : sig
   val subst_typ : SailAST.kid * SailAST.typ_arg -> SailAST.typ -> SailAST.typ
   val enums : 'a env_ext -> (SailAST.id * SailAST.id list) list
   val get_tan_e : (unit tannot_ext option) SailAST.exp -> unit tannot_ext option
-  val registers : 'a env_ext -> (SailAST.id * SailAST.typ) list
-  val lookup_register_env : unit env_ext -> SailAST.id -> SailAST.typ option
-  val lookup_register :
-    unit tannot_ext option -> SailAST.id -> SailAST.typ option
-  val lookup_enum_env : unit env_ext -> SailAST.id -> SailAST.typ option
   val locals : 'a env_ext -> (SailAST.id * (mut * SailAST.typ)) list
-  val lookup_local_id_env : unit env_ext -> SailAST.id -> SailAST.typ option
-  val lookup_local_id :
-    unit tannot_ext option -> SailAST.id -> SailAST.typ option
-  val lookup_id : unit tannot_ext option -> SailAST.id -> SailAST.typ option
+  val get_tan_exp :
+    (unit tannot_ext option) SailAST.exp -> unit tannot_ext option
+  val env_of_exp : (unit tannot_ext option) SailAST.exp -> unit env_ext option
   val top_val_specs :
     'a env_ext -> (SailAST.id * (SailAST.typquant * SailAST.typ)) list
   val get_val_spec_env :
@@ -2171,44 +2156,48 @@ module SailEnv : sig
   val get_env_exp : (unit tannot_ext option) SailAST.exp -> unit env_ext option
   val get_tan_pat :
     (unit tannot_ext option) SailAST.pat -> unit tannot_ext option
-  val lookup_enum : unit tannot_ext option -> SailAST.id -> SailAST.typ option
   val type_of_exp : (unit tannot_ext option) SailAST.exp -> SailAST.typ option
   val type_of_pat : (unit tannot_ext option) SailAST.pat -> SailAST.typ option
   val typ_vars : 'a env_ext -> (SailAST.kid * SailAST.kind) list
   val variants :
     'a env_ext ->
       (SailAST.id * (SailAST.typquant * SailAST.type_union list)) list
-  val get_tan_lexp :
-    (unit tannot_ext option) SailAST.lexp -> unit tannot_ext option
+  val get_tan_pexp :
+    (unit tannot_ext option) SailAST.pexp -> unit tannot_ext option
   val is_list_type : unit tannot_ext option -> SailAST.typ option
   val lookup_index : (SailAST.id * 'a) list -> SailAST.id -> Arith.nat option
-  val type_of_lexp : (unit tannot_ext option) SailAST.lexp -> SailAST.typ option
   val type_of_pexp : (unit tannot_ext option) SailAST.pexp -> SailAST.typ option
+  val registers : 'a env_ext -> (SailAST.id * SailAST.typ) list
+  val lookup_register_env : unit env_ext -> SailAST.id -> SailAST.typ option
+  val lookup_enum_env : unit env_ext -> SailAST.id -> SailAST.typ option
+  val lookup_local_id_env : unit env_ext -> SailAST.id -> SailAST.typ option
+  val lookup_id_env : unit env_ext -> SailAST.id -> SailAST.typ option
   val constraints_update :
     (SailAST.n_constraint list -> SailAST.n_constraint list) ->
       'a env_ext -> 'a env_ext
   val add_constraint : SailAST.n_constraint -> unit env_ext -> unit env_ext
-  val deconstruct_bitvector_type :
-    SailAST.typ -> (SailAST.nexp * (SailAST.order * SailAST.typ)) option
-  val deconstruct_vector_type :
-    SailAST.typ -> (SailAST.nexp * (SailAST.order * SailAST.typ)) option
-  val is_vector_type :
-    unit tannot_ext option ->
-      (SailAST.nexp * (SailAST.order * SailAST.typ)) option
-  val lookup_mutable_env : unit env_ext -> SailAST.id -> SailAST.typ option
-  val lookup_mutable :
+  val env_type_of_exp :
+    (unit tannot_ext option) SailAST.exp -> (unit env_ext * SailAST.typ) option
+  val env_type_of_pat :
+    (unit tannot_ext option) SailAST.pat -> (unit env_ext * SailAST.typ) option
+  val lookup_register :
     unit tannot_ext option -> SailAST.id -> SailAST.typ option
   val subst_inst_list :
     unit tannot_ext option -> SailAST.typ list -> (SailAST.typ list) option
   val typ_synonyms :
     'a env_ext -> (SailAST.id * (SailAST.typquant * SailAST.typ_arg)) list
+  val env_type_of_pexp :
+    (unit tannot_ext option) SailAST.pexp -> (unit env_ext * SailAST.typ) option
   val lookup_variant_env :
     unit env_ext -> SailAST.id -> SailAST.id -> SailAST.typ option
   val deconstruct_bool_type : SailAST.typ -> SailAST.n_constraint option
   val deconstruct_record_type : SailAST.typ -> SailAST.id option
+  val deconstruct_bitvector_type :
+    SailAST.typ -> (SailAST.nexp * (SailAST.order * SailAST.typ)) option
+  val deconstruct_vector_type :
+    SailAST.typ -> (SailAST.nexp * (SailAST.order * SailAST.typ)) option
   val lookup_record_field_env :
     unit env_ext -> SailAST.id -> SailAST.id -> SailAST.typ option
-  val deconstruct_register_type : SailAST.typ -> SailAST.typ option
   val lookup_register_index_env : unit env_ext -> SailAST.id -> Arith.nat option
 end = struct
 
@@ -2248,8 +2237,6 @@ let rec get = function None -> None
               | Some tan -> Some (tannot_env tan, tannot_typ tan);;
 
 let rec bind f t = Option.bind t (Fun.comp (fun a -> Some a) f);;
-
-let rec get_e exp = get (SailAST.annot_e exp);;
 
 let rec constraints
   (Env_ext
@@ -2378,48 +2365,15 @@ let rec enums
 
 let rec get_tan_e exp = SailAST.annot_e exp;;
 
-let rec registers
-  (Env_ext
-    (top_val_specs, typ_vars, locals, records, variants, constraints,
-      default_order, ret_typ, registers, typ_synonyms, enums, prover, more))
-    = registers;;
-
-let rec lookup_register_env
-  env x =
-    (match lookup SailAST.equal_id (registers env) x with None -> None
-      | Some a -> Some a);;
-
-let rec lookup_register
-  xa0 x = match xa0, x with
-    Some tan, x -> lookup_register_env (tannot_env tan) x
-    | None, uu -> None;;
-
-let rec lookup_enum_env
-  env x =
-    (match
-      Lista.find (fun (_, es) -> Lista.member SailAST.equal_id es x) (enums env)
-      with None -> None | Some (tyid, _) -> Some (SailAST.Typ_id tyid));;
-
 let rec locals
   (Env_ext
     (top_val_specs, typ_vars, locals, records, variants, constraints,
       default_order, ret_typ, registers, typ_synonyms, enums, prover, more))
     = locals;;
 
-let rec lookup_local_id_env
-  env x =
-    (match lookup SailAST.equal_id (locals env) x
-      with None -> lookup_enum_env env x
-      | Some a -> (let (_, aa) = a in Some aa));;
+let rec get_tan_exp exp = SailAST.annot_e exp;;
 
-let rec lookup_local_id
-  xa0 x = match xa0, x with
-    Some tan, x -> lookup_local_id_env (tannot_env tan) x
-    | None, x -> None;;
-
-let rec lookup_id
-  t x = (match lookup_local_id t x with None -> lookup_register t x
-          | Some a -> Some a);;
+let rec env_of_exp lexp = get_env (get_tan_exp lexp);;
 
 let rec top_val_specs
   (Env_ext
@@ -2473,10 +2427,6 @@ let rec get_env_exp exp = get_env (get_tan_e exp);;
 
 let rec get_tan_pat exp = SailAST.annot_pat exp;;
 
-let rec lookup_enum
-  xa0 x = match xa0, x with Some tan, x -> lookup_enum_env (tannot_env tan) x
-    | None, uu -> None;;
-
 let rec type_of_exp exp = get_type (get_tan_e exp);;
 
 let rec type_of_pat pat = get_type (get_tan_pat pat);;
@@ -2493,7 +2443,7 @@ let rec variants
       default_order, ret_typ, registers, typ_synonyms, enums, prover, more))
     = variants;;
 
-let rec get_tan_lexp lexp = SailAST.annot_lexp lexp;;
+let rec get_tan_pexp pexp = SailAST.annot_pexp pexp;;
 
 let rec is_list_type
   = function None -> None
@@ -2518,11 +2468,36 @@ let rec lookup_index
         (if SailAST.equal_ida (Product_Type.fst x) y
           then Some (Lista.size_list xs) else lookup_index xs y);;
 
-let rec type_of_lexp lexp = get_type (get_tan_lexp lexp);;
-
 let rec type_of_pexp
   = function SailAST.Pat_exp (uu, pat, exp) -> type_of_pat pat
     | SailAST.Pat_when (uv, pat, uw, exp) -> type_of_pat pat;;
+
+let rec registers
+  (Env_ext
+    (top_val_specs, typ_vars, locals, records, variants, constraints,
+      default_order, ret_typ, registers, typ_synonyms, enums, prover, more))
+    = registers;;
+
+let rec lookup_register_env
+  env x =
+    (match lookup SailAST.equal_id (registers env) x with None -> None
+      | Some a -> Some a);;
+
+let rec lookup_enum_env
+  env x =
+    (match
+      Lista.find (fun (_, es) -> Lista.member SailAST.equal_id es x) (enums env)
+      with None -> None | Some (tyid, _) -> Some (SailAST.Typ_id tyid));;
+
+let rec lookup_local_id_env
+  env x =
+    (match lookup SailAST.equal_id (locals env) x
+      with None -> lookup_enum_env env x
+      | Some a -> (let (_, aa) = a in Some aa));;
+
+let rec lookup_id_env
+  t x = (match lookup_local_id_env t x with None -> lookup_register_env t x
+          | Some a -> Some a);;
 
 let rec constraints_update
   constraintsa
@@ -2536,6 +2511,72 @@ let rec constraints_update
 
 let rec add_constraint
   nc env = constraints_update (fun _ -> nc :: constraints env) env;;
+
+let rec env_type_of_exp
+  exp = (match get_type (get_tan_e exp) with None -> None
+          | Some t ->
+            (match get_env (get_tan_e exp) with None -> None
+              | Some e -> Some (e, t)));;
+
+let rec env_type_of_pat
+  pat = (match get_type (get_tan_pat pat) with None -> None
+          | Some t ->
+            (match get_env (get_tan_pat pat) with None -> None
+              | Some e -> Some (e, t)));;
+
+let rec lookup_register
+  xa0 x = match xa0, x with
+    Some tan, x -> lookup_register_env (tannot_env tan) x
+    | None, uu -> None;;
+
+let rec subst_inst_list
+  tan typs = Lista.those (Lista.map (subst_inst tan) typs);;
+
+let rec typ_synonyms
+  (Env_ext
+    (top_val_specs, typ_vars, locals, records, variants, constraints,
+      default_order, ret_typ, registers, typ_synonyms, enums, prover, more))
+    = typ_synonyms;;
+
+let rec env_type_of_pexp
+  exp = (match get_type (get_tan_pexp exp) with None -> None
+          | Some t ->
+            (match get_env (get_tan_pexp exp) with None -> None
+              | Some e -> Some (e, t)));;
+
+let rec lookup_variant_env
+  env tid vid =
+    (match lookup SailAST.equal_id (variants env) tid with None -> None
+      | Some (_, tus) -> lookup_tud tus vid);;
+
+let rec deconstruct_bool_type
+  = function
+    SailAST.Typ_id (SailAST.Id b) ->
+      (if ((b : string) = "bool") then Some SailAST.NC_true else None)
+    | SailAST.Typ_app (SailAST.Id b, [SailAST.A_bool nc]) ->
+        (if ((b : string) = "atom_bool") then Some nc else None)
+    | SailAST.Typ_exist (kids, nc, typ) -> deconstruct_bool_type typ
+    | SailAST.Typ_internal_unknown -> None
+    | SailAST.Typ_id (SailAST.Operator va) -> None
+    | SailAST.Typ_var v -> None
+    | SailAST.Typ_fn (v, va, vb) -> None
+    | SailAST.Typ_bidir (v, va, vb) -> None
+    | SailAST.Typ_tup v -> None
+    | SailAST.Typ_app (SailAST.Operator vb, va) -> None
+    | SailAST.Typ_app (SailAST.Id va, []) -> None
+    | SailAST.Typ_app (SailAST.Id va, SailAST.A_nexp vc :: vb) -> None
+    | SailAST.Typ_app (SailAST.Id va, SailAST.A_typ vc :: vb) -> None
+    | SailAST.Typ_app (SailAST.Id va, SailAST.A_order vc :: vb) -> None
+    | SailAST.Typ_app (SailAST.Id va, v :: vc :: vd) -> None;;
+
+let rec deconstruct_record_type = function SailAST.Typ_id recid -> Some recid
+                                  | SailAST.Typ_app (recid, uu) -> Some recid
+                                  | SailAST.Typ_internal_unknown -> None
+                                  | SailAST.Typ_var v -> None
+                                  | SailAST.Typ_fn (v, va, vb) -> None
+                                  | SailAST.Typ_bidir (v, va, vb) -> None
+                                  | SailAST.Typ_tup v -> None
+                                  | SailAST.Typ_exist (v, va, vb) -> None;;
 
 let rec deconstruct_bitvector_type
   t = (match t with SailAST.Typ_internal_unknown -> None
@@ -2619,79 +2660,10 @@ let rec deconstruct_vector_type
           deconstruct_bitvector_type t
         | SailAST.Typ_exist (_, _, _) -> deconstruct_bitvector_type t);;
 
-let rec is_vector_type = function None -> None
-                         | Some t -> deconstruct_vector_type (tannot_typ t);;
-
-let rec lookup_mutable_env
-  env x =
-    (match lookup SailAST.equal_id (locals env) x
-      with None -> lookup_register_env env x | Some (Mutable, t) -> Some t);;
-
-let rec lookup_mutable
-  xa0 x = match xa0, x with Some tan, x -> lookup_mutable_env (tannot_env tan) x
-    | None, x -> None;;
-
-let rec subst_inst_list
-  tan typs = Lista.those (Lista.map (subst_inst tan) typs);;
-
-let rec typ_synonyms
-  (Env_ext
-    (top_val_specs, typ_vars, locals, records, variants, constraints,
-      default_order, ret_typ, registers, typ_synonyms, enums, prover, more))
-    = typ_synonyms;;
-
-let rec lookup_variant_env
-  env tid vid =
-    (match lookup SailAST.equal_id (variants env) tid with None -> None
-      | Some (_, tus) -> lookup_tud tus vid);;
-
-let rec deconstruct_bool_type
-  = function
-    SailAST.Typ_id (SailAST.Id b) ->
-      (if ((b : string) = "bool") then Some SailAST.NC_true else None)
-    | SailAST.Typ_app (SailAST.Id b, [SailAST.A_bool nc]) ->
-        (if ((b : string) = "atom_bool") then Some nc else None)
-    | SailAST.Typ_exist (kids, nc, typ) -> deconstruct_bool_type typ
-    | SailAST.Typ_internal_unknown -> None
-    | SailAST.Typ_id (SailAST.Operator va) -> None
-    | SailAST.Typ_var v -> None
-    | SailAST.Typ_fn (v, va, vb) -> None
-    | SailAST.Typ_bidir (v, va, vb) -> None
-    | SailAST.Typ_tup v -> None
-    | SailAST.Typ_app (SailAST.Operator vb, va) -> None
-    | SailAST.Typ_app (SailAST.Id va, []) -> None
-    | SailAST.Typ_app (SailAST.Id va, SailAST.A_nexp vc :: vb) -> None
-    | SailAST.Typ_app (SailAST.Id va, SailAST.A_typ vc :: vb) -> None
-    | SailAST.Typ_app (SailAST.Id va, SailAST.A_order vc :: vb) -> None
-    | SailAST.Typ_app (SailAST.Id va, v :: vc :: vd) -> None;;
-
-let rec deconstruct_record_type = function SailAST.Typ_id recid -> Some recid
-                                  | SailAST.Typ_app (recid, uu) -> Some recid
-                                  | SailAST.Typ_internal_unknown -> None
-                                  | SailAST.Typ_var v -> None
-                                  | SailAST.Typ_fn (v, va, vb) -> None
-                                  | SailAST.Typ_bidir (v, va, vb) -> None
-                                  | SailAST.Typ_tup v -> None
-                                  | SailAST.Typ_exist (v, va, vb) -> None;;
-
 let rec lookup_record_field_env
   env recc_id field_id =
     (match lookup SailAST.equal_id (records env) recc_id with None -> None
       | Some (_, fieldds) -> lookup SailAST.equal_id fieldds field_id);;
-
-let rec deconstruct_register_type
-  t = (match t with SailAST.Typ_internal_unknown -> None
-        | SailAST.Typ_id _ -> None | SailAST.Typ_var _ -> None
-        | SailAST.Typ_fn (_, _, _) -> None | SailAST.Typ_bidir (_, _, _) -> None
-        | SailAST.Typ_tup _ -> None | SailAST.Typ_app (SailAST.Id _, []) -> None
-        | SailAST.Typ_app (SailAST.Id _, SailAST.A_nexp _ :: _) -> None
-        | SailAST.Typ_app (SailAST.Id app_id, [SailAST.A_typ typ]) ->
-          (if ((app_id : string) = "register") then Some typ else None)
-        | SailAST.Typ_app (SailAST.Id _, SailAST.A_typ _ :: _ :: _) -> None
-        | SailAST.Typ_app (SailAST.Id _, SailAST.A_order _ :: _) -> None
-        | SailAST.Typ_app (SailAST.Id _, SailAST.A_bool _ :: _) -> None
-        | SailAST.Typ_app (SailAST.Operator _, _) -> None
-        | SailAST.Typ_exist (_, _, _) -> None);;
 
 let rec lookup_register_index_env
   env x =
@@ -12599,9 +12571,6 @@ module Validator : sig
     SailAST.n_constraint -> SailAST.n_constraint -> SailAST.n_constraint
   val arg_bool : SailAST.n_constraint -> SailAST.typ_arg
   val nc_not : SailAST.n_constraint -> SailAST.n_constraint
-  val integer_of_int2 : Arith.int -> Z.t
-  val check_lit_i_i_i :
-    unit SailEnv.env_ext -> SailAST.lit -> SailAST.typ -> unit Predicate.pred
   val normalise_i_i_o :
     unit SailEnv.env_ext -> SailAST.typ -> SailAST.typ Predicate.pred
   val nc_and_list : SailAST.n_constraint list -> SailAST.n_constraint
@@ -12630,63 +12599,57 @@ module Validator : sig
       SailAST.typ list -> (SailAST.n_constraint list) Predicate.pred
   val subtype_i_i_i :
     unit SailEnv.env_ext -> SailAST.typ -> SailAST.typ -> unit Predicate.pred
-  val check_pat_i_o :
-    (unit SailEnv.tannot_ext option) SailAST.pat ->
-      ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
+  val check_pat_s_i_i_i_o :
+    unit SailEnv.env_ext ->
+      (unit SailEnv.tannot_ext option) SailAST.pat ->
+        SailAST.typ ->
+          ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
+  val integer_of_int2 : Arith.int -> Z.t
+  val check_lit_i_i_i :
+    unit SailEnv.env_ext -> SailAST.lit -> SailAST.typ -> unit Predicate.pred
+  val check_pat_i_i_i_o :
+    unit SailEnv.env_ext ->
+      (unit SailEnv.tannot_ext option) SailAST.pat ->
+        SailAST.typ ->
+          ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
   val check_pat_list_i_o :
     (unit SailEnv.tannot_ext option) SailAST.pat list ->
       ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
-  val subenv_i_i :
-    unit SailEnv.env_ext -> unit SailEnv.env_ext -> unit Predicate.pred
+  val subtype_tan_i_i :
+    SailAST.typ -> unit SailEnv.tannot_ext option -> unit Predicate.pred
+  val exception_typ : SailAST.typ
   val locals_in :
     unit SailEnv.env_ext ->
       (SailAST.id * (SailEnv.mut * SailAST.typ)) list -> bool
-  val check_local_binds_i_i :
-    (unit SailEnv.tannot_ext option) SailAST.exp list ->
-      (SailAST.id * (SailEnv.mut * SailAST.typ)) list -> unit Predicate.pred
-  val subtype_exp_i_i :
-    (unit SailEnv.tannot_ext option) SailAST.exp ->
-      SailAST.typ -> unit Predicate.pred
-  val subtype_tan_i_i :
-    SailAST.typ -> unit SailEnv.tannot_ext option -> unit Predicate.pred
-  val check_lexp_vector_list_i_i_i :
-    (unit SailEnv.tannot_ext option) SailAST.lexp list ->
-      SailAST.order -> SailAST.typ -> unit Predicate.pred
   val add_locals :
     unit SailEnv.env_ext ->
       (SailAST.id * (SailEnv.mut * SailAST.typ)) list -> unit SailEnv.env_ext
   val check_letbind_i_o :
     (unit SailEnv.tannot_ext option) SailAST.letbind ->
       ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
-  val check_exp_i_o :
-    (unit SailEnv.tannot_ext option) SailAST.exp ->
-      ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
-  val check_pexp_i :
-    (unit SailEnv.tannot_ext option) SailAST.pexp -> unit Predicate.pred
-  val check_pexps_i :
-    (unit SailEnv.tannot_ext option) SailAST.pexp list -> unit Predicate.pred
-  val check_exp_typ_i_i :
-    (unit SailEnv.tannot_ext option) SailAST.exp ->
-      SailAST.typ -> unit Predicate.pred
+  val check_exp_i_i_i :
+    unit SailEnv.env_ext ->
+      (unit SailEnv.tannot_ext option) SailAST.exp ->
+        SailAST.typ -> unit Predicate.pred
+  val check_exp_s_i_i_i :
+    unit SailEnv.env_ext ->
+      (unit SailEnv.tannot_ext option) SailAST.exp ->
+        SailAST.typ -> unit Predicate.pred
   val check_fexp_i_i :
     (unit SailEnv.tannot_ext option) SailAST.fexp ->
       SailAST.typ -> unit Predicate.pred
   val check_fexp_list_i_i :
     (unit SailEnv.tannot_ext option) SailAST.fexp list ->
       SailAST.typ -> unit Predicate.pred
-  val check_lexp_i_o :
-    (unit SailEnv.tannot_ext option) SailAST.lexp ->
-      ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
-  val check_lexp_list_i_o :
-    (unit SailEnv.tannot_ext option) SailAST.lexp list ->
-      ((SailAST.id * (SailEnv.mut * SailAST.typ)) list) Predicate.pred
+  val check_pexp_i_i_i :
+    unit SailEnv.env_ext ->
+      (unit SailEnv.tannot_ext option) SailAST.pexp ->
+        SailAST.typ -> unit Predicate.pred
+  val check_pexps_i :
+    (unit SailEnv.tannot_ext option) SailAST.pexp list -> unit Predicate.pred
   val check_exp_list_i_i :
     (unit SailEnv.tannot_ext option) SailAST.exp list ->
       SailAST.typ list -> unit Predicate.pred
-  val check_exp_typ_env_i_i_i :
-    unit SailEnv.env_ext ->
-      (unit SailEnv.tannot_ext option) SailAST.exp ->
-        SailAST.typ -> unit Predicate.pred
   val check_funcls_i_i :
     (unit SailEnv.tannot_ext option) SailAST.funcl list ->
       SailAST.tannot_opt -> unit Predicate.pred
@@ -12726,785 +12689,6 @@ let rec nc_not
                   Stringa.Chara
                     (false, false, true, false, true, true, true, false)],
            [arg_bool nc]);;
-
-let rec integer_of_int2 x = Arith.integer_of_int x;;
-
-let rec check_lit_i_i_i
-  x xa xb =
-    Predicate.sup_pred
-      (Predicate.bind (Predicate.single (x, (xa, xb)))
-        (fun a ->
-          (match a
-            with (_, (SailAST.L_unit, SailAST.Typ_internal_unknown)) ->
-              Predicate.bot_pred
-            | (_, (SailAST.L_unit, SailAST.Typ_id (SailAST.Id xc))) ->
-              (if ((xc : string) = "unit") then Predicate.single ()
-                else Predicate.bot_pred)
-            | (_, (SailAST.L_unit, SailAST.Typ_id (SailAST.Operator _))) ->
-              Predicate.bot_pred
-            | (_, (SailAST.L_unit, SailAST.Typ_var _)) -> Predicate.bot_pred
-            | (_, (SailAST.L_unit, SailAST.Typ_fn (_, _, _))) ->
-              Predicate.bot_pred
-            | (_, (SailAST.L_unit, SailAST.Typ_bidir (_, _, _))) ->
-              Predicate.bot_pred
-            | (_, (SailAST.L_unit, SailAST.Typ_tup _)) -> Predicate.bot_pred
-            | (_, (SailAST.L_unit, SailAST.Typ_app (_, _))) ->
-              Predicate.bot_pred
-            | (_, (SailAST.L_unit, SailAST.Typ_exist (_, _, _))) ->
-              Predicate.bot_pred
-            | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
-            | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
-            | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
-            | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
-            | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
-            | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
-            | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
-            | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
-            | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
-            | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
-      (Predicate.sup_pred
-        (Predicate.bind (Predicate.single (x, (xa, xb)))
-          (fun a ->
-            (match a with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_real _, SailAST.Typ_internal_unknown)) ->
-                Predicate.bot_pred
-              | (_, (SailAST.L_real _, SailAST.Typ_id (SailAST.Id xc))) ->
-                (if ((xc : string) = "real") then Predicate.single ()
-                  else Predicate.bot_pred)
-              | (_, (SailAST.L_real _, SailAST.Typ_id (SailAST.Operator _))) ->
-                Predicate.bot_pred
-              | (_, (SailAST.L_real _, SailAST.Typ_var _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_real _, SailAST.Typ_fn (_, _, _))) ->
-                Predicate.bot_pred
-              | (_, (SailAST.L_real _, SailAST.Typ_bidir (_, _, _))) ->
-                Predicate.bot_pred
-              | (_, (SailAST.L_real _, SailAST.Typ_tup _)) -> Predicate.bot_pred
-              | (_, (SailAST.L_real _, SailAST.Typ_app (_, _))) ->
-                Predicate.bot_pred
-              | (_, (SailAST.L_real _, SailAST.Typ_exist (_, _, _))) ->
-                Predicate.bot_pred)))
-        (Predicate.sup_pred
-          (Predicate.bind (Predicate.single (x, (xa, xb)))
-            (fun a ->
-              (match a with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
-                | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
-                | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
-                | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
-                | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
-                | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
-                | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
-                | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
-                | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
-                | (_, (SailAST.L_undef, _)) -> Predicate.single ()
-                | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
-          (Predicate.sup_pred
-            (Predicate.bind (Predicate.single (x, (xa, xb)))
-              (fun a ->
-                (match a with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
-                  | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
-                  | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
-                  | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
-                  | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _, SailAST.Typ_internal_unknown)) ->
-                    Predicate.bot_pred
-                  | (_, (SailAST.L_num _, SailAST.Typ_id _)) ->
-                    Predicate.bot_pred
-                  | (_, (SailAST.L_num _, SailAST.Typ_var _)) ->
-                    Predicate.bot_pred
-                  | (_, (SailAST.L_num _, SailAST.Typ_fn (_, _, _))) ->
-                    Predicate.bot_pred
-                  | (_, (SailAST.L_num _, SailAST.Typ_bidir (_, _, _))) ->
-                    Predicate.bot_pred
-                  | (_, (SailAST.L_num _, SailAST.Typ_tup _)) ->
-                    Predicate.bot_pred
-                  | (_, (SailAST.L_num _, SailAST.Typ_app (SailAST.Id _, [])))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app
-                            (SailAST.Id _,
-                              SailAST.A_nexp (SailAST.Nexp_id _) :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app
-                            (SailAST.Id _,
-                              SailAST.A_nexp (SailAST.Nexp_var _) :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num num,
-                          SailAST.Typ_app
-                            (SailAST.Id xc,
-                              [SailAST.A_nexp (SailAST.Nexp_constant numa)])))
-                    -> (if Z.equal num numa && ((xc : string) = "atom")
-                         then Predicate.single () else Predicate.bot_pred)
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app
-                            (SailAST.Id _,
-                              SailAST.A_nexp (SailAST.Nexp_constant _) ::
-                                _ :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app
-                            (SailAST.Id _,
-                              SailAST.A_nexp (SailAST.Nexp_app (_, _)) :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app
-                            (SailAST.Id _,
-                              SailAST.A_nexp (SailAST.Nexp_times (_, _)) :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app
-                            (SailAST.Id _,
-                              SailAST.A_nexp (SailAST.Nexp_sum (_, _)) :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app
-                            (SailAST.Id _,
-                              SailAST.A_nexp (SailAST.Nexp_minus (_, _)) :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app
-                            (SailAST.Id _,
-                              SailAST.A_nexp (SailAST.Nexp_exp _) :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app
-                            (SailAST.Id _,
-                              SailAST.A_nexp (SailAST.Nexp_neg _) :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app (SailAST.Id _, SailAST.A_typ _ :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app
-                            (SailAST.Id _, SailAST.A_order _ :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app
-                            (SailAST.Id _, SailAST.A_bool _ :: _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _,
-                          SailAST.Typ_app (SailAST.Operator _, _)))
-                    -> Predicate.bot_pred
-                  | (_, (SailAST.L_num _, SailAST.Typ_exist (_, _, _))) ->
-                    Predicate.bot_pred
-                  | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
-                  | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
-                  | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
-                  | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
-                  | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
-            (Predicate.sup_pred
-              (Predicate.bind (Predicate.single (x, (xa, xb)))
-                (fun a ->
-                  (match a with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
-                    | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
-                    | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
-                    | (_, (SailAST.L_true, SailAST.Typ_internal_unknown)) ->
-                      Predicate.bot_pred
-                    | (_, (SailAST.L_true, SailAST.Typ_id _)) ->
-                      Predicate.bot_pred
-                    | (_, (SailAST.L_true, SailAST.Typ_var _)) ->
-                      Predicate.bot_pred
-                    | (_, (SailAST.L_true, SailAST.Typ_fn (_, _, _))) ->
-                      Predicate.bot_pred
-                    | (_, (SailAST.L_true, SailAST.Typ_bidir (_, _, _))) ->
-                      Predicate.bot_pred
-                    | (_, (SailAST.L_true, SailAST.Typ_tup _)) ->
-                      Predicate.bot_pred
-                    | (_, (SailAST.L_true, SailAST.Typ_app (SailAST.Id _, [])))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _, SailAST.A_nexp _ :: _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _, SailAST.A_typ _ :: _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _, SailAST.A_order _ :: _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool (SailAST.NC_equal (_, _)) :: _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool (SailAST.NC_bounded_ge (_, _)) ::
-                                  _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool (SailAST.NC_bounded_gt (_, _)) ::
-                                  _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool (SailAST.NC_bounded_le (_, _)) ::
-                                  _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool (SailAST.NC_bounded_lt (_, _)) ::
-                                  _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool (SailAST.NC_not_equal (_, _)) ::
-                                  _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool (SailAST.NC_set (_, _)) :: _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool (SailAST.NC_or (_, _)) :: _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool (SailAST.NC_and (_, _)) :: _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool (SailAST.NC_app (_, _)) :: _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool (SailAST.NC_var _) :: _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id xc,
-                                [SailAST.A_bool SailAST.NC_true])))
-                      -> (if ((xc : string) = "atom_bool")
-                           then Predicate.single () else Predicate.bot_pred)
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool SailAST.NC_true :: _ :: _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app
-                              (SailAST.Id _,
-                                SailAST.A_bool SailAST.NC_false :: _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true,
-                            SailAST.Typ_app (SailAST.Operator _, _)))
-                      -> Predicate.bot_pred
-                    | (_, (SailAST.L_true, SailAST.Typ_exist (_, _, _))) ->
-                      Predicate.bot_pred
-                    | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
-                    | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
-                    | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
-                    | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
-                    | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
-                    | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
-                    | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
-              (Predicate.sup_pred
-                (Predicate.bind (Predicate.single (x, (xa, xb)))
-                  (fun a ->
-                    (match a with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
-                      | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
-                      | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
-                      | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
-                      | (_, (SailAST.L_false, SailAST.Typ_internal_unknown)) ->
-                        Predicate.bot_pred
-                      | (_, (SailAST.L_false, SailAST.Typ_id _)) ->
-                        Predicate.bot_pred
-                      | (_, (SailAST.L_false, SailAST.Typ_var _)) ->
-                        Predicate.bot_pred
-                      | (_, (SailAST.L_false, SailAST.Typ_fn (_, _, _))) ->
-                        Predicate.bot_pred
-                      | (_, (SailAST.L_false, SailAST.Typ_bidir (_, _, _))) ->
-                        Predicate.bot_pred
-                      | (_, (SailAST.L_false, SailAST.Typ_tup _)) ->
-                        Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app (SailAST.Id _, [])))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _, SailAST.A_nexp _ :: _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _, SailAST.A_typ _ :: _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _, SailAST.A_order _ :: _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool (SailAST.NC_equal (_, _)) ::
-                                    _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool
-                                    (SailAST.NC_bounded_ge (_, _)) ::
-                                    _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool
-                                    (SailAST.NC_bounded_gt (_, _)) ::
-                                    _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool
-                                    (SailAST.NC_bounded_le (_, _)) ::
-                                    _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool
-                                    (SailAST.NC_bounded_lt (_, _)) ::
-                                    _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool
-                                    (SailAST.NC_not_equal (_, _)) ::
-                                    _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool (SailAST.NC_set (_, _)) :: _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool (SailAST.NC_or (_, _)) :: _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool (SailAST.NC_and (_, _)) :: _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool (SailAST.NC_app (_, _)) :: _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool (SailAST.NC_var _) :: _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool SailAST.NC_true :: _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id xc,
-                                  [SailAST.A_bool SailAST.NC_false])))
-                        -> (if ((xc : string) = "atom_bool")
-                             then Predicate.single () else Predicate.bot_pred)
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app
-                                (SailAST.Id _,
-                                  SailAST.A_bool SailAST.NC_false :: _ :: _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false,
-                              SailAST.Typ_app (SailAST.Operator _, _)))
-                        -> Predicate.bot_pred
-                      | (_, (SailAST.L_false, SailAST.Typ_exist (_, _, _))) ->
-                        Predicate.bot_pred
-                      | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
-                      | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
-                      | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
-                      | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
-                      | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
-                      | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
-                (Predicate.sup_pred
-                  (Predicate.bind (Predicate.single (x, (xa, xb)))
-                    (fun a ->
-                      (match a
-                        with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
-                        | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
-                        | (_, (SailAST.L_one, SailAST.Typ_internal_unknown)) ->
-                          Predicate.bot_pred
-                        | (_, (SailAST.L_one, SailAST.Typ_id (SailAST.Id xc)))
-                          -> (if ((xc : string) = "bit")
-                               then Predicate.single () else Predicate.bot_pred)
-                        | (_, (SailAST.L_one,
-                                SailAST.Typ_id (SailAST.Operator _)))
-                          -> Predicate.bot_pred
-                        | (_, (SailAST.L_one, SailAST.Typ_var _)) ->
-                          Predicate.bot_pred
-                        | (_, (SailAST.L_one, SailAST.Typ_fn (_, _, _))) ->
-                          Predicate.bot_pred
-                        | (_, (SailAST.L_one, SailAST.Typ_bidir (_, _, _))) ->
-                          Predicate.bot_pred
-                        | (_, (SailAST.L_one, SailAST.Typ_tup _)) ->
-                          Predicate.bot_pred
-                        | (_, (SailAST.L_one, SailAST.Typ_app (_, _))) ->
-                          Predicate.bot_pred
-                        | (_, (SailAST.L_one, SailAST.Typ_exist (_, _, _))) ->
-                          Predicate.bot_pred
-                        | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
-                        | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
-                        | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
-                        | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
-                        | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
-                        | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
-                        | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
-                        | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
-                  (Predicate.sup_pred
-                    (Predicate.bind (Predicate.single (x, (xa, xb)))
-                      (fun a ->
-                        (match a
-                          with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
-                          | (_, (SailAST.L_zero, SailAST.Typ_internal_unknown))
-                            -> Predicate.bot_pred
-                          | (_, (SailAST.L_zero,
-                                  SailAST.Typ_id (SailAST.Id xc)))
-                            -> (if ((xc : string) = "bit")
-                                 then Predicate.single ()
-                                 else Predicate.bot_pred)
-                          | (_, (SailAST.L_zero,
-                                  SailAST.Typ_id (SailAST.Operator _)))
-                            -> Predicate.bot_pred
-                          | (_, (SailAST.L_zero, SailAST.Typ_var _)) ->
-                            Predicate.bot_pred
-                          | (_, (SailAST.L_zero, SailAST.Typ_fn (_, _, _))) ->
-                            Predicate.bot_pred
-                          | (_, (SailAST.L_zero, SailAST.Typ_bidir (_, _, _)))
-                            -> Predicate.bot_pred
-                          | (_, (SailAST.L_zero, SailAST.Typ_tup _)) ->
-                            Predicate.bot_pred
-                          | (_, (SailAST.L_zero, SailAST.Typ_app (_, _))) ->
-                            Predicate.bot_pred
-                          | (_, (SailAST.L_zero, SailAST.Typ_exist (_, _, _)))
-                            -> Predicate.bot_pred
-                          | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
-                          | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
-                          | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
-                          | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
-                          | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
-                          | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
-                          | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
-                          | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
-                          | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
-                    (Predicate.sup_pred
-                      (Predicate.bind (Predicate.single (x, (xa, xb)))
-                        (fun a ->
-                          (match a
-                            with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
-                            | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
-                            | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
-                            | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
-                            | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
-                            | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
-                            | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_internal_unknown))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _, SailAST.Typ_id _)) ->
-                              Predicate.bot_pred
-                            | (_, (SailAST.L_bin _, SailAST.Typ_var _)) ->
-                              Predicate.bot_pred
-                            | (_, (SailAST.L_bin _, SailAST.Typ_fn (_, _, _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_bidir (_, _, _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _, SailAST.Typ_tup _)) ->
-                              Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app (SailAST.Id _, [])))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_id _) :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_var _) :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-[SailAST.A_nexp (SailAST.Nexp_constant _)])))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_nexp _ :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_typ _ :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin s,
-                                    SailAST.Typ_app
-                                      (SailAST.Id xc,
-[SailAST.A_nexp (SailAST.Nexp_constant xaa); SailAST.A_order _])))
-                              -> (if Z.equal xaa
-                                       (integer_of_int2
- (Arith.of_nat Arith.semiring_1_int (Lista.size_list (Stringa.explode s)))) &&
-                                       ((xc : string) = "bitvector")
-                                   then Predicate.single ()
-                                   else Predicate.bot_pred)
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_order _ :: _ :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_bool _ :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_app (_, _)) :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_times (_, _)) :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_sum (_, _)) :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_minus (_, _)) :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_exp _) :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _,
-SailAST.A_nexp (SailAST.Nexp_neg _) :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _, SailAST.A_typ _ :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _, SailAST.A_order _ :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app
-                                      (SailAST.Id _, SailAST.A_bool _ :: _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_app (SailAST.Operator _, _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_bin _,
-                                    SailAST.Typ_exist (_, _, _)))
-                              -> Predicate.bot_pred
-                            | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
-                            | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
-                            | (_, (SailAST.L_real _, _)) ->
-                              Predicate.bot_pred)))
-                      (Predicate.sup_pred
-                        (Predicate.bind (Predicate.single (x, (xa, xb)))
-                          (fun a ->
-                            (match a
-                              with (_, (SailAST.L_unit, _)) ->
-                                Predicate.bot_pred
-                              | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_internal_unknown))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _, SailAST.Typ_id _)) ->
-                                Predicate.bot_pred
-                              | (_, (SailAST.L_hex _, SailAST.Typ_var _)) ->
-                                Predicate.bot_pred
-                              | (_, (SailAST.L_hex _, SailAST.Typ_fn (_, _, _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_bidir (_, _, _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _, SailAST.Typ_tup _)) ->
-                                Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app (SailAST.Id _, [])))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_id _) :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_var _) :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, [SailAST.A_nexp (SailAST.Nexp_constant _)])))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _,
-  SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_nexp _ :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _,
-  SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_typ _ :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex s,
-                                      SailAST.Typ_app
-(SailAST.Id xc,
-  [SailAST.A_nexp (SailAST.Nexp_constant xaa); SailAST.A_order _])))
-                                -> (if Z.equal xaa
- (Z.mul (Z.of_int 4)
-   (integer_of_int2
-     (Arith.of_nat Arith.semiring_1_int
-       (Lista.size_list (Stringa.explode s))))) &&
- ((xc : string) = "bitvector")
-                                     then Predicate.single ()
-                                     else Predicate.bot_pred)
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _,
-  SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_order _ :: _ :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _,
-  SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_bool _ :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_app (_, _)) :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_times (_, _)) :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_sum (_, _)) :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_minus (_, _)) :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_exp _) :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_neg _) :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, SailAST.A_typ _ :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, SailAST.A_order _ :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app
-(SailAST.Id _, SailAST.A_bool _ :: _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_app (SailAST.Operator _, _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _,
-                                      SailAST.Typ_exist (_, _, _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_string _, _)) ->
-                                Predicate.bot_pred
-                              | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_real _, _)) ->
-                                Predicate.bot_pred)))
-                        (Predicate.bind (Predicate.single (x, (xa, xb)))
-                          (fun a ->
-                            (match a
-                              with (_, (SailAST.L_unit, _)) ->
-                                Predicate.bot_pred
-                              | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_string _,
-                                      SailAST.Typ_internal_unknown))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_string _,
-                                      SailAST.Typ_id (SailAST.Id xc)))
-                                -> (if ((xc : string) = "string")
-                                     then Predicate.single ()
-                                     else Predicate.bot_pred)
-                              | (_, (SailAST.L_string _,
-                                      SailAST.Typ_id (SailAST.Operator _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_string _, SailAST.Typ_var _)) ->
-                                Predicate.bot_pred
-                              | (_, (SailAST.L_string _,
-                                      SailAST.Typ_fn (_, _, _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_string _,
-                                      SailAST.Typ_bidir (_, _, _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_string _, SailAST.Typ_tup _)) ->
-                                Predicate.bot_pred
-                              | (_, (SailAST.L_string _,
-                                      SailAST.Typ_app (_, _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_string _,
-                                      SailAST.Typ_exist (_, _, _)))
-                                -> Predicate.bot_pred
-                              | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
-                              | (_, (SailAST.L_real _, _)) ->
-                                Predicate.bot_pred))))))))))));;
 
 let rec normalise_i_i_o
   xa xb =
@@ -13603,13 +12787,18 @@ let rec nc_between
 let rec eq_kid_i_i
   xa xb =
     Predicate.bind (Predicate.single (xa, xb))
-      (fun (SailAST.Var _, SailAST.Var _) -> Predicate.single ());;
+      (fun (SailAST.Var x, SailAST.Var y) ->
+        Predicate.bind (eq_i_i Stringa.equal_literal x y)
+          (fun () -> Predicate.single ()));;
 
 let rec eq_id_i_i
   xa xb =
     Predicate.bind (Predicate.single (xa, xb))
       (fun a ->
-        (match a with (SailAST.Id _, SailAST.Id _) -> Predicate.single ()
+        (match a
+          with (SailAST.Id x, SailAST.Id y) ->
+            Predicate.bind (eq_i_i Stringa.equal_literal x y)
+              (fun () -> Predicate.single ())
           | (SailAST.Id _, SailAST.Operator _) -> Predicate.bot_pred
           | (SailAST.Operator _, _) -> Predicate.bot_pred));;
 
@@ -14592,400 +13781,1256 @@ let rec subtype_i_i_i
 Predicate.bind (Predicate.if_pred (SailEnv.prove env (nc_and_list xc)))
   (fun () -> Predicate.single ()))))))))));;
 
-let rec check_pat_i_o
-  xa = Predicate.sup_pred
-         (Predicate.bind (Predicate.single xa)
-           (fun a ->
-             (match a
-               with SailAST.P_lit (tan, lit) ->
-                 Predicate.bind (eq_o_i (SailEnv.get tan))
-                   (fun aa ->
-                     (match aa with None -> Predicate.bot_pred
-                       | Some (env, t) ->
-                         Predicate.bind (check_lit_i_i_i env lit t)
-                           (fun () -> Predicate.single [])))
-               | SailAST.P_wild _ -> Predicate.bot_pred
-               | SailAST.P_or (_, _, _) -> Predicate.bot_pred
-               | SailAST.P_not (_, _) -> Predicate.bot_pred
-               | SailAST.P_as (_, _, _) -> Predicate.bot_pred
-               | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
-               | SailAST.P_id (_, _) -> Predicate.bot_pred
-               | SailAST.P_var (_, _, _) -> Predicate.bot_pred
-               | SailAST.P_app (_, _, _) -> Predicate.bot_pred
-               | SailAST.P_vector (_, _) -> Predicate.bot_pred
-               | SailAST.P_vector_concat (_, _) -> Predicate.bot_pred
-               | SailAST.P_tup (_, _) -> Predicate.bot_pred
-               | SailAST.P_list (_, _) -> Predicate.bot_pred
-               | SailAST.P_cons (_, _, _) -> Predicate.bot_pred
-               | SailAST.P_string_append (_, _) -> Predicate.bot_pred)))
-         (Predicate.sup_pred
-           (Predicate.bind (Predicate.single xa)
-             (fun a ->
-               (match a with SailAST.P_lit (_, _) -> Predicate.bot_pred
-                 | SailAST.P_wild _ -> Predicate.single []
-                 | SailAST.P_or (_, _, _) -> Predicate.bot_pred
-                 | SailAST.P_not (_, _) -> Predicate.bot_pred
-                 | SailAST.P_as (_, _, _) -> Predicate.bot_pred
-                 | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
-                 | SailAST.P_id (_, _) -> Predicate.bot_pred
-                 | SailAST.P_var (_, _, _) -> Predicate.bot_pred
-                 | SailAST.P_app (_, _, _) -> Predicate.bot_pred
-                 | SailAST.P_vector (_, _) -> Predicate.bot_pred
-                 | SailAST.P_vector_concat (_, _) -> Predicate.bot_pred
-                 | SailAST.P_tup (_, _) -> Predicate.bot_pred
-                 | SailAST.P_list (_, _) -> Predicate.bot_pred
-                 | SailAST.P_cons (_, _, _) -> Predicate.bot_pred
-                 | SailAST.P_string_append (_, _) -> Predicate.bot_pred)))
-           (Predicate.sup_pred
-             (Predicate.bind (Predicate.single xa)
-               (fun a ->
-                 (match a with SailAST.P_lit (_, _) -> Predicate.bot_pred
-                   | SailAST.P_wild _ -> Predicate.bot_pred
-                   | SailAST.P_or (_, p1, p2) ->
-                     Predicate.bind (check_pat_i_o p1)
-                       (fun x ->
-                         Predicate.bind (check_pat_i_o p2)
-                           (fun xaa -> Predicate.single (x @ xaa)))
-                   | SailAST.P_not (_, _) -> Predicate.bot_pred
-                   | SailAST.P_as (_, _, _) -> Predicate.bot_pred
-                   | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
-                   | SailAST.P_id (_, _) -> Predicate.bot_pred
-                   | SailAST.P_var (_, _, _) -> Predicate.bot_pred
-                   | SailAST.P_app (_, _, _) -> Predicate.bot_pred
-                   | SailAST.P_vector (_, _) -> Predicate.bot_pred
-                   | SailAST.P_vector_concat (_, _) -> Predicate.bot_pred
-                   | SailAST.P_tup (_, _) -> Predicate.bot_pred
-                   | SailAST.P_list (_, _) -> Predicate.bot_pred
-                   | SailAST.P_cons (_, _, _) -> Predicate.bot_pred
-                   | SailAST.P_string_append (_, _) -> Predicate.bot_pred)))
-             (Predicate.sup_pred
-               (Predicate.bind (Predicate.single xa)
-                 (fun a ->
-                   (match a with SailAST.P_lit (_, _) -> Predicate.bot_pred
-                     | SailAST.P_wild _ -> Predicate.bot_pred
-                     | SailAST.P_or (_, _, _) -> Predicate.bot_pred
-                     | SailAST.P_not (_, p1) ->
-                       Predicate.bind (check_pat_i_o p1) Predicate.single
-                     | SailAST.P_as (_, _, _) -> Predicate.bot_pred
-                     | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
-                     | SailAST.P_id (_, _) -> Predicate.bot_pred
-                     | SailAST.P_var (_, _, _) -> Predicate.bot_pred
-                     | SailAST.P_app (_, _, _) -> Predicate.bot_pred
-                     | SailAST.P_vector (_, _) -> Predicate.bot_pred
-                     | SailAST.P_vector_concat (_, _) -> Predicate.bot_pred
-                     | SailAST.P_tup (_, _) -> Predicate.bot_pred
-                     | SailAST.P_list (_, _) -> Predicate.bot_pred
-                     | SailAST.P_cons (_, _, _) -> Predicate.bot_pred
-                     | SailAST.P_string_append (_, _) -> Predicate.bot_pred)))
-               (Predicate.sup_pred
-                 (Predicate.bind (Predicate.single xa)
-                   (fun a ->
-                     (match a with SailAST.P_lit (_, _) -> Predicate.bot_pred
-                       | SailAST.P_wild _ -> Predicate.bot_pred
-                       | SailAST.P_or (_, _, _) -> Predicate.bot_pred
-                       | SailAST.P_not (_, _) -> Predicate.bot_pred
-                       | SailAST.P_as (_, pat, _) ->
-                         Predicate.bind (check_pat_i_o pat) Predicate.single
-                       | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
-                       | SailAST.P_id (_, _) -> Predicate.bot_pred
-                       | SailAST.P_var (_, _, _) -> Predicate.bot_pred
-                       | SailAST.P_app (_, _, _) -> Predicate.bot_pred
-                       | SailAST.P_vector (_, _) -> Predicate.bot_pred
-                       | SailAST.P_vector_concat (_, _) -> Predicate.bot_pred
-                       | SailAST.P_tup (_, _) -> Predicate.bot_pred
-                       | SailAST.P_list (_, _) -> Predicate.bot_pred
-                       | SailAST.P_cons (_, _, _) -> Predicate.bot_pred
-                       | SailAST.P_string_append (_, _) -> Predicate.bot_pred)))
-                 (Predicate.sup_pred
-                   (Predicate.bind (Predicate.single xa)
-                     (fun a ->
-                       (match a with SailAST.P_lit (_, _) -> Predicate.bot_pred
-                         | SailAST.P_wild _ -> Predicate.bot_pred
-                         | SailAST.P_or (_, _, _) -> Predicate.bot_pred
-                         | SailAST.P_not (_, _) -> Predicate.bot_pred
-                         | SailAST.P_as (_, _, _) -> Predicate.bot_pred
-                         | SailAST.P_typ (_, _, pat) ->
-                           Predicate.bind (check_pat_i_o pat) Predicate.single
-                         | SailAST.P_id (_, _) -> Predicate.bot_pred
-                         | SailAST.P_var (_, _, _) -> Predicate.bot_pred
-                         | SailAST.P_app (_, _, _) -> Predicate.bot_pred
-                         | SailAST.P_vector (_, _) -> Predicate.bot_pred
-                         | SailAST.P_vector_concat (_, _) -> Predicate.bot_pred
-                         | SailAST.P_tup (_, _) -> Predicate.bot_pred
-                         | SailAST.P_list (_, _) -> Predicate.bot_pred
-                         | SailAST.P_cons (_, _, _) -> Predicate.bot_pred
-                         | SailAST.P_string_append (_, _) ->
-                           Predicate.bot_pred)))
-                   (Predicate.sup_pred
-                     (Predicate.bind (Predicate.single xa)
-                       (fun a ->
-                         (match a
-                           with SailAST.P_lit (_, _) -> Predicate.bot_pred
-                           | SailAST.P_wild _ -> Predicate.bot_pred
-                           | SailAST.P_or (_, _, _) -> Predicate.bot_pred
-                           | SailAST.P_not (_, _) -> Predicate.bot_pred
-                           | SailAST.P_as (_, _, _) -> Predicate.bot_pred
-                           | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
-                           | SailAST.P_id (tan, x) ->
-                             Predicate.bind
-                               (eq_i_i (Option.equal_option SailAST.equal_typ)
-                                 None (SailEnv.lookup_enum tan x))
-                               (fun () ->
-                                 Predicate.bind (eq_o_i (SailEnv.get tan))
-                                   (fun aa ->
-                                     (match aa with None -> Predicate.bot_pred
-                                       | Some (_, t) ->
- Predicate.single [(x, (SailEnv.Immutable, t))])))
-                           | SailAST.P_var (_, _, _) -> Predicate.bot_pred
-                           | SailAST.P_app (_, _, _) -> Predicate.bot_pred
-                           | SailAST.P_vector (_, _) -> Predicate.bot_pred
-                           | SailAST.P_vector_concat (_, _) ->
-                             Predicate.bot_pred
-                           | SailAST.P_tup (_, _) -> Predicate.bot_pred
-                           | SailAST.P_list (_, _) -> Predicate.bot_pred
-                           | SailAST.P_cons (_, _, _) -> Predicate.bot_pred
-                           | SailAST.P_string_append (_, _) ->
-                             Predicate.bot_pred)))
-                     (Predicate.sup_pred
-                       (Predicate.bind (Predicate.single xa)
-                         (fun a ->
-                           (match a
-                             with SailAST.P_lit (_, _) -> Predicate.bot_pred
-                             | SailAST.P_wild _ -> Predicate.bot_pred
-                             | SailAST.P_or (_, _, _) -> Predicate.bot_pred
-                             | SailAST.P_not (_, _) -> Predicate.bot_pred
-                             | SailAST.P_as (_, _, _) -> Predicate.bot_pred
-                             | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
-                             | SailAST.P_id (tan, x) ->
-                               Predicate.bind (eq_o_i (SailEnv.get tan))
-                                 (fun aa ->
-                                   (match aa with None -> Predicate.bot_pred
-                                     | Some (env, t1) ->
-                                       Predicate.bind
- (eq_o_i (SailEnv.lookup_enum tan x))
- (fun ab ->
-   (match ab with None -> Predicate.bot_pred
-     | Some t2 ->
-       Predicate.bind (subtype_i_i_i env t2 t1)
-         (fun () -> Predicate.single [])))))
-                             | SailAST.P_var (_, _, _) -> Predicate.bot_pred
-                             | SailAST.P_app (_, _, _) -> Predicate.bot_pred
-                             | SailAST.P_vector (_, _) -> Predicate.bot_pred
-                             | SailAST.P_vector_concat (_, _) ->
-                               Predicate.bot_pred
-                             | SailAST.P_tup (_, _) -> Predicate.bot_pred
-                             | SailAST.P_list (_, _) -> Predicate.bot_pred
-                             | SailAST.P_cons (_, _, _) -> Predicate.bot_pred
-                             | SailAST.P_string_append (_, _) ->
-                               Predicate.bot_pred)))
-                       (Predicate.sup_pred
-                         (Predicate.bind (Predicate.single xa)
-                           (fun a ->
-                             (match a
-                               with SailAST.P_lit (_, _) -> Predicate.bot_pred
-                               | SailAST.P_wild _ -> Predicate.bot_pred
-                               | SailAST.P_or (_, _, _) -> Predicate.bot_pred
-                               | SailAST.P_not (_, _) -> Predicate.bot_pred
-                               | SailAST.P_as (_, _, _) -> Predicate.bot_pred
-                               | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
-                               | SailAST.P_id (_, _) -> Predicate.bot_pred
-                               | SailAST.P_var (_, pat, _) ->
-                                 Predicate.bind (check_pat_i_o pat)
-                                   Predicate.single
-                               | SailAST.P_app (_, _, _) -> Predicate.bot_pred
-                               | SailAST.P_vector (_, _) -> Predicate.bot_pred
-                               | SailAST.P_vector_concat (_, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.P_tup (_, _) -> Predicate.bot_pred
-                               | SailAST.P_list (_, _) -> Predicate.bot_pred
-                               | SailAST.P_cons (_, _, _) -> Predicate.bot_pred
-                               | SailAST.P_string_append (_, _) ->
-                                 Predicate.bot_pred)))
-                         (Predicate.sup_pred
-                           (Predicate.bind (Predicate.single xa)
-                             (fun a ->
-                               (match a
-                                 with SailAST.P_lit (_, _) -> Predicate.bot_pred
-                                 | SailAST.P_wild _ -> Predicate.bot_pred
-                                 | SailAST.P_or (_, _, _) -> Predicate.bot_pred
-                                 | SailAST.P_not (_, _) -> Predicate.bot_pred
-                                 | SailAST.P_as (_, _, _) -> Predicate.bot_pred
-                                 | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
-                                 | SailAST.P_id (_, _) -> Predicate.bot_pred
-                                 | SailAST.P_var (_, _, _) -> Predicate.bot_pred
-                                 | SailAST.P_app (_, _, []) ->
-                                   Predicate.bot_pred
-                                 | SailAST.P_app (_, _, [parg]) ->
-                                   Predicate.bind (check_pat_i_o parg)
-                                     Predicate.single
-                                 | SailAST.P_app (_, _, _ :: _ :: _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.P_vector (_, _) -> Predicate.bot_pred
-                                 | SailAST.P_vector_concat (_, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.P_tup (_, _) -> Predicate.bot_pred
-                                 | SailAST.P_list (_, _) -> Predicate.bot_pred
-                                 | SailAST.P_cons (_, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.P_string_append (_, _) ->
-                                   Predicate.bot_pred)))
-                           (Predicate.sup_pred
-                             (Predicate.bind (Predicate.single xa)
-                               (fun a ->
-                                 (match a
-                                   with SailAST.P_lit (_, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.P_wild _ -> Predicate.bot_pred
-                                   | SailAST.P_or (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.P_not (_, _) -> Predicate.bot_pred
-                                   | SailAST.P_as (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.P_typ (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.P_id (_, _) -> Predicate.bot_pred
-                                   | SailAST.P_var (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.P_app (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.P_vector (_, pats) ->
-                                     Predicate.bind (check_pat_list_i_o pats)
-                                       Predicate.single
-                                   | SailAST.P_vector_concat (_, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.P_tup (_, _) -> Predicate.bot_pred
-                                   | SailAST.P_list (_, _) -> Predicate.bot_pred
-                                   | SailAST.P_cons (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.P_string_append (_, _) ->
-                                     Predicate.bot_pred)))
-                             (Predicate.sup_pred
-                               (Predicate.bind (Predicate.single xa)
-                                 (fun a ->
-                                   (match a
-                                     with SailAST.P_lit (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.P_wild _ -> Predicate.bot_pred
-                                     | SailAST.P_or (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.P_not (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.P_as (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.P_typ (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.P_id (_, _) -> Predicate.bot_pred
-                                     | SailAST.P_var (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.P_app (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.P_vector (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.P_vector_concat (_, pats) ->
-                                       Predicate.bind (check_pat_list_i_o pats)
+let rec check_pat_s_i_i_i_o
+  x xa xb =
+    Predicate.bind (Predicate.single (x, (xa, xb)))
+      (fun (env, (pat, t)) ->
+        Predicate.bind (eq_o_i (SailEnv.env_type_of_pat pat))
+          (fun a ->
+            (match a with None -> Predicate.bot_pred
+              | Some (enva, ta) ->
+                Predicate.bind (subtype_i_i_i env ta t)
+                  (fun () ->
+                    Predicate.bind (check_pat_s_i_i_i_o enva pat ta)
+                      Predicate.single))));;
+
+let rec integer_of_int2 x = Arith.integer_of_int x;;
+
+let rec check_lit_i_i_i
+  x xa xb =
+    Predicate.sup_pred
+      (Predicate.bind (Predicate.single (x, (xa, xb)))
+        (fun a ->
+          (match a
+            with (_, (SailAST.L_unit, SailAST.Typ_internal_unknown)) ->
+              Predicate.bot_pred
+            | (_, (SailAST.L_unit, SailAST.Typ_id (SailAST.Id xc))) ->
+              (if ((xc : string) = "unit") then Predicate.single ()
+                else Predicate.bot_pred)
+            | (_, (SailAST.L_unit, SailAST.Typ_id (SailAST.Operator _))) ->
+              Predicate.bot_pred
+            | (_, (SailAST.L_unit, SailAST.Typ_var _)) -> Predicate.bot_pred
+            | (_, (SailAST.L_unit, SailAST.Typ_fn (_, _, _))) ->
+              Predicate.bot_pred
+            | (_, (SailAST.L_unit, SailAST.Typ_bidir (_, _, _))) ->
+              Predicate.bot_pred
+            | (_, (SailAST.L_unit, SailAST.Typ_tup _)) -> Predicate.bot_pred
+            | (_, (SailAST.L_unit, SailAST.Typ_app (_, _))) ->
+              Predicate.bot_pred
+            | (_, (SailAST.L_unit, SailAST.Typ_exist (_, _, _))) ->
+              Predicate.bot_pred
+            | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
+            | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
+            | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
+            | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
+            | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
+            | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
+            | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
+            | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
+            | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
+            | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
+      (Predicate.sup_pred
+        (Predicate.bind (Predicate.single (x, (xa, xb)))
+          (fun a ->
+            (match a with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_real _, SailAST.Typ_internal_unknown)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.L_real _, SailAST.Typ_id (SailAST.Id xc))) ->
+                (if ((xc : string) = "real") then Predicate.single ()
+                  else Predicate.bot_pred)
+              | (_, (SailAST.L_real _, SailAST.Typ_id (SailAST.Operator _))) ->
+                Predicate.bot_pred
+              | (_, (SailAST.L_real _, SailAST.Typ_var _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_real _, SailAST.Typ_fn (_, _, _))) ->
+                Predicate.bot_pred
+              | (_, (SailAST.L_real _, SailAST.Typ_bidir (_, _, _))) ->
+                Predicate.bot_pred
+              | (_, (SailAST.L_real _, SailAST.Typ_tup _)) -> Predicate.bot_pred
+              | (_, (SailAST.L_real _, SailAST.Typ_app (_, _))) ->
+                Predicate.bot_pred
+              | (_, (SailAST.L_real _, SailAST.Typ_exist (_, _, _))) ->
+                Predicate.bot_pred)))
+        (Predicate.sup_pred
+          (Predicate.bind (Predicate.single (x, (xa, xb)))
+            (fun a ->
+              (match a with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
+                | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
+                | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
+                | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
+                | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
+                | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
+                | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
+                | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
+                | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
+                | (_, (SailAST.L_undef, _)) -> Predicate.single ()
+                | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
+          (Predicate.sup_pred
+            (Predicate.bind (Predicate.single (x, (xa, xb)))
+              (fun a ->
+                (match a with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
+                  | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
+                  | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
+                  | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
+                  | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _, SailAST.Typ_internal_unknown)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.L_num _, SailAST.Typ_id _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.L_num _, SailAST.Typ_var _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.L_num _, SailAST.Typ_fn (_, _, _))) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.L_num _, SailAST.Typ_bidir (_, _, _))) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.L_num _, SailAST.Typ_tup _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.L_num _, SailAST.Typ_app (SailAST.Id _, [])))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app
+                            (SailAST.Id _,
+                              SailAST.A_nexp (SailAST.Nexp_id _) :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app
+                            (SailAST.Id _,
+                              SailAST.A_nexp (SailAST.Nexp_var _) :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num num,
+                          SailAST.Typ_app
+                            (SailAST.Id xc,
+                              [SailAST.A_nexp (SailAST.Nexp_constant numa)])))
+                    -> (if Z.equal num numa && ((xc : string) = "atom")
+                         then Predicate.single () else Predicate.bot_pred)
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app
+                            (SailAST.Id _,
+                              SailAST.A_nexp (SailAST.Nexp_constant _) ::
+                                _ :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app
+                            (SailAST.Id _,
+                              SailAST.A_nexp (SailAST.Nexp_app (_, _)) :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app
+                            (SailAST.Id _,
+                              SailAST.A_nexp (SailAST.Nexp_times (_, _)) :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app
+                            (SailAST.Id _,
+                              SailAST.A_nexp (SailAST.Nexp_sum (_, _)) :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app
+                            (SailAST.Id _,
+                              SailAST.A_nexp (SailAST.Nexp_minus (_, _)) :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app
+                            (SailAST.Id _,
+                              SailAST.A_nexp (SailAST.Nexp_exp _) :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app
+                            (SailAST.Id _,
+                              SailAST.A_nexp (SailAST.Nexp_neg _) :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app (SailAST.Id _, SailAST.A_typ _ :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app
+                            (SailAST.Id _, SailAST.A_order _ :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app
+                            (SailAST.Id _, SailAST.A_bool _ :: _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _,
+                          SailAST.Typ_app (SailAST.Operator _, _)))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.L_num _, SailAST.Typ_exist (_, _, _))) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
+                  | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
+                  | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
+                  | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
+                  | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
+            (Predicate.sup_pred
+              (Predicate.bind (Predicate.single (x, (xa, xb)))
+                (fun a ->
+                  (match a with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
+                    | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
+                    | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
+                    | (_, (SailAST.L_true, SailAST.Typ_internal_unknown)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.L_true, SailAST.Typ_id _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.L_true, SailAST.Typ_var _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.L_true, SailAST.Typ_fn (_, _, _))) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.L_true, SailAST.Typ_bidir (_, _, _))) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.L_true, SailAST.Typ_tup _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.L_true, SailAST.Typ_app (SailAST.Id _, [])))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _, SailAST.A_nexp _ :: _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _, SailAST.A_typ _ :: _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _, SailAST.A_order _ :: _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool (SailAST.NC_equal (_, _)) :: _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool (SailAST.NC_bounded_ge (_, _)) ::
+                                  _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool (SailAST.NC_bounded_gt (_, _)) ::
+                                  _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool (SailAST.NC_bounded_le (_, _)) ::
+                                  _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool (SailAST.NC_bounded_lt (_, _)) ::
+                                  _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool (SailAST.NC_not_equal (_, _)) ::
+                                  _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool (SailAST.NC_set (_, _)) :: _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool (SailAST.NC_or (_, _)) :: _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool (SailAST.NC_and (_, _)) :: _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool (SailAST.NC_app (_, _)) :: _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool (SailAST.NC_var _) :: _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id xc,
+                                [SailAST.A_bool SailAST.NC_true])))
+                      -> (if ((xc : string) = "atom_bool")
+                           then Predicate.single () else Predicate.bot_pred)
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool SailAST.NC_true :: _ :: _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app
+                              (SailAST.Id _,
+                                SailAST.A_bool SailAST.NC_false :: _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true,
+                            SailAST.Typ_app (SailAST.Operator _, _)))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.L_true, SailAST.Typ_exist (_, _, _))) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
+                    | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
+                    | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
+                    | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
+                    | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
+                    | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
+                    | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
+              (Predicate.sup_pred
+                (Predicate.bind (Predicate.single (x, (xa, xb)))
+                  (fun a ->
+                    (match a with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
+                      | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
+                      | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
+                      | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
+                      | (_, (SailAST.L_false, SailAST.Typ_internal_unknown)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.L_false, SailAST.Typ_id _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.L_false, SailAST.Typ_var _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.L_false, SailAST.Typ_fn (_, _, _))) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.L_false, SailAST.Typ_bidir (_, _, _))) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.L_false, SailAST.Typ_tup _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app (SailAST.Id _, [])))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _, SailAST.A_nexp _ :: _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _, SailAST.A_typ _ :: _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _, SailAST.A_order _ :: _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool (SailAST.NC_equal (_, _)) ::
+                                    _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool
+                                    (SailAST.NC_bounded_ge (_, _)) ::
+                                    _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool
+                                    (SailAST.NC_bounded_gt (_, _)) ::
+                                    _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool
+                                    (SailAST.NC_bounded_le (_, _)) ::
+                                    _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool
+                                    (SailAST.NC_bounded_lt (_, _)) ::
+                                    _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool
+                                    (SailAST.NC_not_equal (_, _)) ::
+                                    _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool (SailAST.NC_set (_, _)) :: _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool (SailAST.NC_or (_, _)) :: _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool (SailAST.NC_and (_, _)) :: _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool (SailAST.NC_app (_, _)) :: _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool (SailAST.NC_var _) :: _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool SailAST.NC_true :: _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id xc,
+                                  [SailAST.A_bool SailAST.NC_false])))
+                        -> (if ((xc : string) = "atom_bool")
+                             then Predicate.single () else Predicate.bot_pred)
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app
+                                (SailAST.Id _,
+                                  SailAST.A_bool SailAST.NC_false :: _ :: _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false,
+                              SailAST.Typ_app (SailAST.Operator _, _)))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.L_false, SailAST.Typ_exist (_, _, _))) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
+                      | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
+                      | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
+                      | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
+                      | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
+                      | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
+                (Predicate.sup_pred
+                  (Predicate.bind (Predicate.single (x, (xa, xb)))
+                    (fun a ->
+                      (match a
+                        with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
+                        | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
+                        | (_, (SailAST.L_one, SailAST.Typ_internal_unknown)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.L_one, SailAST.Typ_id (SailAST.Id xc)))
+                          -> (if ((xc : string) = "bit")
+                               then Predicate.single () else Predicate.bot_pred)
+                        | (_, (SailAST.L_one,
+                                SailAST.Typ_id (SailAST.Operator _)))
+                          -> Predicate.bot_pred
+                        | (_, (SailAST.L_one, SailAST.Typ_var _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.L_one, SailAST.Typ_fn (_, _, _))) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.L_one, SailAST.Typ_bidir (_, _, _))) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.L_one, SailAST.Typ_tup _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.L_one, SailAST.Typ_app (_, _))) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.L_one, SailAST.Typ_exist (_, _, _))) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
+                        | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
+                        | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
+                        | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
+                        | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
+                        | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
+                        | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
+                        | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
+                  (Predicate.sup_pred
+                    (Predicate.bind (Predicate.single (x, (xa, xb)))
+                      (fun a ->
+                        (match a
+                          with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
+                          | (_, (SailAST.L_zero, SailAST.Typ_internal_unknown))
+                            -> Predicate.bot_pred
+                          | (_, (SailAST.L_zero,
+                                  SailAST.Typ_id (SailAST.Id xc)))
+                            -> (if ((xc : string) = "bit")
+                                 then Predicate.single ()
+                                 else Predicate.bot_pred)
+                          | (_, (SailAST.L_zero,
+                                  SailAST.Typ_id (SailAST.Operator _)))
+                            -> Predicate.bot_pred
+                          | (_, (SailAST.L_zero, SailAST.Typ_var _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.L_zero, SailAST.Typ_fn (_, _, _))) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.L_zero, SailAST.Typ_bidir (_, _, _)))
+                            -> Predicate.bot_pred
+                          | (_, (SailAST.L_zero, SailAST.Typ_tup _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.L_zero, SailAST.Typ_app (_, _))) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.L_zero, SailAST.Typ_exist (_, _, _)))
+                            -> Predicate.bot_pred
+                          | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
+                          | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
+                          | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
+                          | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
+                          | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
+                          | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
+                          | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
+                          | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
+                          | (_, (SailAST.L_real _, _)) -> Predicate.bot_pred)))
+                    (Predicate.sup_pred
+                      (Predicate.bind (Predicate.single (x, (xa, xb)))
+                        (fun a ->
+                          (match a
+                            with (_, (SailAST.L_unit, _)) -> Predicate.bot_pred
+                            | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
+                            | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
+                            | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
+                            | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
+                            | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
+                            | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_internal_unknown))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _, SailAST.Typ_id _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.L_bin _, SailAST.Typ_var _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.L_bin _, SailAST.Typ_fn (_, _, _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_bidir (_, _, _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _, SailAST.Typ_tup _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app (SailAST.Id _, [])))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_id _) :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_var _) :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+[SailAST.A_nexp (SailAST.Nexp_constant _)])))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_nexp _ :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_typ _ :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin s,
+                                    SailAST.Typ_app
+                                      (SailAST.Id xc,
+[SailAST.A_nexp (SailAST.Nexp_constant xaa); SailAST.A_order _])))
+                              -> (if Z.equal xaa
+                                       (integer_of_int2
+ (Arith.of_nat Arith.semiring_1_int (Lista.size_list (Stringa.explode s)))) &&
+                                       ((xc : string) = "bitvector")
+                                   then Predicate.single ()
+                                   else Predicate.bot_pred)
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_order _ :: _ :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_bool _ :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_app (_, _)) :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_times (_, _)) :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_sum (_, _)) :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_minus (_, _)) :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_exp _) :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _,
+SailAST.A_nexp (SailAST.Nexp_neg _) :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _, SailAST.A_typ _ :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _, SailAST.A_order _ :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app
+                                      (SailAST.Id _, SailAST.A_bool _ :: _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_app (SailAST.Operator _, _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_bin _,
+                                    SailAST.Typ_exist (_, _, _)))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.L_string _, _)) -> Predicate.bot_pred
+                            | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
+                            | (_, (SailAST.L_real _, _)) ->
+                              Predicate.bot_pred)))
+                      (Predicate.sup_pred
+                        (Predicate.bind (Predicate.single (x, (xa, xb)))
+                          (fun a ->
+                            (match a
+                              with (_, (SailAST.L_unit, _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_internal_unknown))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _, SailAST.Typ_id _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.L_hex _, SailAST.Typ_var _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.L_hex _, SailAST.Typ_fn (_, _, _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_bidir (_, _, _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _, SailAST.Typ_tup _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app (SailAST.Id _, [])))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_id _) :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_var _) :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, [SailAST.A_nexp (SailAST.Nexp_constant _)])))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _,
+  SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_nexp _ :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _,
+  SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_typ _ :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex s,
+                                      SailAST.Typ_app
+(SailAST.Id xc,
+  [SailAST.A_nexp (SailAST.Nexp_constant xaa); SailAST.A_order _])))
+                                -> (if Z.equal xaa
+ (Z.mul (Z.of_int 4)
+   (integer_of_int2
+     (Arith.of_nat Arith.semiring_1_int
+       (Lista.size_list (Stringa.explode s))))) &&
+ ((xc : string) = "bitvector")
+                                     then Predicate.single ()
+                                     else Predicate.bot_pred)
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _,
+  SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_order _ :: _ :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _,
+  SailAST.A_nexp (SailAST.Nexp_constant _) :: SailAST.A_bool _ :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_app (_, _)) :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_times (_, _)) :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_sum (_, _)) :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_minus (_, _)) :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_exp _) :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_nexp (SailAST.Nexp_neg _) :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_typ _ :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_order _ :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app
+(SailAST.Id _, SailAST.A_bool _ :: _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_app (SailAST.Operator _, _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _,
+                                      SailAST.Typ_exist (_, _, _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_string _, _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_real _, _)) ->
+                                Predicate.bot_pred)))
+                        (Predicate.bind (Predicate.single (x, (xa, xb)))
+                          (fun a ->
+                            (match a
+                              with (_, (SailAST.L_unit, _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.L_zero, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_one, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_true, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_false, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_num _, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_hex _, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_bin _, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_string _,
+                                      SailAST.Typ_internal_unknown))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_string _,
+                                      SailAST.Typ_id (SailAST.Id xc)))
+                                -> (if ((xc : string) = "string")
+                                     then Predicate.single ()
+                                     else Predicate.bot_pred)
+                              | (_, (SailAST.L_string _,
+                                      SailAST.Typ_id (SailAST.Operator _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_string _, SailAST.Typ_var _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.L_string _,
+                                      SailAST.Typ_fn (_, _, _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_string _,
+                                      SailAST.Typ_bidir (_, _, _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_string _, SailAST.Typ_tup _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.L_string _,
+                                      SailAST.Typ_app (_, _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_string _,
+                                      SailAST.Typ_exist (_, _, _)))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.L_undef, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.L_real _, _)) ->
+                                Predicate.bot_pred))))))))))));;
+
+let rec check_pat_i_i_i_o
+  xa xb xc =
+    Predicate.sup_pred
+      (Predicate.bind (Predicate.single (xa, (xb, xc)))
+        (fun a ->
+          (match a
+            with (env, (SailAST.P_lit (_, lit), t)) ->
+              Predicate.bind (check_lit_i_i_i env lit t)
+                (fun () -> Predicate.single [])
+            | (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_or (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_not (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_as (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_typ (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_id (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_var (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_app (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_vector (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_vector_concat (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_tup (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_list (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_cons (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.P_string_append (_, _), _)) -> Predicate.bot_pred)))
+      (Predicate.sup_pred
+        (Predicate.bind (Predicate.single (xa, (xb, xc)))
+          (fun a ->
+            (match a with (_, (SailAST.P_lit (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_wild _, _)) -> Predicate.single []
+              | (_, (SailAST.P_or (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_not (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_as (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_typ (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_id (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_var (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_app (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_vector (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_vector_concat (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_tup (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_list (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_cons (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.P_string_append (_, _), _)) ->
+                Predicate.bot_pred)))
+        (Predicate.sup_pred
+          (Predicate.bind (Predicate.single (xa, (xb, xc)))
+            (fun a ->
+              (match a with (_, (SailAST.P_lit (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
+                | (env, (SailAST.P_or (_, p1, p2), t)) ->
+                  Predicate.bind (check_pat_s_i_i_i_o env p1 t)
+                    (fun x ->
+                      Predicate.bind (check_pat_s_i_i_i_o env p2 t)
+                        (fun xaa -> Predicate.single (x @ xaa)))
+                | (_, (SailAST.P_not (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_as (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_typ (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_id (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_var (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_app (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_vector (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_vector_concat (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_tup (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_list (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_cons (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.P_string_append (_, _), _)) ->
+                  Predicate.bot_pred)))
+          (Predicate.sup_pred
+            (Predicate.bind (Predicate.single (xa, (xb, xc)))
+              (fun a ->
+                (match a
+                  with (_, (SailAST.P_lit (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
+                  | (_, (SailAST.P_or (_, _, _), _)) -> Predicate.bot_pred
+                  | (env, (SailAST.P_not (_, p1), t)) ->
+                    Predicate.bind (check_pat_i_i_i_o env p1 t) Predicate.single
+                  | (_, (SailAST.P_as (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.P_typ (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.P_id (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.P_var (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.P_app (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.P_vector (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.P_vector_concat (_, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.P_tup (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.P_list (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.P_cons (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.P_string_append (_, _), _)) ->
+                    Predicate.bot_pred)))
+            (Predicate.sup_pred
+              (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                (fun a ->
+                  (match a
+                    with (_, (SailAST.P_lit (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
+                    | (_, (SailAST.P_or (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.P_not (_, _), _)) -> Predicate.bot_pred
+                    | (env, (SailAST.P_as (_, pat, _), t)) ->
+                      Predicate.bind (check_pat_i_i_i_o env pat t)
+                        Predicate.single
+                    | (_, (SailAST.P_typ (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.P_id (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.P_var (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.P_app (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.P_vector (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.P_vector_concat (_, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.P_tup (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.P_list (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.P_cons (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.P_string_append (_, _), _)) ->
+                      Predicate.bot_pred)))
+              (Predicate.sup_pred
+                (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                  (fun a ->
+                    (match a
+                      with (_, (SailAST.P_lit (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
+                      | (_, (SailAST.P_or (_, _, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.P_not (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.P_as (_, _, _), _)) -> Predicate.bot_pred
+                      | (env, (SailAST.P_typ (_, _, pat), t)) ->
+                        Predicate.bind (check_pat_i_i_i_o env pat t)
+                          Predicate.single
+                      | (_, (SailAST.P_id (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.P_var (_, _, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.P_app (_, _, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.P_vector (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.P_vector_concat (_, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.P_tup (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.P_list (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.P_cons (_, _, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.P_string_append (_, _), _)) ->
+                        Predicate.bot_pred)))
+                (Predicate.sup_pred
+                  (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                    (fun a ->
+                      (match a
+                        with (_, (SailAST.P_lit (_, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
+                        | (_, (SailAST.P_or (_, _, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.P_not (_, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.P_as (_, _, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.P_typ (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (env, (SailAST.P_id (_, x), t)) ->
+                          Predicate.bind
+                            (eq_i_i (Option.equal_option SailAST.equal_typ) None
+                              (SailEnv.lookup_enum_env env x))
+                            (fun () ->
+                              Predicate.single [(x, (SailEnv.Immutable, t))])
+                        | (_, (SailAST.P_var (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.P_app (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.P_vector (_, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.P_vector_concat (_, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.P_tup (_, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.P_list (_, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.P_cons (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.P_string_append (_, _), _)) ->
+                          Predicate.bot_pred)))
+                  (Predicate.sup_pred
+                    (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                      (fun a ->
+                        (match a
+                          with (_, (SailAST.P_lit (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
+                          | (_, (SailAST.P_or (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.P_not (_, _), _)) -> Predicate.bot_pred
+                          | (_, (SailAST.P_as (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.P_typ (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (env, (SailAST.P_id (_, x), t1)) ->
+                            Predicate.bind
+                              (eq_o_i (SailEnv.lookup_enum_env env x))
+                              (fun aa ->
+                                (match aa with None -> Predicate.bot_pred
+                                  | Some t2 ->
+                                    Predicate.bind (subtype_i_i_i env t2 t1)
+                                      (fun () -> Predicate.single [])))
+                          | (_, (SailAST.P_var (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.P_app (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.P_vector (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.P_vector_concat (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.P_tup (_, _), _)) -> Predicate.bot_pred
+                          | (_, (SailAST.P_list (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.P_cons (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.P_string_append (_, _), _)) ->
+                            Predicate.bot_pred)))
+                    (Predicate.sup_pred
+                      (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                        (fun a ->
+                          (match a
+                            with (_, (SailAST.P_lit (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
+                            | (_, (SailAST.P_or (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.P_not (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.P_as (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.P_typ (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.P_id (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (env, (SailAST.P_var (_, pat, _), t)) ->
+                              Predicate.bind (check_pat_i_i_i_o env pat t)
+                                Predicate.single
+                            | (_, (SailAST.P_app (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.P_vector (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.P_vector_concat (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.P_tup (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.P_list (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.P_cons (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.P_string_append (_, _), _)) ->
+                              Predicate.bot_pred)))
+                      (Predicate.sup_pred
+                        (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                          (fun a ->
+                            (match a
+                              with (_, (SailAST.P_lit (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
+                              | (_, (SailAST.P_or (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_not (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_as (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_typ (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_id (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_var (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_app (_, _, []), _)) ->
+                                Predicate.bot_pred
+                              | (env, (SailAST.P_app (_, _, [parg]), t)) ->
+                                Predicate.bind (check_pat_i_i_i_o env parg t)
+                                  Predicate.single
+                              | (_, (SailAST.P_app (_, _, _ :: _ :: _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_vector (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_vector_concat (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_tup (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_list (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_cons (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.P_string_append (_, _), _)) ->
+                                Predicate.bot_pred)))
+                        (Predicate.sup_pred
+                          (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                            (fun a ->
+                              (match a
+                                with (_, (SailAST.P_lit (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_wild _, _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_or (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_not (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_as (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_typ (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_id (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_var (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_app (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_vector (_, pats), _)) ->
+                                  Predicate.bind (check_pat_list_i_o pats)
+                                    Predicate.single
+                                | (_, (SailAST.P_vector_concat (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_tup (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_list (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_cons (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.P_string_append (_, _), _)) ->
+                                  Predicate.bot_pred)))
+                          (Predicate.sup_pred
+                            (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                              (fun a ->
+                                (match a
+                                  with (_, (SailAST.P_lit (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_wild _, _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_or (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_not (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_as (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_typ (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_id (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_var (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_app (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_vector (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_vector_concat (_, pats), _))
+                                    -> Predicate.bind (check_pat_list_i_o pats)
  Predicate.single
-                                     | SailAST.P_tup (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.P_list (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.P_cons (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.P_string_append (_, _) ->
-                                       Predicate.bot_pred)))
-                               (Predicate.sup_pred
-                                 (Predicate.bind (Predicate.single xa)
-                                   (fun a ->
-                                     (match a
-                                       with SailAST.P_lit (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_wild _ -> Predicate.bot_pred
-                                       | SailAST.P_or (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_not (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_as (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_typ (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_id (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_var (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_app (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_vector (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_vector_concat (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_tup (_, pat_list) ->
- Predicate.bind (check_pat_list_i_o pat_list) Predicate.single
-                                       | SailAST.P_list (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_cons (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.P_string_append (_, _) ->
- Predicate.bot_pred)))
-                                 (Predicate.sup_pred
-                                   (Predicate.bind (Predicate.single xa)
-                                     (fun a ->
-                                       (match a
- with SailAST.P_lit (_, _) -> Predicate.bot_pred
- | SailAST.P_wild _ -> Predicate.bot_pred
- | SailAST.P_or (_, _, _) -> Predicate.bot_pred
- | SailAST.P_not (_, _) -> Predicate.bot_pred
- | SailAST.P_as (_, _, _) -> Predicate.bot_pred
- | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
- | SailAST.P_id (_, _) -> Predicate.bot_pred
- | SailAST.P_var (_, _, _) -> Predicate.bot_pred
- | SailAST.P_app (_, _, _) -> Predicate.bot_pred
- | SailAST.P_vector (_, _) -> Predicate.bot_pred
- | SailAST.P_vector_concat (_, _) -> Predicate.bot_pred
- | SailAST.P_tup (_, _) -> Predicate.bot_pred
- | SailAST.P_list (_, pat_list) ->
-   Predicate.bind (check_pat_list_i_o pat_list) Predicate.single
- | SailAST.P_cons (_, _, _) -> Predicate.bot_pred
- | SailAST.P_string_append (_, _) -> Predicate.bot_pred)))
-                                   (Predicate.sup_pred
-                                     (Predicate.bind (Predicate.single xa)
-                                       (fun a ->
- (match a with SailAST.P_lit (_, _) -> Predicate.bot_pred
-   | SailAST.P_wild _ -> Predicate.bot_pred
-   | SailAST.P_or (_, _, _) -> Predicate.bot_pred
-   | SailAST.P_not (_, _) -> Predicate.bot_pred
-   | SailAST.P_as (_, _, _) -> Predicate.bot_pred
-   | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
-   | SailAST.P_id (_, _) -> Predicate.bot_pred
-   | SailAST.P_var (_, _, _) -> Predicate.bot_pred
-   | SailAST.P_app (_, _, _) -> Predicate.bot_pred
-   | SailAST.P_vector (_, _) -> Predicate.bot_pred
-   | SailAST.P_vector_concat (_, _) -> Predicate.bot_pred
-   | SailAST.P_tup (_, _) -> Predicate.bot_pred
-   | SailAST.P_list (_, _) -> Predicate.bot_pred
-   | SailAST.P_cons (_, p1, p2) ->
-     Predicate.bind (check_pat_i_o p1)
-       (fun x ->
-         Predicate.bind (check_pat_i_o p2)
-           (fun xaa -> Predicate.single (x @ xaa)))
-   | SailAST.P_string_append (_, _) -> Predicate.bot_pred)))
-                                     (Predicate.bind (Predicate.single xa)
-                                       (fun a ->
- (match a with SailAST.P_lit (_, _) -> Predicate.bot_pred
-   | SailAST.P_wild _ -> Predicate.bot_pred
-   | SailAST.P_or (_, _, _) -> Predicate.bot_pred
-   | SailAST.P_not (_, _) -> Predicate.bot_pred
-   | SailAST.P_as (_, _, _) -> Predicate.bot_pred
-   | SailAST.P_typ (_, _, _) -> Predicate.bot_pred
-   | SailAST.P_id (_, _) -> Predicate.bot_pred
-   | SailAST.P_var (_, _, _) -> Predicate.bot_pred
-   | SailAST.P_app (_, _, _) -> Predicate.bot_pred
-   | SailAST.P_vector (_, _) -> Predicate.bot_pred
-   | SailAST.P_vector_concat (_, _) -> Predicate.bot_pred
-   | SailAST.P_tup (_, _) -> Predicate.bot_pred
-   | SailAST.P_list (_, _) -> Predicate.bot_pred
-   | SailAST.P_cons (_, _, _) -> Predicate.bot_pred
-   | SailAST.P_string_append (_, pat_list) ->
-     Predicate.bind (check_pat_list_i_o pat_list)
-       Predicate.single)))))))))))))))))
+                                  | (_, (SailAST.P_tup (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_list (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_cons (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.P_string_append (_, _), _)) ->
+                                    Predicate.bot_pred)))
+                            (Predicate.sup_pred
+                              (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                                (fun a ->
+                                  (match a
+                                    with (_, (SailAST.P_lit (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_wild _, _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_or (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_not (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_as (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_typ (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_id (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_var (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_app (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_vector (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_vector_concat (_, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_, (SailAST.P_tup (_, pat_list), _)) ->
+                                      Predicate.bind
+(check_pat_list_i_o pat_list) Predicate.single
+                                    | (_, (SailAST.P_list (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_cons (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.P_string_append (_, _), _))
+                                      -> Predicate.bot_pred)))
+                              (Predicate.sup_pred
+                                (Predicate.bind
+                                  (Predicate.single (xa, (xb, xc)))
+                                  (fun a ->
+                                    (match a
+                                      with (_, (SailAST.P_lit (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_wild _, _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_or (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_not (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_as (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_typ (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_id (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_var (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_app (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_vector (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_vector_concat (_, _), _))
+-> Predicate.bot_pred
+                                      | (_, (SailAST.P_tup (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_list (_, pat_list), _))
+-> Predicate.bind (check_pat_list_i_o pat_list) Predicate.single
+                                      | (_, (SailAST.P_cons (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.P_string_append (_, _), _))
+-> Predicate.bot_pred)))
+                                (Predicate.sup_pred
+                                  (Predicate.bind
+                                    (Predicate.single (xa, (xb, xc)))
+                                    (fun a ->
+                                      (match a
+with (_, (SailAST.P_lit (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
+| (_, (SailAST.P_or (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_not (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_as (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_typ (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_id (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_var (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_app (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_vector (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_vector_concat (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_tup (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_list (_, _), _)) -> Predicate.bot_pred
+| (env, (SailAST.P_cons (_, p1, p2), t)) ->
+  Predicate.bind (check_pat_i_i_i_o env p1 t)
+    (fun x ->
+      Predicate.bind (check_pat_i_i_i_o env p2 t)
+        (fun xaa -> Predicate.single (x @ xaa)))
+| (_, (SailAST.P_string_append (_, _), _)) -> Predicate.bot_pred)))
+                                  (Predicate.bind
+                                    (Predicate.single (xa, (xb, xc)))
+                                    (fun a ->
+                                      (match a
+with (_, (SailAST.P_lit (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
+| (_, (SailAST.P_or (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_not (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_as (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_typ (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_id (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_var (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_app (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_vector (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_vector_concat (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_tup (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_list (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_cons (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.P_string_append (_, pat_list), _)) ->
+  Predicate.bind (check_pat_list_i_o pat_list) Predicate.single)))))))))))))))))
 and check_pat_list_i_o
   xa = Predicate.sup_pred
          (Predicate.bind (Predicate.single xa)
@@ -14998,55 +15043,12 @@ and check_pat_list_i_o
                | pat :: pats ->
                  Predicate.bind (check_pat_list_i_o pats)
                    (fun x ->
-                     Predicate.bind (check_pat_i_o pat)
-                       (fun xaa -> Predicate.single (xaa @ x))))));;
-
-let rec subenv_i_i
-  x xa =
-    Predicate.bind (Predicate.single (x, xa))
-      (fun (_, _) -> Predicate.single ());;
-
-let rec locals_in
-  uu x1 = match uu, x1 with uu, [] -> true
-    | env, (x, (mut, typ)) :: gs ->
-        (match SailEnv.lookup_local_id_env env x with None -> false
-          | Some _ -> locals_in env gs);;
-
-let rec check_local_binds_i_i
-  x xa =
-    Predicate.sup_pred
-      (Predicate.bind (Predicate.single (x, xa))
-        (fun a ->
-          (match a with ([], _) -> Predicate.single ()
-            | (_ :: _, _) -> Predicate.bot_pred)))
-      (Predicate.bind (Predicate.single (x, xa))
-        (fun a ->
-          (match a with ([], _) -> Predicate.bot_pred
-            | (exp :: exps, bindings) ->
-              Predicate.bind (check_local_binds_i_i exps bindings)
-                (fun () ->
-                  Predicate.bind (eq_o_i (SailEnv.get_env_exp exp))
-                    (fun aa ->
-                      (match aa with None -> Predicate.bot_pred
-                        | Some env ->
-                          Predicate.bind
-                            (Predicate.if_pred (locals_in env bindings))
-                            (fun () -> Predicate.single ())))))));;
-
-let rec subtype_exp_i_i
-  x xa =
-    Predicate.bind (Predicate.single (x, xa))
-      (fun (exp, typ2) ->
-        Predicate.bind (eq_o_i (SailEnv.get_env_exp exp))
-          (fun a ->
-            (match a with None -> Predicate.bot_pred
-              | Some env ->
-                Predicate.bind (eq_o_i (SailEnv.type_of_exp exp))
-                  (fun aa ->
-                    (match aa with None -> Predicate.bot_pred
-                      | Some typ1 ->
-                        Predicate.bind (subtype_i_i_i env typ1 typ2)
-                          (fun () -> Predicate.single ()))))));;
+                     Predicate.bind (eq_o_i (SailEnv.env_type_of_pat pat))
+                       (fun aa ->
+                         (match aa with None -> Predicate.bot_pred
+                           | Some (env, t) ->
+                             Predicate.bind (check_pat_i_i_i_o env pat t)
+                               (fun xaa -> Predicate.single (xaa @ x))))))));;
 
 let rec subtype_tan_i_i
   x xa =
@@ -15063,291 +15065,312 @@ let rec subtype_tan_i_i
                         Predicate.bind (subtype_i_i_i env t ta)
                           (fun () -> Predicate.single ()))))));;
 
-let rec check_lexp_vector_list_i_i_i
-  x xa xb =
-    Predicate.sup_pred
-      (Predicate.bind (Predicate.single (x, (xa, xb)))
-        (fun a ->
-          (match a with ([], (_, _)) -> Predicate.single ()
-            | (_ :: _, _) -> Predicate.bot_pred)))
-      (Predicate.bind (Predicate.single (x, (xa, xb)))
-        (fun a ->
-          (match a with ([], _) -> Predicate.bot_pred
-            | (lexp :: lexps, (order, typ)) ->
-              Predicate.bind (check_lexp_vector_list_i_i_i lexps order typ)
-                (fun () ->
-                  Predicate.bind (eq_o_i (SailEnv.type_of_lexp lexp))
-                    (fun aa ->
-                      (match aa with None -> Predicate.bot_pred
-                        | Some t ->
-                          Predicate.bind
-                            (eq_o_i (SailEnv.deconstruct_vector_type t))
-                            (fun ab ->
-                              (match ab with None -> Predicate.bot_pred
-                                | Some (_, (ordera, typa)) ->
-                                  (if SailAST.equal_order order ordera &&
-SailAST.equal_typa typ typa
-                                    then Predicate.single ()
-                                    else Predicate.bot_pred)))))))));;
+let exception_typ : SailAST.typ = SailAST.Typ_id (SailAST.Id "exception");;
+
+let rec locals_in
+  uu x1 = match uu, x1 with uu, [] -> true
+    | env, (x, (mut, typ)) :: gs ->
+        (match SailEnv.lookup_local_id_env env x with None -> false
+          | Some _ -> locals_in env gs);;
 
 let rec add_locals env uu = env;;
 
 let rec check_letbind_i_o
   xa = Predicate.bind (Predicate.single xa)
          (fun (SailAST.LB_val (_, pat, exp)) ->
-           Predicate.bind (check_pat_i_o pat)
-             (fun x ->
-               Predicate.bind (check_exp_i_o exp)
-                 (fun _ -> Predicate.single x)))
-and check_exp_i_o
-  xa = Predicate.sup_pred
-         (Predicate.bind (Predicate.single xa)
-           (fun a ->
-             (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-               | SailAST.E_id (_, _) -> Predicate.bot_pred
-               | SailAST.E_lit (tan, lit) ->
-                 Predicate.bind (eq_o_i (SailEnv.get tan))
-                   (fun aa ->
-                     (match aa with None -> Predicate.bot_pred
-                       | Some (env, t) ->
-                         Predicate.bind (check_lit_i_i_i env lit t)
-                           (fun () -> Predicate.single [])))
-               | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-               | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_vector (_, _) -> Predicate.bot_pred
-               | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_vector_subrange (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                 Predicate.bot_pred
-               | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_list (_, _) -> Predicate.bot_pred
-               | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_record (_, _) -> Predicate.bot_pred
-               | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-               | SailAST.E_return (_, _) -> Predicate.bot_pred
-               | SailAST.E_exit (_, _) -> Predicate.bot_pred
-               | SailAST.E_ref (_, _) -> Predicate.bot_pred
-               | SailAST.E_throw (_, _) -> Predicate.bot_pred
-               | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-               | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-               | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-         (Predicate.sup_pred
-           (Predicate.bind (Predicate.single xa)
+           Predicate.bind (eq_o_i (SailEnv.env_type_of_pat pat))
              (fun a ->
-               (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-                 | SailAST.E_id (tan, x) ->
-                   Predicate.bind
-                     (Predicate.if_pred
-                       (trace
-                         [Stringa.Chara
-                            (true, true, false, false, false, true, true,
-                              false);
-                           Stringa.Chara
-                             (false, false, false, true, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, false, true, false, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, true, false, false, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, true, false, true, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, true, true, true, true, false, true, false);
-                           Stringa.Chara
-                             (true, false, false, true, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (false, false, true, false, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, false, false, true, false, false, true,
-                               false)]))
-                     (fun () ->
-                       Predicate.bind (eq_o_i (SailEnv.get tan))
+               (match a with None -> Predicate.bot_pred
+                 | Some (e, t) ->
+                   Predicate.bind (check_pat_i_i_i_o e pat t)
+                     (fun x ->
+                       Predicate.bind (eq_o_i (SailEnv.env_type_of_exp exp))
                          (fun aa ->
                            (match aa with None -> Predicate.bot_pred
-                             | Some (env, t2) ->
-                               Predicate.bind (eq_o_i (SailEnv.lookup_id tan x))
-                                 (fun ab ->
-                                   (match ab with None -> Predicate.bot_pred
-                                     | Some t1 ->
-                                       Predicate.bind (subtype_i_i_i env t1 t2)
- (fun () -> Predicate.single []))))))
-                 | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                 | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                 | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                 | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_vector_subrange (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                   Predicate.bot_pred
-                 | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_list (_, _) -> Predicate.bot_pred
-                 | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_record (_, _) -> Predicate.bot_pred
-                 | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                 | SailAST.E_return (_, _) -> Predicate.bot_pred
-                 | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                 | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                 | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                 | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-                 | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-                 | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-           (Predicate.sup_pred
-             (Predicate.bind (Predicate.single xa)
-               (fun a ->
-                 (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-                   | SailAST.E_id (_, _) -> Predicate.bot_pred
-                   | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                   | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_tuple (tan, exps) ->
-                     Predicate.bind (eq_o_i (SailEnv.get tan))
-                       (fun aa ->
-                         (match aa with None -> Predicate.bot_pred
-                           | Some (_, t) ->
-                             Predicate.bind (eq_o_i t)
-                               (fun ab ->
-                                 (match ab
-                                   with SailAST.Typ_internal_unknown ->
-                                     Predicate.bot_pred
-                                   | SailAST.Typ_id _ -> Predicate.bot_pred
-                                   | SailAST.Typ_var _ -> Predicate.bot_pred
-                                   | SailAST.Typ_fn (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.Typ_bidir (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.Typ_tup typs ->
-                                     Predicate.bind
-                                       (check_exp_list_i_i exps typs)
-                                       (fun () -> Predicate.single [])
-                                   | SailAST.Typ_app (_, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.Typ_exist (_, _, _) ->
-                                     Predicate.bot_pred))))
-                   | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                   | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_vector_subrange (_, _, _, _) ->
-                     Predicate.bot_pred
-                   | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                     Predicate.bot_pred
-                   | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_list (_, _) -> Predicate.bot_pred
-                   | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_record (_, _) -> Predicate.bot_pred
-                   | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                   | SailAST.E_return (_, _) -> Predicate.bot_pred
-                   | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                   | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                   | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                   | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-                   | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-                   | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-             (Predicate.sup_pred
-               (Predicate.bind (Predicate.single xa)
-                 (fun a ->
-                   (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-                     | SailAST.E_id (_, _) -> Predicate.bot_pred
-                     | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                     | SailAST.E_cast (_, t, exp) ->
-                       Predicate.bind (subtype_exp_i_i exp t)
-                         (fun () ->
-                           Predicate.bind (check_exp_i_o exp) Predicate.single)
-                     | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-                     | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                     | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                     | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-                     | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-                     | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                     | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_vector_subrange (_, _, _, _) ->
-                       Predicate.bot_pred
-                     | SailAST.E_vector_update (_, _, _, _) ->
-                       Predicate.bot_pred
-                     | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                       Predicate.bot_pred
-                     | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_list (_, _) -> Predicate.bot_pred
-                     | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_record (_, _) -> Predicate.bot_pred
-                     | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                     | SailAST.E_return (_, _) -> Predicate.bot_pred
-                     | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                     | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                     | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                     | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                     | SailAST.E_internal_plet (_, _, _, _) ->
-                       Predicate.bot_pred
-                     | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-                     | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-                     | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-               (Predicate.sup_pred
-                 (Predicate.bind (Predicate.single xa)
-                   (fun a ->
-                     (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-                       | SailAST.E_id (_, _) -> Predicate.bot_pred
-                       | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                       | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_app (tan, fid, exps) ->
-                         Predicate.bind
-                           (Predicate.if_pred
-                             (trace
-                               ([Stringa.Chara
+                             | Some (ea, ta) ->
+                               Predicate.bind (check_exp_s_i_i_i ea exp ta)
+                                 (fun () -> Predicate.single x)))))))
+and check_exp_i_i_i
+  xa xb xc =
+    Predicate.sup_pred
+      (Predicate.bind (Predicate.single (xa, (xb, xc)))
+        (fun a ->
+          (match a with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+            | (env, (SailAST.E_lit (_, lit), t)) ->
+              Predicate.bind (check_lit_i_i_i env lit t)
+                (fun () -> Predicate.single ())
+            | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_app_infix (_, _, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_loop (_, _, _, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+              Predicate.bot_pred
+            | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_vector_access (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+              Predicate.bot_pred
+            | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+              Predicate.bot_pred
+            | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+              Predicate.bot_pred
+            | (_, (SailAST.E_vector_append (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_record_update (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+              Predicate.bot_pred
+            | (_, (SailAST.E_internal_return (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_internal_value (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+      (Predicate.sup_pred
+        (Predicate.bind (Predicate.single (xa, (xb, xc)))
+          (fun a ->
+            (match a with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+              | (env, (SailAST.E_id (_, x), t2)) ->
+                Predicate.bind
+                  (Predicate.if_pred
+                    (trace
+                      [Stringa.Chara
+                         (true, true, false, false, false, true, true, false);
+                        Stringa.Chara
+                          (false, false, false, true, false, true, true, false);
+                        Stringa.Chara
+                          (true, false, true, false, false, true, true, false);
+                        Stringa.Chara
+                          (true, true, false, false, false, true, true, false);
+                        Stringa.Chara
+                          (true, true, false, true, false, true, true, false);
+                        Stringa.Chara
+                          (true, true, true, true, true, false, true, false);
+                        Stringa.Chara
+                          (true, false, false, true, false, true, true, false);
+                        Stringa.Chara
+                          (false, false, true, false, false, true, true, false);
+                        Stringa.Chara
+                          (true, false, false, true, false, false, true,
+                            false)]))
+                  (fun () ->
+                    Predicate.bind (eq_o_i (SailEnv.lookup_id_env env x))
+                      (fun aa ->
+                        (match aa with None -> Predicate.bot_pred
+                          | Some t1 ->
+                            Predicate.bind (subtype_i_i_i env t1 t2)
+                              (fun () -> Predicate.single ()))))
+              | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_app_infix (_, _, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_loop (_, _, _, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_internal_return (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_internal_value (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+        (Predicate.sup_pred
+          (Predicate.bind (Predicate.single (xa, (xb, xc)))
+            (fun a ->
+              (match a
+                with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_tuple (_, exps), t)) ->
+                  Predicate.bind (eq_o_i t)
+                    (fun aa ->
+                      (match aa
+                        with SailAST.Typ_internal_unknown -> Predicate.bot_pred
+                        | SailAST.Typ_id _ -> Predicate.bot_pred
+                        | SailAST.Typ_var _ -> Predicate.bot_pred
+                        | SailAST.Typ_fn (_, _, _) -> Predicate.bot_pred
+                        | SailAST.Typ_bidir (_, _, _) -> Predicate.bot_pred
+                        | SailAST.Typ_tup typs ->
+                          Predicate.bind (check_exp_list_i_i exps typs)
+                            (fun () -> Predicate.single ())
+                        | SailAST.Typ_app (_, _) -> Predicate.bot_pred
+                        | SailAST.Typ_exist (_, _, _) -> Predicate.bot_pred))
+                | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_loop (_, _, _, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_internal_return (_, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_internal_value (_, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+          (Predicate.sup_pred
+            (Predicate.bind (Predicate.single (xa, (xb, xc)))
+              (fun a ->
+                (match a
+                  with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+                  | (e, (SailAST.E_cast (_, ta, exp), t)) ->
+                    Predicate.bind (check_exp_s_i_i_i e exp ta)
+                      (fun () ->
+                        Predicate.bind (subtype_i_i_i e ta t)
+                          (fun () -> Predicate.single ()))
+                  | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_loop (_, _, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_internal_return (_, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_internal_value (_, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_constraint (_, _), _)) ->
+                    Predicate.bot_pred)))
+            (Predicate.sup_pred
+              (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                (fun a ->
+                  (match a
+                    with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_app (tan, fid, exps), t)) ->
+                      Predicate.bind
+                        (Predicate.if_pred
+                          (trace
+                            ([Stringa.Chara
+                                (true, false, true, false, false, false, true,
+                                  false);
+                               Stringa.Chara
+                                 (true, true, true, true, true, false, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, false, false, false, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, false, false, false, true, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, false, false, false, true, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, false, false, false, false, true,
+                                   false, false)] @
+                              ShowAST.show_tannot tan)))
+                        (fun () ->
+                          Predicate.bind
+                            (Predicate.if_pred
+                              (trace
+                                [Stringa.Chara
                                    (true, false, true, false, false, false,
                                      true, false);
                                   Stringa.Chara
@@ -15364,1847 +15387,169 @@ and check_exp_i_o
                                       true, false);
                                   Stringa.Chara
                                     (false, false, false, false, false, true,
-                                      false, false)] @
-                                 ShowAST.show_tannot tan)))
-                           (fun () ->
-                             Predicate.bind
-                               (Predicate.if_pred
-                                 (trace
-                                   [Stringa.Chara
-                                      (true, false, true, false, false, false,
-true, false);
-                                     Stringa.Chara
-                                       (true, true, true, true, true, false,
+                                      false, false);
+                                  Stringa.Chara
+                                    (true, false, false, false, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, true, true, false, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, false, true, false, true, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (true, false, true, false, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, true, false, false, true, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, false, false, false, false, true,
+                                      false, false);
+                                  Stringa.Chara
+                                    (true, true, false, false, true, true, true,
+                                      false);
+                                  Stringa.Chara
+                                    (true, false, true, false, true, true, true,
+                                      false);
+                                  Stringa.Chara
+                                    (false, true, false, false, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (true, true, false, false, true, true, true,
+                                      false);
+                                  Stringa.Chara
+                                    (false, false, true, false, true, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (true, true, true, true, true, false, true,
+                                      false);
+                                  Stringa.Chara
+                                    (true, false, false, true, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, true, true, true, false, true, true,
+                                      false);
+                                  Stringa.Chara
+                                    (true, true, false, false, true, true, true,
+                                      false);
+                                  Stringa.Chara
+                                    (false, false, true, false, true, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, false, false, false, false, true,
+                                      false, false);
+                                  Stringa.Chara
+                                    (true, false, false, true, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, true, true, true, false, true, true,
+                                      false);
+                                  Stringa.Chara
+                                    (false, false, false, false, false, true,
+                                      false, false);
+                                  Stringa.Chara
+                                    (true, false, false, false, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, true, false, false, true, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (true, true, true, false, false, true, true,
+                                      false);
+                                  Stringa.Chara
+                                    (true, true, false, false, true, true, true,
+                                      false)]))
+                            (fun () ->
+                              Predicate.bind
+                                (Predicate.if_pred
+                                  (trace
+                                    [Stringa.Chara
+                                       (true, false, true, false, false, false,
  true, false);
-                                     Stringa.Chara
-                                       (true, false, false, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, false, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, false, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, false, false, false, true,
- false, false);
-                                     Stringa.Chara
-                                       (true, false, false, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, true, true, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, true, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, false, true, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, true, false, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, false, false, false, true,
- false, false);
-                                     Stringa.Chara
-                                       (true, true, false, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, false, true, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, true, false, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, false, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, true, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, true, true, true, false,
- true, false);
-                                     Stringa.Chara
-                                       (true, false, false, true, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, true, true, true, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, false, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, true, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, false, false, false, true,
- false, false);
-                                     Stringa.Chara
-                                       (true, false, false, true, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, true, true, true, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, false, false, false, true,
- false, false);
-                                     Stringa.Chara
-                                       (true, false, false, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, true, false, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, true, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, false, false, true, true,
- true, false)]))
-                               (fun () ->
-                                 Predicate.bind
-                                   (Predicate.if_pred
-                                     (trace
-                                       [Stringa.Chara
-  (true, false, true, false, false, false, true, false);
- Stringa.Chara (true, true, true, true, true, false, true, false);
- Stringa.Chara (true, false, false, false, false, true, true, false);
- Stringa.Chara (false, false, false, false, true, true, true, false);
- Stringa.Chara (false, false, false, false, true, true, true, false);
- Stringa.Chara (false, false, false, false, false, true, false, false);
- Stringa.Chara (true, false, false, false, false, true, true, false);
- Stringa.Chara (false, true, true, false, false, true, true, false);
- Stringa.Chara (false, false, true, false, true, true, true, false);
- Stringa.Chara (true, false, true, false, false, true, true, false);
- Stringa.Chara (false, true, false, false, true, true, true, false);
- Stringa.Chara (false, false, false, false, false, true, false, false);
- Stringa.Chara (true, true, false, false, true, true, true, false);
- Stringa.Chara (true, false, true, false, true, true, true, false);
- Stringa.Chara (false, true, false, false, false, true, true, false);
- Stringa.Chara (true, true, false, false, true, true, true, false);
- Stringa.Chara (false, false, true, false, true, true, true, false);
- Stringa.Chara (true, true, true, true, true, false, true, false);
- Stringa.Chara (true, false, false, true, false, true, true, false);
- Stringa.Chara (false, true, true, true, false, true, true, false);
- Stringa.Chara (true, true, false, false, true, true, true, false);
- Stringa.Chara (false, false, true, false, true, true, true, false);
- Stringa.Chara (false, false, false, false, false, true, false, false);
- Stringa.Chara (false, true, false, false, true, true, true, false);
- Stringa.Chara (true, false, true, false, false, true, true, false);
- Stringa.Chara (false, false, true, false, true, true, true, false)]))
-                                   (fun () ->
-                                     Predicate.bind (eq_o_i (SailEnv.get tan))
-                                       (fun aa ->
- (match aa with None -> Predicate.bot_pred
-   | Some (_, t) ->
-     Predicate.bind (eq_o_i (SailEnv.lookup_fun tan fid))
-       (fun ab ->
-         (match ab with None -> Predicate.bot_pred
-           | Some (in_typs, rett_typ) ->
-             Predicate.bind (eq_o_i (SailEnv.subst_inst_list tan in_typs))
-               (fun ac ->
-                 (match ac with None -> Predicate.bot_pred
-                   | Some in_typs2 ->
-                     Predicate.bind (check_exp_list_i_i exps in_typs2)
-                       (fun () ->
-                         Predicate.bind
-                           (eq_o_i (SailEnv.subst_inst tan rett_typ))
-                           (fun ad ->
-                             (match ad with None -> Predicate.bot_pred
-                               | Some ret_typ2 ->
-                                 Predicate.bind
-                                   (Predicate.if_pred
-                                     (trace
-                                       ([Stringa.Chara
-   (true, false, true, false, false, false, true, false);
-  Stringa.Chara (true, true, true, true, true, false, true, false);
-  Stringa.Chara (true, false, false, false, false, true, true, false);
-  Stringa.Chara (false, false, false, false, true, true, true, false);
-  Stringa.Chara (false, false, false, false, true, true, true, false);
-  Stringa.Chara (false, false, false, false, false, true, false, false);
-  Stringa.Chara (true, true, false, false, true, true, true, false);
-  Stringa.Chara (true, false, true, false, true, true, true, false);
-  Stringa.Chara (false, true, false, false, false, true, true, false);
-  Stringa.Chara (false, false, true, false, true, true, true, false);
-  Stringa.Chara (true, false, false, true, true, true, true, false);
-  Stringa.Chara (false, false, false, false, true, true, true, false);
-  Stringa.Chara (true, false, true, false, false, true, true, false)] @
- [Stringa.Chara (false, false, true, false, true, true, true, false);
-   Stringa.Chara (true, false, false, false, true, true, false, false);
-   Stringa.Chara (true, false, true, true, true, true, false, false)] @
-   ShowAST.shows_prec_typ Arith.Zero_nat ret_typ2 [] @
-     [Stringa.Chara (false, false, true, false, true, true, true, false);
-       Stringa.Chara (false, true, false, false, true, true, false, false);
-       Stringa.Chara (true, false, true, true, true, true, false, false)] @
-       ShowAST.shows_prec_typ Arith.Zero_nat t [])))
-                                   (fun () ->
-                                     Predicate.bind
-                                       (subtype_tan_i_i ret_typ2 tan)
-                                       (fun () ->
- Predicate.single []))))))))))))))
-                       | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                       | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_for (_, _, _, _, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                       | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_vector_subrange (_, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector_update (_, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_list (_, _) -> Predicate.bot_pred
-                       | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_record (_, _) -> Predicate.bot_pred
-                       | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                       | SailAST.E_return (_, _) -> Predicate.bot_pred
-                       | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                       | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                       | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                       | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_internal_plet (_, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-                       | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-                       | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-                 (Predicate.sup_pred
-                   (Predicate.bind (Predicate.single xa)
-                     (fun a ->
-                       (match a
-                         with SailAST.E_block (_, _) -> Predicate.bot_pred
-                         | SailAST.E_id (_, _) -> Predicate.bot_pred
-                         | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                         | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                         | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                         | SailAST.E_app_infix (_, _, _, _) ->
-                           Predicate.bot_pred
-                         | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                         | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                         | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-                         | SailAST.E_for (_, _, _, _, _, _, _) ->
-                           Predicate.bot_pred
-                         | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                         | SailAST.E_vector_access (_, _, _) ->
-                           Predicate.bot_pred
-                         | SailAST.E_vector_subrange (_, _, _, _) ->
-                           Predicate.bot_pred
-                         | SailAST.E_vector_update (_, _, _, _) ->
-                           Predicate.bot_pred
-                         | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                           Predicate.bot_pred
-                         | SailAST.E_vector_append (_, _, _) ->
-                           Predicate.bot_pred
-                         | SailAST.E_list (_, _) -> Predicate.bot_pred
-                         | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                         | SailAST.E_record (tan, fexp_list) ->
-                           Predicate.bind (eq_o_i (SailEnv.get tan))
-                             (fun aa ->
-                               (match aa with None -> Predicate.bot_pred
-                                 | Some (_, typ) ->
-                                   Predicate.bind
-                                     (check_fexp_list_i_i fexp_list typ)
-                                     (fun () -> Predicate.single [])))
-                         | SailAST.E_record_update (_, _, _) ->
-                           Predicate.bot_pred
-                         | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                         | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                         | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                         | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                         | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                         | SailAST.E_return (_, _) -> Predicate.bot_pred
-                         | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                         | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                         | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                         | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                         | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-                         | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                         | SailAST.E_internal_plet (_, _, _, _) ->
-                           Predicate.bot_pred
-                         | SailAST.E_internal_return (_, _) ->
-                           Predicate.bot_pred
-                         | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-                         | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-                   (Predicate.sup_pred
-                     (Predicate.bind (Predicate.single xa)
-                       (fun a ->
-                         (match a
-                           with SailAST.E_block (_, _) -> Predicate.bot_pred
-                           | SailAST.E_id (_, _) -> Predicate.bot_pred
-                           | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                           | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                           | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                           | SailAST.E_app_infix (_, _, _, _) ->
-                             Predicate.bot_pred
-                           | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                           | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                           | SailAST.E_loop (_, _, _, _, _) ->
-                             Predicate.bot_pred
-                           | SailAST.E_for (_, _, _, _, _, _, _) ->
-                             Predicate.bot_pred
-                           | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                           | SailAST.E_vector_access (_, _, _) ->
-                             Predicate.bot_pred
-                           | SailAST.E_vector_subrange (_, _, _, _) ->
-                             Predicate.bot_pred
-                           | SailAST.E_vector_update (_, _, _, _) ->
-                             Predicate.bot_pred
-                           | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                             Predicate.bot_pred
-                           | SailAST.E_vector_append (_, _, _) ->
-                             Predicate.bot_pred
-                           | SailAST.E_list (_, _) -> Predicate.bot_pred
-                           | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                           | SailAST.E_record (_, _) -> Predicate.bot_pred
-                           | SailAST.E_record_update (tan, exp, fexp_list) ->
-                             Predicate.bind (check_exp_i_o exp)
-                               (fun _ ->
-                                 Predicate.bind (eq_o_i (SailEnv.get tan))
-                                   (fun aa ->
-                                     (match aa with None -> Predicate.bot_pred
-                                       | Some (_, typ) ->
- Predicate.bind (check_fexp_list_i_i fexp_list typ)
-   (fun () -> Predicate.single []))))
-                           | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                           | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                           | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                           | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                           | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                           | SailAST.E_return (_, _) -> Predicate.bot_pred
-                           | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                           | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                           | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                           | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                           | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-                           | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                           | SailAST.E_internal_plet (_, _, _, _) ->
-                             Predicate.bot_pred
-                           | SailAST.E_internal_return (_, _) ->
-                             Predicate.bot_pred
-                           | SailAST.E_internal_value (_, _) ->
-                             Predicate.bot_pred
-                           | SailAST.E_constraint (_, _) ->
-                             Predicate.bot_pred)))
-                     (Predicate.sup_pred
-                       (Predicate.bind (Predicate.single xa)
-                         (fun a ->
-                           (match a
-                             with SailAST.E_block (_, _) -> Predicate.bot_pred
-                             | SailAST.E_id (_, _) -> Predicate.bot_pred
-                             | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                             | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                             | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                             | SailAST.E_app_infix (_, _, _, _) ->
-                               Predicate.bot_pred
-                             | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                             | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                             | SailAST.E_loop (_, _, _, _, _) ->
-                               Predicate.bot_pred
-                             | SailAST.E_for (_, _, _, _, _, _, _) ->
-                               Predicate.bot_pred
-                             | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                             | SailAST.E_vector_access (_, _, _) ->
-                               Predicate.bot_pred
-                             | SailAST.E_vector_subrange (_, _, _, _) ->
-                               Predicate.bot_pred
-                             | SailAST.E_vector_update (_, _, _, _) ->
-                               Predicate.bot_pred
-                             | SailAST.E_vector_update_subrange (_, _, _, _, _)
-                               -> Predicate.bot_pred
-                             | SailAST.E_vector_append (_, _, _) ->
-                               Predicate.bot_pred
-                             | SailAST.E_list (_, _) -> Predicate.bot_pred
-                             | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                             | SailAST.E_record (_, _) -> Predicate.bot_pred
-                             | SailAST.E_record_update (_, _, _) ->
-                               Predicate.bot_pred
-                             | SailAST.E_field (tan, exp, fid) ->
-                               Predicate.bind (check_exp_i_o exp)
-                                 (fun _ ->
-                                   Predicate.bind (eq_o_i (SailEnv.get tan))
-                                     (fun aa ->
-                                       (match aa with None -> Predicate.bot_pred
- | Some (env, t1) ->
-   Predicate.bind (eq_o_i (SailEnv.type_of_exp exp))
-     (fun ab ->
-       (match ab with None -> Predicate.bot_pred
-         | Some rtype ->
-           Predicate.bind (eq_o_i (SailEnv.deconstruct_record_type rtype))
-             (fun ac ->
-               (match ac with None -> Predicate.bot_pred
-                 | Some recid ->
-                   Predicate.bind
-                     (eq_o_i (SailEnv.lookup_record_field_env env recid fid))
-                     (fun ad ->
-                       (match ad with None -> Predicate.bot_pred
-                         | Some t2 ->
-                           Predicate.bind (subtype_i_i_i env t1 t2)
-                             (fun () -> Predicate.single []))))))))))
-                             | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                             | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                             | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                             | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                             | SailAST.E_return (_, _) -> Predicate.bot_pred
-                             | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                             | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                             | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                             | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                             | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-                             | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                             | SailAST.E_internal_plet (_, _, _, _) ->
-                               Predicate.bot_pred
-                             | SailAST.E_internal_return (_, _) ->
-                               Predicate.bot_pred
-                             | SailAST.E_internal_value (_, _) ->
-                               Predicate.bot_pred
-                             | SailAST.E_constraint (_, _) ->
-                               Predicate.bot_pred)))
-                       (Predicate.sup_pred
-                         (Predicate.bind (Predicate.single xa)
-                           (fun a ->
-                             (match a
-                               with SailAST.E_block (_, _) -> Predicate.bot_pred
-                               | SailAST.E_id (_, _) -> Predicate.bot_pred
-                               | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                               | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                               | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                               | SailAST.E_app_infix (_, _, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                               | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                               | SailAST.E_loop (_, _, _, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_for (_, _, _, _, _, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                               | SailAST.E_vector_access (_, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_vector_subrange (_, _, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_vector_update (_, _, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_vector_update_subrange
-                                   (_, _, _, _, _)
-                                 -> Predicate.bot_pred
-                               | SailAST.E_vector_append (_, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_list (_, _) -> Predicate.bot_pred
-                               | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                               | SailAST.E_record (_, _) -> Predicate.bot_pred
-                               | SailAST.E_record_update (_, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                               | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                               | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                               | SailAST.E_assign (_, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                               | SailAST.E_return (tan, exp) ->
-                                 Predicate.bind (eq_o_i (SailEnv.ret_type tan))
-                                   (fun aa ->
-                                     (match aa with None -> Predicate.bot_pred
-                                       | Some r_typ ->
- Predicate.bind (check_exp_typ_i_i exp r_typ) (fun () -> Predicate.single [])))
-                               | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                               | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                               | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                               | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                               | SailAST.E_assert (_, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_var (_, _, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_internal_plet (_, _, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_internal_return (_, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_internal_value (_, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.E_constraint (_, _) ->
-                                 Predicate.bot_pred)))
-                         (Predicate.sup_pred
-                           (Predicate.bind (Predicate.single xa)
-                             (fun a ->
-                               (match a
-                                 with SailAST.E_block (_, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_id (_, _) -> Predicate.bot_pred
-                                 | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                                 | SailAST.E_cast (_, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                                 | SailAST.E_app_infix (_, _, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                                 | SailAST.E_if (_, _, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_loop (_, _, _, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_for (_, _, _, _, _, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                                 | SailAST.E_vector_access (_, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_vector_subrange (_, _, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_vector_update (_, _, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_vector_update_subrange
-                                     (_, _, _, _, _)
-                                   -> Predicate.bot_pred
-                                 | SailAST.E_vector_append (_, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_list (_, _) -> Predicate.bot_pred
-                                 | SailAST.E_cons (_, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_record (_, _) -> Predicate.bot_pred
-                                 | SailAST.E_record_update (_, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_field (_, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_case (_, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                                 | SailAST.E_assign (_, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                                 | SailAST.E_return (_, _) -> Predicate.bot_pred
-                                 | SailAST.E_exit (_, exp) ->
-                                   Predicate.bind
-                                     (check_exp_typ_i_i exp
-                                       SailASTUtils.unit_typ)
-                                     (fun () -> Predicate.single [])
-                                 | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                                 | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                                 | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                                 | SailAST.E_assert (_, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_var (_, _, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_internal_plet (_, _, _, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_internal_return (_, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_internal_value (_, _) ->
-                                   Predicate.bot_pred
-                                 | SailAST.E_constraint (_, _) ->
-                                   Predicate.bot_pred)))
-                           (Predicate.sup_pred
-                             (Predicate.bind (Predicate.single xa)
-                               (fun a ->
-                                 (match a
-                                   with SailAST.E_block (_, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_id (_, _) -> Predicate.bot_pred
-                                   | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                                   | SailAST.E_cast (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_app (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_app_infix (_, _, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_tuple (_, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_if (_, _, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_loop (_, _, _, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_for (_, _, _, _, _, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_vector (_, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_vector_access (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_vector_subrange (_, _, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_vector_update (_, _, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_vector_update_subrange
-                                       (_, _, _, _, _)
-                                     -> Predicate.bot_pred
-                                   | SailAST.E_vector_append (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_list (_, _) -> Predicate.bot_pred
-                                   | SailAST.E_cons (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_record (_, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_record_update (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_field (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_case (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_let (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_assign (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_sizeof (_, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_return (_, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                                   | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                                   | SailAST.E_throw (_, exp) ->
-                                     Predicate.bind
-                                       (check_exp_typ_i_i exp
- (SailAST.Typ_id (SailAST.Id "exception")))
-                                       (fun () -> Predicate.single [])
-                                   | SailAST.E_try (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_assert (_, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_var (_, _, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_internal_plet (_, _, _, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_internal_return (_, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_internal_value (_, _) ->
-                                     Predicate.bot_pred
-                                   | SailAST.E_constraint (_, _) ->
-                                     Predicate.bot_pred)))
-                             (Predicate.sup_pred
-                               (Predicate.bind (Predicate.single xa)
-                                 (fun a ->
-                                   (match a
-                                     with SailAST.E_block (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_id (_, _) -> Predicate.bot_pred
-                                     | SailAST.E_lit (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_cast (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_app (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_app_infix (_, _, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_tuple (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_if (_, _, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_loop (_, _, _, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_for (_, _, _, _, _, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_vector (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_vector_access (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_vector_subrange (_, _, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_vector_update (_, _, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_vector_update_subrange
- (_, _, _, _, _)
-                                       -> Predicate.bot_pred
-                                     | SailAST.E_vector_append (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_list (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_cons (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_record (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_record_update (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_field (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_case (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_let (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_assign (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_sizeof (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_return (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_exit (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_ref (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_throw (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_try (_, exp, pexps) ->
-                                       Predicate.bind (check_pexps_i pexps)
- (fun () -> Predicate.bind (check_exp_i_o exp) (fun _ -> Predicate.single []))
-                                     | SailAST.E_assert (_, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_var (_, _, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_internal_plet (_, _, _, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_internal_return (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_internal_value (_, _) ->
-                                       Predicate.bot_pred
-                                     | SailAST.E_constraint (_, _) ->
-                                       Predicate.bot_pred)))
-                               (Predicate.sup_pred
-                                 (Predicate.bind (Predicate.single xa)
-                                   (fun a ->
-                                     (match a
-                                       with SailAST.E_block (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_id (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_lit (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_cast (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_app (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_app_infix (_, _, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_tuple (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_if (_, _, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_loop (_, _, _, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_for (_, _, _, _, _, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_vector (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_vector_access (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_vector_subrange (_, _, _, _)
- -> Predicate.bot_pred
-                                       | SailAST.E_vector_update (_, _, _, _) ->
- Predicate.bot_pred
-                                       |
- SailAST.E_vector_update_subrange (_, _, _, _, _) -> Predicate.bot_pred
-                                       | SailAST.E_vector_append (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_list (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_cons (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_record (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_record_update (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_field (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_case (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_let (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_assign (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_sizeof (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_return (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_exit (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_ref (tan, x) ->
- Predicate.bind (eq_o_i (SailEnv.lookup_register tan x))
-   (fun aa ->
-     (match aa with None -> Predicate.bot_pred
-       | Some t1 ->
-         Predicate.bind (subtype_tan_i_i t1 tan)
-           (fun () -> Predicate.single [])))
-                                       | SailAST.E_throw (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_try (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_assert (_, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_var (_, _, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_internal_plet (_, _, _, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_internal_return (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_internal_value (_, _) ->
- Predicate.bot_pred
-                                       | SailAST.E_constraint (_, _) ->
- Predicate.bot_pred)))
-                                 (Predicate.sup_pred
-                                   (Predicate.bind (Predicate.single xa)
-                                     (fun a ->
-                                       (match a
- with SailAST.E_block (_, _) -> Predicate.bot_pred
- | SailAST.E_id (_, _) -> Predicate.bot_pred
- | SailAST.E_lit (_, _) -> Predicate.bot_pred
- | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
- | SailAST.E_app (_, _, _) -> Predicate.bot_pred
- | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
- | SailAST.E_tuple (_, _) -> Predicate.bot_pred
- | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
- | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
- | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
- | SailAST.E_vector (tan, exps) ->
-   Predicate.bind (eq_o_i (SailEnv.get tan))
-     (fun aa ->
-       (match aa with None -> Predicate.bot_pred
-         | Some (env, _) ->
-           Predicate.bind (eq_o_i (SailEnv.is_vector_type tan))
-             (fun ab ->
-               (match ab with None -> Predicate.bot_pred
-                 | Some (len, (_, typ)) ->
-                   Predicate.bind
-                     (check_exp_list_i_i exps
-                       (Lista.replicate (Lista.size_list exps) typ))
-                     (fun () ->
-                       Predicate.bind
-                         (Predicate.if_pred
-                           (SailEnv.prove env
-                             (SailAST.NC_equal
-                               (SailAST.Nexp_constant
-                                  (integer_of_int2
-                                    (Arith.of_nat Arith.semiring_1_int
-                                      (Lista.size_list exps))),
-                                 len))))
-                         (fun () -> Predicate.single []))))))
- | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
- | SailAST.E_vector_subrange (_, _, _, _) -> Predicate.bot_pred
- | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
- | SailAST.E_vector_update_subrange (_, _, _, _, _) -> Predicate.bot_pred
- | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
- | SailAST.E_list (_, _) -> Predicate.bot_pred
- | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
- | SailAST.E_record (_, _) -> Predicate.bot_pred
- | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
- | SailAST.E_field (_, _, _) -> Predicate.bot_pred
- | SailAST.E_case (_, _, _) -> Predicate.bot_pred
- | SailAST.E_let (_, _, _) -> Predicate.bot_pred
- | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
- | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
- | SailAST.E_return (_, _) -> Predicate.bot_pred
- | SailAST.E_exit (_, _) -> Predicate.bot_pred
- | SailAST.E_ref (_, _) -> Predicate.bot_pred
- | SailAST.E_throw (_, _) -> Predicate.bot_pred
- | SailAST.E_try (_, _, _) -> Predicate.bot_pred
- | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
- | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
- | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
- | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
- | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
- | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-                                   (Predicate.sup_pred
-                                     (Predicate.bind (Predicate.single xa)
-                                       (fun a ->
- (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-   | SailAST.E_id (_, _) -> Predicate.bot_pred
-   | SailAST.E_lit (_, _) -> Predicate.bot_pred
-   | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-   | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-   | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-   | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-   | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-   | SailAST.E_vector (_, _) -> Predicate.bot_pred
-   | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_vector_subrange (_, _, _, _) -> Predicate.bot_pred
-   | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-   | SailAST.E_vector_update_subrange (_, _, _, _, _) -> Predicate.bot_pred
-   | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_list (tan, exps) ->
-     Predicate.bind (eq_o_i (SailEnv.is_list_type tan))
-       (fun aa ->
-         (match aa with None -> Predicate.bot_pred
-           | Some elem_typ ->
-             Predicate.bind
-               (check_exp_list_i_i exps
-                 (Lista.replicate (Lista.size_list exps) elem_typ))
-               (fun () -> Predicate.single [])))
-   | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_record (_, _) -> Predicate.bot_pred
-   | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-   | SailAST.E_return (_, _) -> Predicate.bot_pred
-   | SailAST.E_exit (_, _) -> Predicate.bot_pred
-   | SailAST.E_ref (_, _) -> Predicate.bot_pred
-   | SailAST.E_throw (_, _) -> Predicate.bot_pred
-   | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-   | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-   | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-   | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-   | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-   | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-                                     (Predicate.sup_pred
-                                       (Predicate.bind (Predicate.single xa)
- (fun a ->
-   (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-     | SailAST.E_id (_, _) -> Predicate.bot_pred
-     | SailAST.E_lit (_, _) -> Predicate.bot_pred
-     | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-     | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-     | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-     | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-     | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-     | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-     | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-     | SailAST.E_vector (_, _) -> Predicate.bot_pred
-     | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-     | SailAST.E_vector_subrange (_, _, _, _) -> Predicate.bot_pred
-     | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-     | SailAST.E_vector_update_subrange (_, _, _, _, _) -> Predicate.bot_pred
-     | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-     | SailAST.E_list (_, _) -> Predicate.bot_pred
-     | SailAST.E_cons (tan, exp1, exp2) ->
-       Predicate.bind (eq_o_i (SailEnv.get tan))
-         (fun aa ->
-           (match aa with None -> Predicate.bot_pred
-             | Some (_, t) ->
-               Predicate.bind (check_exp_typ_i_i exp2 t)
-                 (fun () ->
-                   Predicate.bind (eq_o_i (SailEnv.is_list_type tan))
-                     (fun ab ->
-                       (match ab with None -> Predicate.bot_pred
-                         | Some elem_typ ->
-                           Predicate.bind (check_exp_list_i_i [exp1] [elem_typ])
-                             (fun () -> Predicate.single []))))))
-     | SailAST.E_record (_, _) -> Predicate.bot_pred
-     | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-     | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-     | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-     | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-     | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-     | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-     | SailAST.E_return (_, _) -> Predicate.bot_pred
-     | SailAST.E_exit (_, _) -> Predicate.bot_pred
-     | SailAST.E_ref (_, _) -> Predicate.bot_pred
-     | SailAST.E_throw (_, _) -> Predicate.bot_pred
-     | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-     | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-     | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-     | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-     | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-     | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-     | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-                                       (Predicate.sup_pred
- (Predicate.bind (Predicate.single xa)
-   (fun a ->
-     (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-       | SailAST.E_id (_, _) -> Predicate.bot_pred
-       | SailAST.E_lit (_, _) -> Predicate.bot_pred
-       | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-       | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-       | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-       | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-       | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-       | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-       | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-       | SailAST.E_vector (_, _) -> Predicate.bot_pred
-       | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-       | SailAST.E_vector_subrange (_, _, _, _) -> Predicate.bot_pred
-       | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-       | SailAST.E_vector_update_subrange (_, _, _, _, _) -> Predicate.bot_pred
-       | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-       | SailAST.E_list (_, _) -> Predicate.bot_pred
-       | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-       | SailAST.E_record (_, _) -> Predicate.bot_pred
-       | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-       | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-       | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-       | SailAST.E_let (tan, lb, exp) ->
-         Predicate.bind
-           (Predicate.if_pred
-             (trace
-               [Stringa.Chara
-                  (true, true, false, false, false, true, true, false);
-                 Stringa.Chara
-                   (false, false, false, true, false, true, true, false);
-                 Stringa.Chara
-                   (true, false, true, false, false, true, true, false);
-                 Stringa.Chara
-                   (true, true, false, false, false, true, true, false);
-                 Stringa.Chara
-                   (true, true, false, true, false, true, true, false);
-                 Stringa.Chara
-                   (true, true, true, true, true, false, true, false);
-                 Stringa.Chara
-                   (false, false, true, true, false, true, true, false);
-                 Stringa.Chara
-                   (true, false, true, false, false, true, true, false);
-                 Stringa.Chara
-                   (false, false, true, false, true, true, true, false);
-                 Stringa.Chara
-                   (true, false, false, true, false, false, true, false)]))
-           (fun () ->
-             Predicate.bind (eq_o_i (SailEnv.get tan))
-               (fun aa ->
-                 (match aa with None -> Predicate.bot_pred
-                   | Some (env, t1) ->
-                     Predicate.bind (check_letbind_i_o lb)
-                       (fun x ->
-                         Predicate.bind
-                           (check_exp_typ_env_i_i_i (add_locals env x) exp t1)
-                           (fun () -> Predicate.single [])))))
-       | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-       | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-       | SailAST.E_return (_, _) -> Predicate.bot_pred
-       | SailAST.E_exit (_, _) -> Predicate.bot_pred
-       | SailAST.E_ref (_, _) -> Predicate.bot_pred
-       | SailAST.E_throw (_, _) -> Predicate.bot_pred
-       | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-       | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-       | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-       | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-       | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-       | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-       | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
- (Predicate.sup_pred
-   (Predicate.bind (Predicate.single xa)
-     (fun a ->
-       (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-         | SailAST.E_id (_, _) -> Predicate.bot_pred
-         | SailAST.E_lit (_, _) -> Predicate.bot_pred
-         | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-         | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-         | SailAST.E_if (tan, exp1, exp2, exp3) ->
-           Predicate.bind (check_exp_i_o exp1)
-             (fun _ ->
-               Predicate.bind (eq_o_i (SailEnv.get tan))
-                 (fun aa ->
-                   (match aa with None -> Predicate.bot_pred
-                     | Some (env, t) ->
-                       Predicate.bind (eq_o_i (SailEnv.type_of_exp exp1))
-                         (fun ab ->
-                           (match ab with None -> Predicate.bot_pred
-                             | Some t_exp1 ->
-                               Predicate.bind
-                                 (eq_o_i (SailEnv.deconstruct_bool_type t_exp1))
-                                 (fun ac ->
-                                   (match ac with None -> Predicate.bot_pred
-                                     | Some nc ->
-                                       Predicate.bind
- (check_exp_typ_env_i_i_i (SailEnv.add_constraint nc env) exp2 t)
- (fun () ->
-   Predicate.bind
-     (check_exp_typ_env_i_i_i (SailEnv.add_constraint (nc_not nc) env) exp3 t)
-     (fun () -> Predicate.single [])))))))))
-         | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-         | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-         | SailAST.E_vector (_, _) -> Predicate.bot_pred
-         | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_vector_subrange (_, _, _, _) -> Predicate.bot_pred
-         | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-         | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-           Predicate.bot_pred
-         | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_list (_, _) -> Predicate.bot_pred
-         | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_record (_, _) -> Predicate.bot_pred
-         | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-         | SailAST.E_return (_, _) -> Predicate.bot_pred
-         | SailAST.E_exit (_, _) -> Predicate.bot_pred
-         | SailAST.E_ref (_, _) -> Predicate.bot_pred
-         | SailAST.E_throw (_, _) -> Predicate.bot_pred
-         | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-         | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-         | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-         | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-         | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-         | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-   (Predicate.sup_pred
-     (Predicate.bind (Predicate.single xa)
-       (fun a ->
-         (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-           | SailAST.E_id (_, _) -> Predicate.bot_pred
-           | SailAST.E_lit (_, _) -> Predicate.bot_pred
-           | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-           | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-           | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-           | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-           | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-           | SailAST.E_vector (_, _) -> Predicate.bot_pred
-           | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_vector_subrange (_, _, _, _) -> Predicate.bot_pred
-           | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-           | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-             Predicate.bot_pred
-           | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_list (_, _) -> Predicate.bot_pred
-           | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_record (_, _) -> Predicate.bot_pred
-           | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-           | SailAST.E_return (_, _) -> Predicate.bot_pred
-           | SailAST.E_exit (_, _) -> Predicate.bot_pred
-           | SailAST.E_ref (_, _) -> Predicate.bot_pred
-           | SailAST.E_throw (_, _) -> Predicate.bot_pred
-           | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-           | SailAST.E_var (_, SailAST.LEXP_id (_, _), _, _) ->
-             Predicate.bot_pred
-           | SailAST.E_var (_, SailAST.LEXP_deref (_, _), _, _) ->
-             Predicate.bot_pred
-           | SailAST.E_var (_, SailAST.LEXP_memory (_, _, _), _, _) ->
-             Predicate.bot_pred
-           | SailAST.E_var (tan, SailAST.LEXP_cast (_, _, _), exp1, exp2) ->
-             Predicate.bind (check_exp_i_o exp1)
-               (fun _ ->
-                 Predicate.bind (check_exp_i_o exp2)
-                   (fun _ ->
-                     Predicate.bind (eq_o_i (SailEnv.get tan))
-                       (fun aa ->
-                         (match aa with None -> Predicate.bot_pred
-                           | Some (env, t1) ->
-                             Predicate.bind (eq_o_i (SailEnv.type_of_exp exp1))
-                               (fun ab ->
-                                 (match ab with None -> Predicate.bot_pred
-                                   | Some t2 ->
-                                     Predicate.bind (subtype_i_i_i env t1 t2)
-                                       (fun () -> Predicate.single [])))))))
-           | SailAST.E_var (_, SailAST.LEXP_tup (_, _), _, _) ->
-             Predicate.bot_pred
-           | SailAST.E_var (_, SailAST.LEXP_vector_concat (_, _), _, _) ->
-             Predicate.bot_pred
-           | SailAST.E_var (_, SailAST.LEXP_vector (_, _, _), _, _) ->
-             Predicate.bot_pred
-           | SailAST.E_var (_, SailAST.LEXP_vector_range (_, _, _, _), _, _) ->
-             Predicate.bot_pred
-           | SailAST.E_var (_, SailAST.LEXP_field (_, _, _), _, _) ->
-             Predicate.bot_pred
-           | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-           | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-           | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-           | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-     (Predicate.sup_pred
-       (Predicate.bind (Predicate.single xa)
-         (fun a ->
-           (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-             | SailAST.E_id (_, _) -> Predicate.bot_pred
-             | SailAST.E_lit (_, _) -> Predicate.bot_pred
-             | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-             | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-             | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-             | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-             | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-             | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-             | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-             | SailAST.E_vector (_, _) -> Predicate.bot_pred
-             | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-             | SailAST.E_vector_subrange (_, _, _, _) -> Predicate.bot_pred
-             | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-             | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-               Predicate.bot_pred
-             | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-             | SailAST.E_list (_, _) -> Predicate.bot_pred
-             | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-             | SailAST.E_record (_, _) -> Predicate.bot_pred
-             | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-             | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-             | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-             | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-             | SailAST.E_assign (_, lexp, exp) ->
-               Predicate.bind (check_exp_i_o exp)
-                 (fun _ ->
-                   Predicate.bind (check_lexp_i_o lexp) Predicate.single)
-             | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-             | SailAST.E_return (_, _) -> Predicate.bot_pred
-             | SailAST.E_exit (_, _) -> Predicate.bot_pred
-             | SailAST.E_ref (_, _) -> Predicate.bot_pred
-             | SailAST.E_throw (_, _) -> Predicate.bot_pred
-             | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-             | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-             | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-             | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-             | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-             | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-             | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-       (Predicate.sup_pred
-         (Predicate.bind (Predicate.single xa)
-           (fun a ->
-             (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-               | SailAST.E_id (_, _) -> Predicate.bot_pred
-               | SailAST.E_lit (_, _) -> Predicate.bot_pred
-               | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-               | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_vector (_, _) -> Predicate.bot_pred
-               | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_vector_subrange (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                 Predicate.bot_pred
-               | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_list (_, _) -> Predicate.bot_pred
-               | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_record (_, _) -> Predicate.bot_pred
-               | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_case (_, exp, pexps) ->
-                 Predicate.bind
-                   (Predicate.if_pred
-                     (trace
-                       [Stringa.Chara
-                          (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, true, false, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, false, true, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, true, true, true, false, true, false);
-                         Stringa.Chara
-                           (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, false, false, false, false, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, true, false, false, true, true, true, false);
-                         Stringa.Chara
-                           (true, false, true, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, false, false, true, false, false, true,
-                             false)]))
-                   (fun () ->
-                     Predicate.bind (check_pexps_i pexps)
-                       (fun () ->
-                         Predicate.bind (check_exp_i_o exp)
-                           (fun _ -> Predicate.single [])))
-               | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-               | SailAST.E_return (_, _) -> Predicate.bot_pred
-               | SailAST.E_exit (_, _) -> Predicate.bot_pred
-               | SailAST.E_ref (_, _) -> Predicate.bot_pred
-               | SailAST.E_throw (_, _) -> Predicate.bot_pred
-               | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-               | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-               | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-               | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-         (Predicate.sup_pred
-           (Predicate.bind (Predicate.single xa)
-             (fun a ->
-               (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-                 | SailAST.E_id (_, _) -> Predicate.bot_pred
-                 | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                 | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                 | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_loop (tan, _, _, exp1, exp2) ->
-                   Predicate.bind (check_exp_i_o exp1)
-                     (fun _ ->
-                       Predicate.bind (check_exp_i_o exp2)
-                         (fun _ ->
-                           Predicate.bind (eq_o_i (SailEnv.get tan))
-                             (fun aa ->
-                               (match aa with None -> Predicate.bot_pred
-                                 | Some (env, _) ->
-                                   Predicate.bind
-                                     (eq_o_i (SailEnv.type_of_exp exp1))
-                                     (fun ab ->
-                                       (match ab with None -> Predicate.bot_pred
- | Some t1 ->
-   Predicate.bind (eq_o_i (SailEnv.deconstruct_bool_type t1))
-     (fun ac ->
-       (match ac with None -> Predicate.bot_pred
-         | Some nc ->
-           Predicate.bind
-             (check_exp_typ_env_i_i_i (SailEnv.add_constraint nc env) exp2
-               SailASTUtils.unit_typ)
-             (fun () -> Predicate.single [])))))))))
-                 | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                 | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_vector_subrange (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                   Predicate.bot_pred
-                 | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_list (_, _) -> Predicate.bot_pred
-                 | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_record (_, _) -> Predicate.bot_pred
-                 | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                 | SailAST.E_return (_, _) -> Predicate.bot_pred
-                 | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                 | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                 | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                 | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-                 | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-                 | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-                 | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-           (Predicate.sup_pred
-             (Predicate.bind (Predicate.single xa)
-               (fun a ->
-                 (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-                   | SailAST.E_id (_, _) -> Predicate.bot_pred
-                   | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                   | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                   | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_for (_, _, exp1, exp2, exp3, _, exp4) ->
-                     Predicate.bind
-                       (check_exp_typ_i_i exp1 SailASTUtils.int_typ)
-                       (fun () ->
-                         Predicate.bind
-                           (check_exp_typ_i_i exp2 SailASTUtils.int_typ)
-                           (fun () ->
-                             Predicate.bind
-                               (check_exp_typ_i_i exp3 SailASTUtils.int_typ)
-                               (fun () ->
-                                 Predicate.bind
-                                   (check_exp_typ_i_i exp4
-                                     SailASTUtils.unit_typ)
-                                   (fun () -> Predicate.single []))))
-                   | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                   | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_vector_subrange (_, _, _, _) ->
-                     Predicate.bot_pred
-                   | SailAST.E_vector_update (_, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                     Predicate.bot_pred
-                   | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_list (_, _) -> Predicate.bot_pred
-                   | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_record (_, _) -> Predicate.bot_pred
-                   | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                   | SailAST.E_return (_, _) -> Predicate.bot_pred
-                   | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                   | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                   | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                   | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-                   | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_internal_plet (_, _, _, _) -> Predicate.bot_pred
-                   | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-                   | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-                   | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-             (Predicate.sup_pred
-               (Predicate.bind (Predicate.single xa)
-                 (fun a ->
-                   (match a with SailAST.E_block (_, []) -> Predicate.bot_pred
-                     | SailAST.E_block (tan, [exp]) ->
-                       Predicate.bind (eq_o_i (SailEnv.get tan))
-                         (fun aa ->
-                           (match aa with None -> Predicate.bot_pred
-                             | Some (_, t) ->
-                               Predicate.bind (check_exp_typ_i_i exp t)
-                                 (fun () ->
-                                   Predicate.bind
-                                     (Predicate.if_pred
-                                       (trace
- ([Stringa.Chara (false, true, false, false, false, true, true, false);
-    Stringa.Chara (false, false, true, true, false, true, true, false);
-    Stringa.Chara (true, true, true, true, false, true, true, false);
-    Stringa.Chara (true, true, false, false, false, true, true, false);
-    Stringa.Chara (true, true, false, true, false, true, true, false);
-    Stringa.Chara (false, false, false, false, false, true, false, false);
-    Stringa.Chara (true, true, false, false, true, true, true, false);
-    Stringa.Chara (true, false, false, true, false, true, true, false);
-    Stringa.Chara (false, true, true, true, false, true, true, false);
-    Stringa.Chara (true, true, true, false, false, true, true, false);
-    Stringa.Chara (false, false, true, true, false, true, true, false);
-    Stringa.Chara (true, false, true, false, false, true, true, false);
-    Stringa.Chara (false, false, false, false, false, true, false, false);
-    Stringa.Chara (false, false, true, false, true, true, true, false);
-    Stringa.Chara (true, false, true, true, true, true, false, false)] @
-   ShowAST.shows_prec_typ Arith.Zero_nat t [])))
-                                     (fun () -> Predicate.single []))))
-                     | SailAST.E_block (_, _ :: _ :: _) -> Predicate.bot_pred
-                     | SailAST.E_id (_, _) -> Predicate.bot_pred
-                     | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                     | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-                     | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                     | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                     | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-                     | SailAST.E_for (_, _, _, _, _, _, _) -> Predicate.bot_pred
-                     | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                     | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_vector_subrange (_, _, _, _) ->
-                       Predicate.bot_pred
-                     | SailAST.E_vector_update (_, _, _, _) ->
-                       Predicate.bot_pred
-                     | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                       Predicate.bot_pred
-                     | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_list (_, _) -> Predicate.bot_pred
-                     | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_record (_, _) -> Predicate.bot_pred
-                     | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                     | SailAST.E_return (_, _) -> Predicate.bot_pred
-                     | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                     | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                     | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                     | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-                     | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                     | SailAST.E_internal_plet (_, _, _, _) ->
-                       Predicate.bot_pred
-                     | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-                     | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-                     | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-               (Predicate.sup_pred
-                 (Predicate.bind (Predicate.single xa)
-                   (fun a ->
-                     (match a with SailAST.E_block (_, []) -> Predicate.bot_pred
-                       | SailAST.E_block (_, [_]) -> Predicate.bot_pred
-                       | SailAST.E_block (tan, exp1 :: exp2 :: exps) ->
-                         Predicate.bind
-                           (subtype_exp_i_i exp1 SailASTUtils.unit_typ)
-                           (fun () ->
-                             Predicate.bind (check_exp_i_o exp1)
-                               (fun x ->
-                                 Predicate.bind
-                                   (check_local_binds_i_i (exp2 :: exps) x)
-                                   (fun () ->
-                                     Predicate.bind
-                                       (check_exp_i_o
- (SailAST.E_block (tan, exp2 :: exps)))
-                                       (fun _ -> Predicate.single []))))
-                       | SailAST.E_id (_, _) -> Predicate.bot_pred
-                       | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                       | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                       | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_for (_, _, _, _, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                       | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_vector_subrange (_, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector_update (_, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_list (_, _) -> Predicate.bot_pred
-                       | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_record (_, _) -> Predicate.bot_pred
-                       | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                       | SailAST.E_return (_, _) -> Predicate.bot_pred
-                       | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                       | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                       | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                       | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_assert (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_internal_plet (_, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-                       | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-                       | SailAST.E_constraint (_, _) -> Predicate.bot_pred)))
-                 (Predicate.bind (Predicate.single xa)
-                   (fun a ->
-                     (match a with SailAST.E_block (_, _) -> Predicate.bot_pred
-                       | SailAST.E_id (_, _) -> Predicate.bot_pred
-                       | SailAST.E_lit (_, _) -> Predicate.bot_pred
-                       | SailAST.E_cast (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_app (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_app_infix (_, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_tuple (_, _) -> Predicate.bot_pred
-                       | SailAST.E_if (_, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_loop (_, _, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_for (_, _, _, _, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector (_, _) -> Predicate.bot_pred
-                       | SailAST.E_vector_access (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_vector_subrange (_, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector_update (_, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector_update_subrange (_, _, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_vector_append (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_list (_, _) -> Predicate.bot_pred
-                       | SailAST.E_cons (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_record (_, _) -> Predicate.bot_pred
-                       | SailAST.E_record_update (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_field (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_case (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_let (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_assign (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_sizeof (_, _) -> Predicate.bot_pred
-                       | SailAST.E_return (_, _) -> Predicate.bot_pred
-                       | SailAST.E_exit (_, _) -> Predicate.bot_pred
-                       | SailAST.E_ref (_, _) -> Predicate.bot_pred
-                       | SailAST.E_throw (_, _) -> Predicate.bot_pred
-                       | SailAST.E_try (_, _, _) -> Predicate.bot_pred
-                       | SailAST.E_assert (_, assert_exp, _) ->
-                         Predicate.bind (check_exp_i_o assert_exp)
-                           (fun _ ->
-                             Predicate.bind
-                               (eq_o_i (SailEnv.type_of_exp assert_exp))
-                               (fun aa ->
-                                 (match aa with None -> Predicate.bot_pred
-                                   | Some _ -> Predicate.single [])))
-                       | SailAST.E_var (_, _, _, _) -> Predicate.bot_pred
-                       | SailAST.E_internal_plet (_, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.E_internal_return (_, _) -> Predicate.bot_pred
-                       | SailAST.E_internal_value (_, _) -> Predicate.bot_pred
-                       | SailAST.E_constraint (_, _) ->
-                         Predicate.bot_pred)))))))))))))))))))))))))))
-and check_pexp_i
-  xa = Predicate.sup_pred
-         (Predicate.bind (Predicate.single xa)
-           (fun a ->
-             (match a
-               with SailAST.Pat_exp (_, pat, exp) ->
-                 Predicate.bind
-                   (Predicate.if_pred
-                     (trace
-                       [Stringa.Chara
-                          (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, true, false, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, false, true, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, true, true, true, false, true, false);
-                         Stringa.Chara
-                           (false, false, false, false, true, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, false, true, false, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, true, true, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, false, true, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, false, false, true, false, false, true,
-                             false)]))
-                   (fun () ->
-                     Predicate.bind (eq_o_i (env_of exp))
-                       (fun aa ->
-                         (match aa with None -> Predicate.bot_pred
-                           | Some env ->
-                             Predicate.bind (check_pat_i_o pat)
-                               (fun x ->
-                                 Predicate.bind
-                                   (Predicate.if_pred (locals_in env x))
-                                   (fun () ->
-                                     Predicate.bind (check_exp_i_o exp)
-                                       (fun _ -> Predicate.single ()))))))
-               | SailAST.Pat_when (_, _, _, _) -> Predicate.bot_pred)))
-         (Predicate.bind (Predicate.single xa)
-           (fun a ->
-             (match a with SailAST.Pat_exp (_, _, _) -> Predicate.bot_pred
-               | SailAST.Pat_when (_, pat, expg, exp) ->
-                 Predicate.bind (eq_o_i (env_of exp))
-                   (fun aa ->
-                     (match aa with None -> Predicate.bot_pred
-                       | Some env ->
-                         Predicate.bind (check_pat_i_o pat)
-                           (fun x ->
-                             Predicate.bind
-                               (Predicate.if_pred (locals_in env x))
-                               (fun () ->
-                                 Predicate.bind (check_exp_i_o exp)
-                                   (fun _ ->
-                                     Predicate.bind (eq_o_i (env_of expg))
-                                       (fun ab ->
- (match ab with None -> Predicate.bot_pred
-   | Some envg ->
-     Predicate.bind (Predicate.if_pred (locals_in envg x))
-       (fun () ->
-         Predicate.bind (check_exp_i_o expg)
-           (fun _ -> Predicate.single ()))))))))))))
-and check_pexps_i
-  xa = Predicate.sup_pred
-         (Predicate.bind (Predicate.single xa)
-           (fun a ->
-             (match a with [] -> Predicate.single ()
-               | _ :: _ -> Predicate.bot_pred)))
-         (Predicate.bind (Predicate.single xa)
-           (fun a ->
-             (match a with [] -> Predicate.bot_pred
-               | pexp :: pexps ->
-                 Predicate.bind (check_pexps_i pexps)
-                   (fun () ->
-                     Predicate.bind (check_pexp_i pexp)
-                       (fun () -> Predicate.single ())))))
-and check_exp_typ_i_i
-  xa xb =
-    Predicate.bind (Predicate.single (xa, xb))
-      (fun (exp, typ) ->
-        Predicate.bind (subtype_exp_i_i exp typ)
-          (fun () ->
-            Predicate.bind (check_exp_i_o exp) (fun _ -> Predicate.single ())))
-and check_fexp_i_i
-  xa xb =
-    Predicate.bind (Predicate.single (xa, xb))
-      (fun (SailAST.FE_Fexp (_, x, exp), rtyp) ->
-        Predicate.bind (eq_o_i (SailEnv.deconstruct_record_type rtyp))
-          (fun a ->
-            (match a with None -> Predicate.bot_pred
-              | Some recid ->
-                Predicate.bind (eq_o_i (SailEnv.get_env_exp exp))
-                  (fun aa ->
-                    (match aa with None -> Predicate.bot_pred
-                      | Some env ->
-                        Predicate.bind
-                          (eq_o_i (SailEnv.lookup_record_field_env env recid x))
-                          (fun ab ->
-                            (match ab with None -> Predicate.bot_pred
-                              | Some t2 ->
-                                Predicate.bind (check_exp_typ_i_i exp t2)
-                                  (fun () -> Predicate.single ()))))))))
-and check_fexp_list_i_i
-  xa xb =
-    Predicate.sup_pred
-      (Predicate.bind (Predicate.single (xa, xb))
-        (fun a ->
-          (match a with ([], _) -> Predicate.single ()
-            | (_ :: _, _) -> Predicate.bot_pred)))
-      (Predicate.bind (Predicate.single (xa, xb))
-        (fun a ->
-          (match a with ([], _) -> Predicate.bot_pred
-            | (fexp :: fexp_list, typ) ->
-              Predicate.bind (check_fexp_list_i_i fexp_list typ)
-                (fun () ->
-                  Predicate.bind (check_fexp_i_i fexp typ)
-                    (fun () -> Predicate.single ())))))
-and check_lexp_i_o
-  xa = Predicate.sup_pred
-         (Predicate.bind (Predicate.single xa)
-           (fun a ->
-             (match a
-               with SailAST.LEXP_id (tan, x) ->
-                 Predicate.bind
-                   (Predicate.if_pred
-                     (trace
-                       [Stringa.Chara
-                          (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, true, false, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, false, true, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, true, true, true, false, true, false);
-                         Stringa.Chara
-                           (false, false, true, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, false, true, false, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, true, true, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, false, true, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, true, true, true, true, false, true, false);
-                         Stringa.Chara
-                           (true, false, false, true, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, true, false, false, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, true, true, true, true, false, true, false);
-                         Stringa.Chara
-                           (false, true, true, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, true, true, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, true, false, true, true, true, false);
-                         Stringa.Chara
-                           (false, true, false, false, false, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, false, false, true, false, false, true,
-                             false)]))
-                   (fun () ->
-                     Predicate.bind
-                       (eq_i_i (Option.equal_option SailAST.equal_typ) None
-                         (SailEnv.lookup_mutable tan x))
-                       (fun () ->
-                         Predicate.bind (eq_o_i (SailEnv.get tan))
-                           (fun aa ->
-                             (match aa with None -> Predicate.bot_pred
-                               | Some (_, t) ->
-                                 Predicate.single
-                                   [(x, (SailEnv.Mutable, t))]))))
-               | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
-               | SailAST.LEXP_memory (_, _, _) -> Predicate.bot_pred
-               | SailAST.LEXP_cast (_, _, _) -> Predicate.bot_pred
-               | SailAST.LEXP_tup (_, _) -> Predicate.bot_pred
-               | SailAST.LEXP_vector_concat (_, _) -> Predicate.bot_pred
-               | SailAST.LEXP_vector (_, _, _) -> Predicate.bot_pred
-               | SailAST.LEXP_vector_range (_, _, _, _) -> Predicate.bot_pred
-               | SailAST.LEXP_field (_, _, _) -> Predicate.bot_pred)))
-         (Predicate.sup_pred
-           (Predicate.bind (Predicate.single xa)
-             (fun a ->
-               (match a
-                 with SailAST.LEXP_id (tan, x) ->
-                   Predicate.bind
-                     (Predicate.if_pred
-                       (trace
-                         [Stringa.Chara
-                            (true, true, false, false, false, true, true,
-                              false);
-                           Stringa.Chara
-                             (false, false, false, true, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, false, true, false, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, true, false, false, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, true, false, true, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, true, true, true, true, false, true, false);
-                           Stringa.Chara
-                             (false, false, true, true, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, false, true, false, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (false, false, false, true, true, true, true,
-                               false);
-                           Stringa.Chara
-                             (false, false, false, false, true, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, true, true, true, true, false, true, false);
-                           Stringa.Chara
-                             (true, false, false, true, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (false, false, true, false, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, true, true, true, true, false, true, false);
-                           Stringa.Chara
-                             (false, true, false, false, false, true, true,
-                               false);
-                           Stringa.Chara
-                             (true, false, false, true, false, false, true,
-                               false)]))
-                     (fun () ->
-                       Predicate.bind
-                         (Predicate.if_pred
-                           (trace
-                             [Stringa.Chara
-                                (true, true, false, false, false, true, true,
+                                      Stringa.Chara
+(true, true, true, true, true, false, true, false);
+                                      Stringa.Chara
+(true, false, false, false, false, true, true, false);
+                                      Stringa.Chara
+(false, false, false, false, true, true, true, false);
+                                      Stringa.Chara
+(false, false, false, false, true, true, true, false);
+                                      Stringa.Chara
+(false, false, false, false, false, true, false, false);
+                                      Stringa.Chara
+(true, false, false, false, false, true, true, false);
+                                      Stringa.Chara
+(false, true, true, false, false, true, true, false);
+                                      Stringa.Chara
+(false, false, true, false, true, true, true, false);
+                                      Stringa.Chara
+(true, false, true, false, false, true, true, false);
+                                      Stringa.Chara
+(false, true, false, false, true, true, true, false);
+                                      Stringa.Chara
+(false, false, false, false, false, true, false, false);
+                                      Stringa.Chara
+(true, true, false, false, true, true, true, false);
+                                      Stringa.Chara
+(true, false, true, false, true, true, true, false);
+                                      Stringa.Chara
+(false, true, false, false, false, true, true, false);
+                                      Stringa.Chara
+(true, true, false, false, true, true, true, false);
+                                      Stringa.Chara
+(false, false, true, false, true, true, true, false);
+                                      Stringa.Chara
+(true, true, true, true, true, false, true, false);
+                                      Stringa.Chara
+(true, false, false, true, false, true, true, false);
+                                      Stringa.Chara
+(false, true, true, true, false, true, true, false);
+                                      Stringa.Chara
+(true, true, false, false, true, true, true, false);
+                                      Stringa.Chara
+(false, false, true, false, true, true, true, false);
+                                      Stringa.Chara
+(false, false, false, false, false, true, false, false);
+                                      Stringa.Chara
+(false, true, false, false, true, true, true, false);
+                                      Stringa.Chara
+(true, false, true, false, false, true, true, false);
+                                      Stringa.Chara
+(false, false, true, false, true, true, true, false)]))
+                                (fun () ->
+                                  Predicate.bind
+                                    (eq_o_i (SailEnv.lookup_fun tan fid))
+                                    (fun aa ->
+                                      (match aa with None -> Predicate.bot_pred
+| Some (in_typs, rett_typ) ->
+  Predicate.bind (eq_o_i (SailEnv.subst_inst_list tan in_typs))
+    (fun ab ->
+      (match ab with None -> Predicate.bot_pred
+        | Some in_typs2 ->
+          Predicate.bind (check_exp_list_i_i exps in_typs2)
+            (fun () ->
+              Predicate.bind (eq_o_i (SailEnv.subst_inst tan rett_typ))
+                (fun ac ->
+                  (match ac with None -> Predicate.bot_pred
+                    | Some ret_typ2 ->
+                      Predicate.bind
+                        (Predicate.if_pred
+                          (trace
+                            ([Stringa.Chara
+                                (true, false, true, false, false, false, true,
                                   false);
-                               Stringa.Chara
-                                 (false, false, false, true, false, true, true,
-                                   false);
-                               Stringa.Chara
-                                 (true, false, true, false, false, true, true,
-                                   false);
-                               Stringa.Chara
-                                 (true, true, false, false, false, true, true,
-                                   false);
-                               Stringa.Chara
-                                 (true, true, false, true, false, true, true,
-                                   false);
                                Stringa.Chara
                                  (true, true, true, true, true, false, true,
                                    false);
                                Stringa.Chara
-                                 (false, false, true, true, false, true, true,
-                                   false);
-                               Stringa.Chara
-                                 (true, false, true, false, false, true, true,
-                                   false);
-                               Stringa.Chara
-                                 (false, false, false, true, true, true, true,
+                                 (true, false, false, false, false, true, true,
                                    false);
                                Stringa.Chara
                                  (false, false, false, false, true, true, true,
                                    false);
                                Stringa.Chara
-                                 (true, true, true, true, true, false, true,
-                                   false);
-                               Stringa.Chara
-                                 (true, false, false, true, false, true, true,
-                                   false);
-                               Stringa.Chara
-                                 (false, false, true, false, false, true, true,
-                                   false);
-                               Stringa.Chara
-                                 (true, true, true, true, true, false, true,
-                                   false);
-                               Stringa.Chara
-                                 (false, true, false, false, false, true, true,
-                                   false);
-                               Stringa.Chara
-                                 (true, false, false, true, false, false, true,
+                                 (false, false, false, false, true, true, true,
                                    false);
                                Stringa.Chara
                                  (false, false, false, false, false, true,
@@ -17229,223 +15574,1145 @@ and check_lexp_i_o
                                    false);
                                Stringa.Chara
                                  (true, false, true, false, false, true, true,
+                                   false)] @
+                              [Stringa.Chara
+                                 (false, false, true, false, true, true, true,
                                    false);
-                               Stringa.Chara
-                                 (false, false, false, false, false, true,
-                                   false, false);
-                               Stringa.Chara
-                                 (true, true, true, true, false, true, true,
-                                   false);
-                               Stringa.Chara
-                                 (true, true, false, true, false, true, true,
-                                   false)]))
-                         (fun () ->
-                           Predicate.bind (eq_o_i (SailEnv.get tan))
-                             (fun aa ->
-                               (match aa with None -> Predicate.bot_pred
-                                 | Some (env, t1) ->
-                                   Predicate.bind
-                                     (eq_o_i (SailEnv.lookup_mutable tan x))
-                                     (fun ab ->
-                                       (match ab with None -> Predicate.bot_pred
- | Some t2 ->
-   Predicate.bind
-     (Predicate.if_pred
-       (trace
-         ([Stringa.Chara (true, true, false, false, false, true, true, false);
-            Stringa.Chara (false, false, false, true, false, true, true, false);
-            Stringa.Chara (true, false, true, false, false, true, true, false);
-            Stringa.Chara (true, true, false, false, false, true, true, false);
-            Stringa.Chara (true, true, false, true, false, true, true, false);
-            Stringa.Chara (true, true, true, true, true, false, true, false);
-            Stringa.Chara (false, false, true, true, false, true, true, false);
-            Stringa.Chara (true, false, true, false, false, true, true, false);
-            Stringa.Chara (false, false, false, true, true, true, true, false);
-            Stringa.Chara (false, false, false, false, true, true, true, false);
-            Stringa.Chara (true, true, true, true, true, false, true, false);
-            Stringa.Chara (true, false, false, true, false, true, true, false);
-            Stringa.Chara (false, false, true, false, false, true, true, false);
-            Stringa.Chara (true, true, true, true, true, false, true, false);
-            Stringa.Chara (false, true, false, false, false, true, true, false);
-            Stringa.Chara (true, false, false, true, false, false, true, false);
-            Stringa.Chara
-              (false, false, false, false, false, true, false, false);
-            Stringa.Chara (false, true, true, false, false, true, true, false);
-            Stringa.Chara (true, true, true, true, false, true, true, false);
-            Stringa.Chara (true, false, true, false, true, true, true, false);
-            Stringa.Chara (false, true, true, true, false, true, true, false);
-            Stringa.Chara (false, false, true, false, false, true, true, false);
-            Stringa.Chara
-              (false, false, false, false, false, true, false, false);
-            Stringa.Chara (true, false, true, true, false, true, true, false);
-            Stringa.Chara (true, false, true, false, true, true, true, false);
-            Stringa.Chara
-              (false, false, true, false, true, true, true, false)] @
-           ShowAST.shows_prec_typ Arith.Zero_nat t2 [])))
-     (fun () ->
-       Predicate.bind (subtype_i_i_i env t1 t2)
-         (fun () -> Predicate.single []))))))))
-                 | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
-                 | SailAST.LEXP_memory (_, _, _) -> Predicate.bot_pred
-                 | SailAST.LEXP_cast (_, _, _) -> Predicate.bot_pred
-                 | SailAST.LEXP_tup (_, _) -> Predicate.bot_pred
-                 | SailAST.LEXP_vector_concat (_, _) -> Predicate.bot_pred
-                 | SailAST.LEXP_vector (_, _, _) -> Predicate.bot_pred
-                 | SailAST.LEXP_vector_range (_, _, _, _) -> Predicate.bot_pred
-                 | SailAST.LEXP_field (_, _, _) -> Predicate.bot_pred)))
-           (Predicate.sup_pred
-             (Predicate.bind (Predicate.single xa)
-               (fun a ->
-                 (match a with SailAST.LEXP_id (_, _) -> Predicate.bot_pred
-                   | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
-                   | SailAST.LEXP_memory (_, _, _) -> Predicate.bot_pred
-                   | SailAST.LEXP_cast (tan, t, x) ->
-                     Predicate.bind
-                       (eq_i_i (Option.equal_option SailAST.equal_typ) None
-                         (SailEnv.lookup_mutable tan x))
-                       (fun () ->
-                         Predicate.bind (eq_o_i (SailEnv.get tan))
-                           (fun aa ->
-                             (match aa with None -> Predicate.bot_pred
-                               | Some (env, ta) ->
-                                 Predicate.bind (subtype_i_i_i env ta t)
-                                   (fun () ->
-                                     Predicate.single
-                                       [(x, (SailEnv.Mutable, t))]))))
-                   | SailAST.LEXP_tup (_, _) -> Predicate.bot_pred
-                   | SailAST.LEXP_vector_concat (_, _) -> Predicate.bot_pred
-                   | SailAST.LEXP_vector (_, _, _) -> Predicate.bot_pred
-                   | SailAST.LEXP_vector_range (_, _, _, _) ->
-                     Predicate.bot_pred
-                   | SailAST.LEXP_field (_, _, _) -> Predicate.bot_pred)))
-             (Predicate.sup_pred
-               (Predicate.bind (Predicate.single xa)
-                 (fun a ->
-                   (match a with SailAST.LEXP_id (_, _) -> Predicate.bot_pred
-                     | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
-                     | SailAST.LEXP_memory (_, _, _) -> Predicate.bot_pred
-                     | SailAST.LEXP_cast (tan, t, x) ->
-                       Predicate.bind (eq_o_i (SailEnv.get tan))
-                         (fun aa ->
-                           (match aa with None -> Predicate.bot_pred
-                             | Some (env, ta) ->
-                               Predicate.bind (subtype_i_i_i env ta t)
-                                 (fun () ->
-                                   Predicate.bind
-                                     (eq_o_i (SailEnv.lookup_mutable tan x))
-                                     (fun ab ->
-                                       (match ab with None -> Predicate.bot_pred
- | Some taa ->
-   Predicate.bind (subtype_i_i_i env t taa) (fun () -> Predicate.single []))))))
-                     | SailAST.LEXP_tup (_, _) -> Predicate.bot_pred
-                     | SailAST.LEXP_vector_concat (_, _) -> Predicate.bot_pred
-                     | SailAST.LEXP_vector (_, _, _) -> Predicate.bot_pred
-                     | SailAST.LEXP_vector_range (_, _, _, _) ->
-                       Predicate.bot_pred
-                     | SailAST.LEXP_field (_, _, _) -> Predicate.bot_pred)))
-               (Predicate.sup_pred
-                 (Predicate.bind (Predicate.single xa)
-                   (fun a ->
-                     (match a with SailAST.LEXP_id (_, _) -> Predicate.bot_pred
-                       | SailAST.LEXP_deref (tan, exp) ->
-                         Predicate.bind (eq_o_i (SailEnv.get tan))
-                           (fun aa ->
-                             (match aa with None -> Predicate.bot_pred
-                               | Some (_, _) ->
-                                 Predicate.bind (check_exp_i_o exp)
-                                   (fun _ ->
-                                     Predicate.bind
-                                       (eq_o_i (SailEnv.type_of_exp exp))
-                                       (fun ab ->
- (match ab with None -> Predicate.bot_pred
-   | Some t ->
-     Predicate.bind (eq_o_i (SailEnv.deconstruct_register_type t))
-       (fun ac ->
-         (match ac with None -> Predicate.bot_pred
-           | Some t1 ->
-             Predicate.bind (subtype_tan_i_i t1 tan)
-               (fun () -> Predicate.single []))))))))
-                       | SailAST.LEXP_memory (_, _, _) -> Predicate.bot_pred
-                       | SailAST.LEXP_cast (_, _, _) -> Predicate.bot_pred
-                       | SailAST.LEXP_tup (_, _) -> Predicate.bot_pred
-                       | SailAST.LEXP_vector_concat (_, _) -> Predicate.bot_pred
-                       | SailAST.LEXP_vector (_, _, _) -> Predicate.bot_pred
-                       | SailAST.LEXP_vector_range (_, _, _, _) ->
-                         Predicate.bot_pred
-                       | SailAST.LEXP_field (_, _, _) -> Predicate.bot_pred)))
-                 (Predicate.sup_pred
-                   (Predicate.bind (Predicate.single xa)
-                     (fun a ->
-                       (match a
-                         with SailAST.LEXP_id (_, _) -> Predicate.bot_pred
-                         | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
-                         | SailAST.LEXP_memory (_, _, _) -> Predicate.bot_pred
-                         | SailAST.LEXP_cast (_, _, _) -> Predicate.bot_pred
-                         | SailAST.LEXP_tup (tan, lexps) ->
-                           Predicate.bind
-                             (Predicate.if_pred
-                               (trace
-                                 [Stringa.Chara
-                                    (true, true, false, false, false, true,
-                                      true, false);
-                                   Stringa.Chara
-                                     (false, false, false, true, false, true,
-                                       true, false);
-                                   Stringa.Chara
-                                     (true, false, true, false, false, true,
-                                       true, false);
-                                   Stringa.Chara
-                                     (true, true, false, false, false, true,
-                                       true, false);
-                                   Stringa.Chara
-                                     (true, true, false, true, false, true,
-                                       true, false);
-                                   Stringa.Chara
-                                     (true, true, true, true, true, false, true,
-                                       false);
-                                   Stringa.Chara
-                                     (false, false, true, true, false, true,
-                                       true, false);
-                                   Stringa.Chara
-                                     (true, false, true, false, false, true,
-                                       true, false);
-                                   Stringa.Chara
-                                     (false, false, false, true, true, true,
-                                       true, false);
-                                   Stringa.Chara
-                                     (false, false, false, false, true, true,
-                                       true, false);
-                                   Stringa.Chara
-                                     (true, true, true, true, true, false, true,
-                                       false);
-                                   Stringa.Chara
+                                Stringa.Chara
+                                  (true, false, false, false, true, true, false,
+                                    false);
+                                Stringa.Chara
+                                  (true, false, true, true, true, true, false,
+                                    false)] @
+                                ShowAST.shows_prec_typ Arith.Zero_nat ret_typ2
+                                  [] @
+                                  [Stringa.Chara
                                      (false, false, true, false, true, true,
                                        true, false);
-                                   Stringa.Chara
-                                     (true, false, true, false, true, true,
-                                       true, false);
-                                   Stringa.Chara
-                                     (false, false, false, false, true, true,
-                                       true, false);
-                                   Stringa.Chara
-                                     (true, false, false, true, false, false,
-                                       true, false)]))
-                             (fun () ->
-                               Predicate.bind (eq_o_i (SailEnv.get tan))
-                                 (fun aa ->
-                                   (match aa with None -> Predicate.bot_pred
-                                     | Some (_, _) ->
-                                       Predicate.bind
- (check_lexp_list_i_o lexps)
- (fun x ->
-   Predicate.bind (eq_o_i (Lista.those (Lista.map SailEnv.type_of_lexp lexps)))
-     (fun ab ->
-       (match ab with None -> Predicate.bot_pred
-         | Some ts1 ->
-           Predicate.bind
-             (Predicate.if_pred
-               (trace
-                 ([Stringa.Chara
+                                    Stringa.Chara
+                                      (false, true, false, false, true, true,
+false, false);
+                                    Stringa.Chara
+                                      (true, false, true, true, true, true,
+false, false)] @
+                                    ShowAST.shows_prec_typ Arith.Zero_nat t
+                                      [])))
+                        (fun () ->
+                          Predicate.bind (subtype_tan_i_i ret_typ2 tan)
+                            (fun () -> Predicate.single ()))))))))))))
+                    | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_loop (_, _, _, _, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _))
+                      -> Predicate.bot_pred
+                    | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+                    | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.E_internal_return (_, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.E_internal_value (_, _), _)) ->
+                      Predicate.bot_pred
+                    | (_, (SailAST.E_constraint (_, _), _)) ->
+                      Predicate.bot_pred)))
+              (Predicate.sup_pred
+                (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                  (fun a ->
+                    (match a
+                      with (_, (SailAST.E_block (_, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_if (_, _, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_loop (_, _, _, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _),
+                              _))
+                        -> Predicate.bot_pred
+                      | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_record (_, fexp_list), typ)) ->
+                        Predicate.bind (check_fexp_list_i_i fexp_list typ)
+                          (fun () -> Predicate.single ())
+                      | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_field (_, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_assign (_, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+                      | (_, (SailAST.E_assert (_, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_var (_, _, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_internal_return (_, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_internal_value (_, _), _)) ->
+                        Predicate.bot_pred
+                      | (_, (SailAST.E_constraint (_, _), _)) ->
+                        Predicate.bot_pred)))
+                (Predicate.sup_pred
+                  (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                    (fun a ->
+                      (match a
+                        with (_, (SailAST.E_block (_, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.E_cast (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_app (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.E_if (_, _, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_loop (_, _, _, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_vector (_, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _),
+                                _))
+                          -> Predicate.bot_pred
+                        | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.E_cons (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_record (_, _), _)) ->
+                          Predicate.bot_pred
+                        | (e, (SailAST.E_record_update (_, exp, fexp_list),
+                                typ))
+                          -> Predicate.bind (check_exp_i_i_i e exp typ)
+                               (fun () ->
+                                 Predicate.bind
+                                   (check_fexp_list_i_i fexp_list typ)
+                                   (fun () -> Predicate.single ()))
+                        | (_, (SailAST.E_field (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_case (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_let (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_assign (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_sizeof (_, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_return (_, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+                        | (_, (SailAST.E_try (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_assert (_, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_var (_, _, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_internal_return (_, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_internal_value (_, _), _)) ->
+                          Predicate.bot_pred
+                        | (_, (SailAST.E_constraint (_, _), _)) ->
+                          Predicate.bot_pred)))
+                  (Predicate.sup_pred
+                    (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                      (fun a ->
+                        (match a
+                          with (_, (SailAST.E_block (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+                          | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+                          | (_, (SailAST.E_cast (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_app (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_tuple (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_if (_, _, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_loop (_, _, _, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_vector (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_vector_update_subrange
+                                   (_, _, _, _, _),
+                                  _))
+                            -> Predicate.bot_pred
+                          | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_list (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_cons (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_record (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (env, (SailAST.E_field (_, exp, fid), t1)) ->
+                            Predicate.bind (eq_o_i (SailEnv.type_of_exp exp))
+                              (fun aa ->
+                                (match aa with None -> Predicate.bot_pred
+                                  | Some rtype ->
+                                    Predicate.bind
+                                      (check_exp_s_i_i_i env exp rtype)
+                                      (fun () ->
+Predicate.bind (eq_o_i (SailEnv.deconstruct_record_type rtype))
+  (fun ab ->
+    (match ab with None -> Predicate.bot_pred
+      | Some recid ->
+        Predicate.bind (eq_o_i (SailEnv.lookup_record_field_env env recid fid))
+          (fun ac ->
+            (match ac with None -> Predicate.bot_pred
+              | Some t2 ->
+                Predicate.bind (subtype_i_i_i env t1 t2)
+                  (fun () -> Predicate.single ()))))))))
+                          | (_, (SailAST.E_case (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_let (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_assign (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_sizeof (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_return (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_exit (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+                          | (_, (SailAST.E_throw (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_try (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_assert (_, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_var (_, _, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_internal_return (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_internal_value (_, _), _)) ->
+                            Predicate.bot_pred
+                          | (_, (SailAST.E_constraint (_, _), _)) ->
+                            Predicate.bot_pred)))
+                    (Predicate.sup_pred
+                      (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                        (fun a ->
+                          (match a
+                            with (_, (SailAST.E_block (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_id (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_lit (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_cast (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_app (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_tuple (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_if (_, _, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_loop (_, _, _, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_vector (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_vector_subrange (_, _, _, _), _))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_vector_update_subrange
+                                     (_, _, _, _, _),
+                                    _))
+                              -> Predicate.bot_pred
+                            | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_list (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_cons (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_record (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_field (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_case (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_let (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_assign (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_sizeof (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (e, (SailAST.E_return (tan, exp), _)) ->
+                              Predicate.bind (eq_o_i (SailEnv.ret_type tan))
+                                (fun aa ->
+                                  (match aa with None -> Predicate.bot_pred
+                                    | Some r_typ ->
+                                      Predicate.bind
+(check_exp_s_i_i_i e exp r_typ) (fun () -> Predicate.single ())))
+                            | (_, (SailAST.E_exit (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_ref (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_throw (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_try (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_assert (_, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_var (_, _, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_internal_return (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_internal_value (_, _), _)) ->
+                              Predicate.bot_pred
+                            | (_, (SailAST.E_constraint (_, _), _)) ->
+                              Predicate.bot_pred)))
+                      (Predicate.sup_pred
+                        (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                          (fun a ->
+                            (match a
+                              with (_, (SailAST.E_block (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_id (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_lit (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_cast (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_app (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_tuple (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_if (_, _, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_loop (_, _, _, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_vector (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_vector_subrange (_, _, _, _), _))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.E_vector_update (_, _, _, _), _))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.E_vector_update_subrange
+                                       (_, _, _, _, _),
+                                      _))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_list (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_cons (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_record (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_field (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_case (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_let (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_assign (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_sizeof (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_return (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (e, (SailAST.E_exit (_, exp), _)) ->
+                                Predicate.bind
+                                  (check_exp_s_i_i_i e exp
+                                    SailASTUtils.unit_typ)
+                                  (fun () -> Predicate.single ())
+                              | (_, (SailAST.E_ref (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_throw (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_try (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_assert (_, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_var (_, _, _, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_internal_plet (_, _, _, _), _))
+                                -> Predicate.bot_pred
+                              | (_, (SailAST.E_internal_return (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_internal_value (_, _), _)) ->
+                                Predicate.bot_pred
+                              | (_, (SailAST.E_constraint (_, _), _)) ->
+                                Predicate.bot_pred)))
+                        (Predicate.sup_pred
+                          (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                            (fun a ->
+                              (match a
+                                with (_, (SailAST.E_block (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_id (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_lit (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_cast (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_app (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_tuple (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_if (_, _, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_loop (_, _, _, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_for (_, _, _, _, _, _, _), _))
+                                  -> Predicate.bot_pred
+                                | (_, (SailAST.E_vector (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_vector_subrange (_, _, _, _),
+_))
+                                  -> Predicate.bot_pred
+                                | (_, (SailAST.E_vector_update (_, _, _, _), _))
+                                  -> Predicate.bot_pred
+                                | (_, (SailAST.E_vector_update_subrange
+ (_, _, _, _, _),
+_))
+                                  -> Predicate.bot_pred
+                                | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_list (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_cons (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_record (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_field (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_case (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_let (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_assign (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_sizeof (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_return (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_exit (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_ref (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (e, (SailAST.E_throw (_, exp), xaa)) ->
+                                  Predicate.bind
+                                    (check_exp_s_i_i_i e exp exception_typ)
+                                    (fun () ->
+                                      (if SailAST.equal_typa xaa exception_typ
+then Predicate.single () else Predicate.bot_pred))
+                                | (_, (SailAST.E_try (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_assert (_, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_var (_, _, _, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_internal_plet (_, _, _, _), _))
+                                  -> Predicate.bot_pred
+                                | (_, (SailAST.E_internal_return (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_internal_value (_, _), _)) ->
+                                  Predicate.bot_pred
+                                | (_, (SailAST.E_constraint (_, _), _)) ->
+                                  Predicate.bot_pred)))
+                          (Predicate.sup_pred
+                            (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                              (fun a ->
+                                (match a
+                                  with (_, (SailAST.E_block (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_id (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_lit (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_cast (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_app (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_app_infix (_, _, _, _), _))
+                                    -> Predicate.bot_pred
+                                  | (_, (SailAST.E_tuple (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_if (_, _, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_loop (_, _, _, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_for (_, _, _, _, _, _, _),
+  _))
+                                    -> Predicate.bot_pred
+                                  | (_, (SailAST.E_vector (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_vector_access (_, _, _), _))
+                                    -> Predicate.bot_pred
+                                  | (_, (SailAST.E_vector_subrange (_, _, _, _),
+  _))
+                                    -> Predicate.bot_pred
+                                  | (_, (SailAST.E_vector_update (_, _, _, _),
+  _))
+                                    -> Predicate.bot_pred
+                                  | (_, (SailAST.E_vector_update_subrange
+   (_, _, _, _, _),
+  _))
+                                    -> Predicate.bot_pred
+                                  | (_, (SailAST.E_vector_append (_, _, _), _))
+                                    -> Predicate.bot_pred
+                                  | (_, (SailAST.E_list (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_cons (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_record (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_record_update (_, _, _), _))
+                                    -> Predicate.bot_pred
+                                  | (_, (SailAST.E_field (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_case (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_let (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_assign (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_sizeof (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_return (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_exit (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_ref (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_throw (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (e, (SailAST.E_try (_, exp, pexps), xaa)) ->
+                                    Predicate.bind
+                                      (check_exp_s_i_i_i e exp exception_typ)
+                                      (fun () ->
+Predicate.bind (check_pexps_i pexps)
+  (fun () ->
+    (if SailAST.equal_typa xaa SailASTUtils.unit_typ then Predicate.single ()
+      else Predicate.bot_pred)))
+                                  | (_, (SailAST.E_assert (_, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_var (_, _, _, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_internal_plet (_, _, _, _),
+  _))
+                                    -> Predicate.bot_pred
+                                  | (_, (SailAST.E_internal_return (_, _), _))
+                                    -> Predicate.bot_pred
+                                  | (_, (SailAST.E_internal_value (_, _), _)) ->
+                                    Predicate.bot_pred
+                                  | (_, (SailAST.E_constraint (_, _), _)) ->
+                                    Predicate.bot_pred)))
+                            (Predicate.sup_pred
+                              (Predicate.bind (Predicate.single (xa, (xb, xc)))
+                                (fun a ->
+                                  (match a
+                                    with (_, (SailAST.E_block (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_id (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_lit (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_cast (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_app (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_app_infix (_, _, _, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_, (SailAST.E_tuple (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_if (_, _, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_loop (_, _, _, _, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_,
+(SailAST.E_for (_, _, _, _, _, _, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_, (SailAST.E_vector (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_,
+(SailAST.E_vector_access (_, _, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_,
+(SailAST.E_vector_subrange (_, _, _, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_,
+(SailAST.E_vector_update (_, _, _, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_,
+(SailAST.E_vector_update_subrange (_, _, _, _, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_,
+(SailAST.E_vector_append (_, _, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_, (SailAST.E_list (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_cons (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_record (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_,
+(SailAST.E_record_update (_, _, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_, (SailAST.E_field (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_case (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_let (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_assign (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_sizeof (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_return (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_exit (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_ref (tan, x), _)) ->
+                                      Predicate.bind
+(eq_o_i (SailEnv.lookup_register tan x))
+(fun aa ->
+  (match aa with None -> Predicate.bot_pred
+    | Some t1 ->
+      Predicate.bind (subtype_tan_i_i t1 tan) (fun () -> Predicate.single ())))
+                                    | (_, (SailAST.E_throw (_, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_try (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_assert (_, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_, (SailAST.E_var (_, _, _, _), _)) ->
+                                      Predicate.bot_pred
+                                    | (_,
+(SailAST.E_internal_plet (_, _, _, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_, (SailAST.E_internal_return (_, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_, (SailAST.E_internal_value (_, _), _))
+                                      -> Predicate.bot_pred
+                                    | (_, (SailAST.E_constraint (_, _), _)) ->
+                                      Predicate.bot_pred)))
+                              (Predicate.sup_pred
+                                (Predicate.bind
+                                  (Predicate.single (xa, (xb, xc)))
+                                  (fun a ->
+                                    (match a
+                                      with (_, (SailAST.E_block (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_id (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_lit (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_cast (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_app (_, _, _), _)) ->
+Predicate.bot_pred
+                                      |
+(_, (SailAST.E_app_infix (_, _, _, _), _)) -> Predicate.bot_pred
+                                      | (_, (SailAST.E_tuple (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_if (_, _, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_loop (_, _, _, _, _), _))
+-> Predicate.bot_pred
+                                      |
+(_, (SailAST.E_for (_, _, _, _, _, _, _), _)) -> Predicate.bot_pred
+                                      |
+(_, (SailAST.E_vector (tan, exps), vec_typ)) ->
+Predicate.bind (eq_o_i (SailEnv.get tan))
+  (fun aa ->
+    (match aa with None -> Predicate.bot_pred
+      | Some (env, _) ->
+        Predicate.bind (eq_o_i (SailEnv.deconstruct_vector_type vec_typ))
+          (fun ab ->
+            (match ab with None -> Predicate.bot_pred
+              | Some (len, (_, typ)) ->
+                Predicate.bind
+                  (check_exp_list_i_i exps
+                    (Lista.replicate (Lista.size_list exps) typ))
+                  (fun () ->
+                    Predicate.bind
+                      (Predicate.if_pred
+                        (SailEnv.prove env
+                          (SailAST.NC_equal
+                            (SailAST.Nexp_constant
+                               (integer_of_int2
+                                 (Arith.of_nat Arith.semiring_1_int
+                                   (Lista.size_list exps))),
+                              len))))
+                      (fun () -> Predicate.single ()))))))
+                                      |
+(_, (SailAST.E_vector_access (_, _, _), _)) -> Predicate.bot_pred
+                                      |
+(_, (SailAST.E_vector_subrange (_, _, _, _), _)) -> Predicate.bot_pred
+                                      |
+(_, (SailAST.E_vector_update (_, _, _, _), _)) -> Predicate.bot_pred
+                                      |
+(_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) -> Predicate.bot_pred
+                                      |
+(_, (SailAST.E_vector_append (_, _, _), _)) -> Predicate.bot_pred
+                                      | (_, (SailAST.E_list (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_cons (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_record (_, _), _)) ->
+Predicate.bot_pred
+                                      |
+(_, (SailAST.E_record_update (_, _, _), _)) -> Predicate.bot_pred
+                                      | (_, (SailAST.E_field (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_case (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_let (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_assign (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_sizeof (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_return (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_exit (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_ref (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_throw (_, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_try (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_assert (_, _, _), _)) ->
+Predicate.bot_pred
+                                      | (_, (SailAST.E_var (_, _, _, _), _)) ->
+Predicate.bot_pred
+                                      |
+(_, (SailAST.E_internal_plet (_, _, _, _), _)) -> Predicate.bot_pred
+                                      |
+(_, (SailAST.E_internal_return (_, _), _)) -> Predicate.bot_pred
+                                      |
+(_, (SailAST.E_internal_value (_, _), _)) -> Predicate.bot_pred
+                                      | (_, (SailAST.E_constraint (_, _), _)) ->
+Predicate.bot_pred)))
+                                (Predicate.sup_pred
+                                  (Predicate.bind
+                                    (Predicate.single (xa, (xb, xc)))
+                                    (fun a ->
+                                      (match a
+with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_app_infix (_, _, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_loop (_, _, _, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_vector_access (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_vector_subrange (_, _, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_vector_update (_, _, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+  Predicate.bot_pred
+| (_, (SailAST.E_vector_append (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_list (tan, exps), _)) ->
+  Predicate.bind (eq_o_i (SailEnv.is_list_type tan))
+    (fun aa ->
+      (match aa with None -> Predicate.bot_pred
+        | Some elem_typ ->
+          Predicate.bind
+            (check_exp_list_i_i exps
+              (Lista.replicate (Lista.size_list exps) elem_typ))
+            (fun () -> Predicate.single ())))
+| (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_record_update (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_internal_plet (_, _, _, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_internal_return (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_internal_value (_, _), _)) -> Predicate.bot_pred
+| (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+                                  (Predicate.sup_pred
+                                    (Predicate.bind
+                                      (Predicate.single (xa, (xb, xc)))
+                                      (fun a ->
+(match a with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_app_infix (_, _, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_loop (_, _, _, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_vector_access (_, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_vector_update (_, _, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+    Predicate.bot_pred
+  | (_, (SailAST.E_vector_append (_, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+  | (e, (SailAST.E_cons (tan, exp1, exp2), t)) ->
+    Predicate.bind (check_exp_s_i_i_i e exp2 t)
+      (fun () ->
+        Predicate.bind (eq_o_i (SailEnv.is_list_type tan))
+          (fun aa ->
+            (match aa with None -> Predicate.bot_pred
+              | Some elem_typ ->
+                Predicate.bind (check_exp_list_i_i [exp1] [elem_typ])
+                  (fun () -> Predicate.single ()))))
+  | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_record_update (_, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_internal_plet (_, _, _, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_internal_return (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_internal_value (_, _), _)) -> Predicate.bot_pred
+  | (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+                                    (Predicate.sup_pred
+                                      (Predicate.bind
+(Predicate.single (xa, (xb, xc)))
+(fun a ->
+  (match a with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_app_infix (_, _, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_loop (_, _, _, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_vector_access (_, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_vector_update (_, _, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+      Predicate.bot_pred
+    | (_, (SailAST.E_vector_append (_, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_record_update (_, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+    | (env, (SailAST.E_let (_, lb, exp), t1)) ->
+      Predicate.bind
+        (Predicate.if_pred
+          (trace
+            [Stringa.Chara (true, true, false, false, false, true, true, false);
+              Stringa.Chara
+                (false, false, false, true, false, true, true, false);
+              Stringa.Chara
+                (true, false, true, false, false, true, true, false);
+              Stringa.Chara
+                (true, true, false, false, false, true, true, false);
+              Stringa.Chara (true, true, false, true, false, true, true, false);
+              Stringa.Chara (true, true, true, true, true, false, true, false);
+              Stringa.Chara
+                (false, false, true, true, false, true, true, false);
+              Stringa.Chara
+                (true, false, true, false, false, true, true, false);
+              Stringa.Chara
+                (false, false, true, false, true, true, true, false);
+              Stringa.Chara
+                (true, false, false, true, false, false, true, false)]))
+        (fun () ->
+          Predicate.bind (check_letbind_i_o lb)
+            (fun x ->
+              Predicate.bind (check_exp_s_i_i_i (add_locals env x) exp t1)
+                (fun () -> Predicate.single ())))
+    | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_internal_plet (_, _, _, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_internal_return (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_internal_value (_, _), _)) -> Predicate.bot_pred
+    | (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+                                      (Predicate.sup_pred
+(Predicate.bind (Predicate.single (xa, (xb, xc)))
+  (fun a ->
+    (match a with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_app_infix (_, _, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+      | (env, (SailAST.E_if (_, exp1, exp2, exp3), t)) ->
+        Predicate.bind (check_exp_s_i_i_i env exp1 SailASTUtils.bool_all_typ)
+          (fun () ->
+            Predicate.bind (eq_o_i (SailEnv.type_of_exp exp1))
+              (fun aa ->
+                (match aa with None -> Predicate.bot_pred
+                  | Some t_exp1 ->
+                    Predicate.bind
+                      (eq_o_i (SailEnv.deconstruct_bool_type t_exp1))
+                      (fun ab ->
+                        (match ab with None -> Predicate.bot_pred
+                          | Some nc ->
+                            Predicate.bind
+                              (check_exp_s_i_i_i (SailEnv.add_constraint nc env)
+                                exp2 t)
+                              (fun () ->
+                                Predicate.bind
+                                  (check_exp_s_i_i_i
+                                    (SailEnv.add_constraint (nc_not nc) env)
+                                    exp3 t)
+                                  (fun () -> Predicate.single ())))))))
+      | (_, (SailAST.E_loop (_, _, _, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_vector_access (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_vector_update (_, _, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+        Predicate.bot_pred
+      | (_, (SailAST.E_vector_append (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_record_update (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_internal_plet (_, _, _, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_internal_return (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_internal_value (_, _), _)) -> Predicate.bot_pred
+      | (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+(Predicate.sup_pred
+  (Predicate.bind (Predicate.single (xa, (xb, xc)))
+    (fun a ->
+      (match a with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_app_infix (_, _, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_loop (_, _, _, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_vector_access (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_vector_update (_, _, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+          Predicate.bot_pred
+        | (_, (SailAST.E_vector_append (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_record_update (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_var (_, SailAST.LEXP_id (_, _), _, _), _)) ->
+          Predicate.bot_pred
+        | (_, (SailAST.E_var (_, SailAST.LEXP_deref (_, _), _, _), _)) ->
+          Predicate.bot_pred
+        | (_, (SailAST.E_var (_, SailAST.LEXP_memory (_, _, _), _, _), _)) ->
+          Predicate.bot_pred
+        | (e, (SailAST.E_var (_, SailAST.LEXP_cast (_, typ, _), exp1, exp2),
+                t2))
+          -> Predicate.bind (check_exp_s_i_i_i e exp1 typ)
+               (fun () ->
+                 Predicate.bind (check_exp_s_i_i_i e exp2 t2)
+                   (fun () -> Predicate.single ()))
+        | (_, (SailAST.E_var (_, SailAST.LEXP_tup (_, _), _, _), _)) ->
+          Predicate.bot_pred
+        | (_, (SailAST.E_var (_, SailAST.LEXP_vector_concat (_, _), _, _), _))
+          -> Predicate.bot_pred
+        | (_, (SailAST.E_var (_, SailAST.LEXP_vector (_, _, _), _, _), _)) ->
+          Predicate.bot_pred
+        | (_, (SailAST.E_var (_, SailAST.LEXP_vector_range (_, _, _, _), _, _),
+                _))
+          -> Predicate.bot_pred
+        | (_, (SailAST.E_var (_, SailAST.LEXP_field (_, _, _), _, _), _)) ->
+          Predicate.bot_pred
+        | (_, (SailAST.E_internal_plet (_, _, _, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_internal_return (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_internal_value (_, _), _)) -> Predicate.bot_pred
+        | (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+  (Predicate.sup_pred
+    (Predicate.bind (Predicate.single (xa, (xb, xc)))
+      (fun a ->
+        (match a with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_app_infix (_, _, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_loop (_, _, _, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_vector_access (_, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+            Predicate.bot_pred
+          | (_, (SailAST.E_vector_update (_, _, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+            Predicate.bot_pred
+          | (_, (SailAST.E_vector_append (_, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_record_update (_, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+          | (e, (SailAST.E_case (_, exp, pexps), _)) ->
+            Predicate.bind
+              (Predicate.if_pred
+                (trace
+                  [Stringa.Chara
                      (true, true, false, false, false, true, true, false);
                     Stringa.Chara
                       (false, false, false, true, false, true, true, false);
@@ -17458,564 +16725,527 @@ and check_lexp_i_o
                     Stringa.Chara
                       (true, true, true, true, true, false, true, false);
                     Stringa.Chara
-                      (false, false, true, true, false, true, true, false);
+                      (true, true, false, false, false, true, true, false);
                     Stringa.Chara
-                      (true, false, true, false, false, true, true, false);
-                    Stringa.Chara
-                      (false, false, false, true, true, true, true, false);
-                    Stringa.Chara
-                      (false, false, false, false, true, true, true, false);
-                    Stringa.Chara
-                      (true, true, true, true, true, false, true, false);
-                    Stringa.Chara
-                      (false, false, true, false, true, true, true, false);
-                    Stringa.Chara
-                      (true, false, true, false, true, true, true, false);
-                    Stringa.Chara
-                      (false, false, false, false, true, true, true, false);
-                    Stringa.Chara
-                      (true, false, false, true, false, false, true, false);
-                    Stringa.Chara
-                      (false, false, false, false, false, true, false, false);
-                    Stringa.Chara
-                      (false, false, true, false, true, true, true, false);
-                    Stringa.Chara
-                      (true, false, false, true, true, true, true, false);
-                    Stringa.Chara
-                      (false, false, false, false, true, true, true, false);
-                    Stringa.Chara
-                      (true, false, true, false, false, true, true, false);
+                      (true, false, false, false, false, true, true, false);
                     Stringa.Chara
                       (true, true, false, false, true, true, true, false);
                     Stringa.Chara
-                      (true, false, true, true, true, true, false, false)] @
-                   Show.shows_prec_list ShowAST.show_typ Arith.Zero_nat ts1
-                     [])))
-             (fun () ->
-               Predicate.bind (subtype_tan_i_i (SailAST.Typ_tup ts1) tan)
-                 (fun () -> Predicate.single x))))))))
-                         | SailAST.LEXP_vector_concat (_, _) ->
-                           Predicate.bot_pred
-                         | SailAST.LEXP_vector (_, _, _) -> Predicate.bot_pred
-                         | SailAST.LEXP_vector_range (_, _, _, _) ->
-                           Predicate.bot_pred
-                         | SailAST.LEXP_field (_, _, _) -> Predicate.bot_pred)))
-                   (Predicate.sup_pred
-                     (Predicate.bind (Predicate.single xa)
-                       (fun a ->
-                         (match a
-                           with SailAST.LEXP_id (_, _) -> Predicate.bot_pred
-                           | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
-                           | SailAST.LEXP_memory (_, _, _) -> Predicate.bot_pred
-                           | SailAST.LEXP_cast (_, _, _) -> Predicate.bot_pred
-                           | SailAST.LEXP_tup (_, _) -> Predicate.bot_pred
-                           | SailAST.LEXP_vector_concat (tan, lexps) ->
-                             Predicate.bind
-                               (Predicate.if_pred
-                                 (trace
-                                   [Stringa.Chara
-                                      (true, true, false, false, false, true,
-true, false);
-                                     Stringa.Chara
-                                       (false, false, false, true, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, false, true, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, false, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, false, true, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, true, true, true, false,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, true, true, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, false, true, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, false, true, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, false, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, true, true, true, false,
- true, false);
-                                     Stringa.Chara
-                                       (false, true, true, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, false, true, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, false, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, true, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, true, true, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, true, false, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, true, true, true, false,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, false, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, true, true, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, true, true, true, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, true, false, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, false, false, false, false, true,
- true, false);
-                                     Stringa.Chara
-                                       (false, false, true, false, true, true,
- true, false);
-                                     Stringa.Chara
-                                       (true, false, false, true, false, false,
- true, false)]))
-                               (fun () ->
-                                 Predicate.bind
-                                   (eq_o_i (SailEnv.is_vector_type tan))
-                                   (fun aa ->
-                                     (match aa with None -> Predicate.bot_pred
-                                       | Some (_, (order, typ)) ->
- Predicate.bind (check_lexp_vector_list_i_i_i lexps order typ)
-   (fun () -> Predicate.bind (check_lexp_list_i_o lexps) Predicate.single))))
-                           | SailAST.LEXP_vector (_, _, _) -> Predicate.bot_pred
-                           | SailAST.LEXP_vector_range (_, _, _, _) ->
-                             Predicate.bot_pred
-                           | SailAST.LEXP_field (_, _, _) ->
-                             Predicate.bot_pred)))
-                     (Predicate.sup_pred
-                       (Predicate.bind (Predicate.single xa)
-                         (fun a ->
-                           (match a
-                             with SailAST.LEXP_id (_, _) -> Predicate.bot_pred
-                             | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
-                             | SailAST.LEXP_memory (_, _, _) ->
-                               Predicate.bot_pred
-                             | SailAST.LEXP_cast (_, _, _) -> Predicate.bot_pred
-                             | SailAST.LEXP_tup (_, _) -> Predicate.bot_pred
-                             | SailAST.LEXP_vector_concat (_, _) ->
-                               Predicate.bot_pred
-                             | SailAST.LEXP_vector (tan, lexp, exp) ->
-                               Predicate.bind
-                                 (Predicate.if_pred
-                                   (trace
-                                     [Stringa.Chara
-(true, true, false, false, false, true, true, false);
-                                       Stringa.Chara
- (false, false, false, true, false, true, true, false);
-                                       Stringa.Chara
- (true, false, true, false, false, true, true, false);
-                                       Stringa.Chara
- (true, true, false, false, false, true, true, false);
-                                       Stringa.Chara
- (true, true, false, true, false, true, true, false);
-                                       Stringa.Chara
- (true, true, true, true, true, false, true, false);
-                                       Stringa.Chara
- (false, false, true, true, false, true, true, false);
-                                       Stringa.Chara
- (true, false, true, false, false, true, true, false);
-                                       Stringa.Chara
- (false, false, false, true, true, true, true, false);
-                                       Stringa.Chara
- (false, false, false, false, true, true, true, false);
-                                       Stringa.Chara
- (true, true, true, true, true, false, true, false);
-                                       Stringa.Chara
- (false, true, true, false, true, true, true, false);
-                                       Stringa.Chara
- (true, false, true, false, false, true, true, false);
-                                       Stringa.Chara
- (true, true, false, false, false, true, true, false);
-                                       Stringa.Chara
- (false, false, true, false, true, true, true, false);
-                                       Stringa.Chara
- (true, true, true, true, false, true, true, false);
-                                       Stringa.Chara
- (false, true, false, false, true, true, true, false);
-                                       Stringa.Chara
- (true, false, false, true, false, false, true, false)]))
-                                 (fun () ->
-                                   Predicate.bind
-                                     (Predicate.if_pred
-                                       (trace
- [Stringa.Chara (true, true, false, false, false, true, true, false);
-   Stringa.Chara (false, false, false, true, false, true, true, false);
-   Stringa.Chara (true, false, true, false, false, true, true, false);
-   Stringa.Chara (true, true, false, false, false, true, true, false);
-   Stringa.Chara (true, true, false, true, false, true, true, false);
-   Stringa.Chara (true, true, true, true, true, false, true, false);
-   Stringa.Chara (false, false, true, true, false, true, true, false);
-   Stringa.Chara (true, false, true, false, false, true, true, false);
-   Stringa.Chara (false, false, false, true, true, true, true, false);
-   Stringa.Chara (false, false, false, false, true, true, true, false);
-   Stringa.Chara (true, true, true, true, true, false, true, false);
-   Stringa.Chara (false, true, true, false, true, true, true, false);
-   Stringa.Chara (true, false, true, false, false, true, true, false);
-   Stringa.Chara (true, true, false, false, false, true, true, false);
-   Stringa.Chara (false, false, true, false, true, true, true, false);
-   Stringa.Chara (true, true, true, true, false, true, true, false);
-   Stringa.Chara (false, true, false, false, true, true, true, false);
-   Stringa.Chara (true, false, false, true, false, false, true, false);
-   Stringa.Chara (false, false, false, false, false, true, false, false);
-   Stringa.Chara (false, true, false, false, true, true, false, false)]))
-                                     (fun () ->
-                                       Predicate.bind
- (check_exp_typ_i_i exp SailASTUtils.int_typ)
- (fun () ->
-   Predicate.bind (check_lexp_i_o lexp)
-     (fun x ->
-       Predicate.bind (eq_o_i (SailEnv.get tan))
-         (fun aa ->
-           (match aa with None -> Predicate.bot_pred
-             | Some (_, typ) ->
-               Predicate.bind
-                 (Predicate.if_pred
-                   (trace
-                     ([Stringa.Chara
-                         (true, true, false, false, false, true, true, false);
-                        Stringa.Chara
-                          (false, false, false, true, false, true, true, false);
-                        Stringa.Chara
-                          (true, false, true, false, false, true, true, false);
-                        Stringa.Chara
-                          (true, true, false, false, false, true, true, false);
-                        Stringa.Chara
-                          (true, true, false, true, false, true, true, false);
-                        Stringa.Chara
-                          (true, true, true, true, true, false, true, false);
-                        Stringa.Chara
-                          (false, false, true, true, false, true, true, false);
-                        Stringa.Chara
-                          (true, false, true, false, false, true, true, false);
-                        Stringa.Chara
-                          (false, false, false, true, true, true, true, false);
-                        Stringa.Chara
-                          (false, false, false, false, true, true, true, false);
-                        Stringa.Chara
-                          (true, true, true, true, true, false, true, false);
-                        Stringa.Chara
-                          (false, true, true, false, true, true, true, false);
-                        Stringa.Chara
-                          (true, false, true, false, false, true, true, false);
-                        Stringa.Chara
-                          (true, true, false, false, false, true, true, false);
-                        Stringa.Chara
-                          (false, false, true, false, true, true, true, false);
-                        Stringa.Chara
-                          (true, true, true, true, false, true, true, false);
-                        Stringa.Chara
-                          (false, true, false, false, true, true, true, false);
-                        Stringa.Chara
-                          (true, false, false, true, false, false, true, false);
-                        Stringa.Chara
-                          (false, false, false, false, false, true, false,
-                            false);
-                        Stringa.Chara
-                          (false, false, true, false, true, true, true, false);
-                        Stringa.Chara
-                          (true, false, false, true, true, true, true, false);
-                        Stringa.Chara
-                          (false, false, false, false, true, true, true, false);
-                        Stringa.Chara
-                          (true, false, true, true, true, true, false, false)] @
-                       ShowAST.shows_prec_typ Arith.Zero_nat typ [])))
-                 (fun () ->
-                   Predicate.bind (eq_o_i (SailEnv.type_of_lexp lexp))
-                     (fun ab ->
-                       (match ab with None -> Predicate.bot_pred
-                         | Some t ->
-                           Predicate.bind
-                             (Predicate.if_pred
-                               (trace
-                                 ([Stringa.Chara
-                                     (true, true, false, false, false, true,
-                                       true, false);
-                                    Stringa.Chara
-                                      (false, false, false, true, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, false, true, false, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, true, false, false, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, true, false, true, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, true, true, true, true, false,
-true, false);
-                                    Stringa.Chara
-                                      (false, false, true, true, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, false, true, false, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (false, false, false, true, true, true,
-true, false);
-                                    Stringa.Chara
-                                      (false, false, false, false, true, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, true, true, true, true, false,
-true, false);
-                                    Stringa.Chara
-                                      (false, true, true, false, true, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, false, true, false, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, true, false, false, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (false, false, true, false, true, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, true, true, true, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (false, true, false, false, true, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, false, false, true, false, false,
-true, false);
-                                    Stringa.Chara
-                                      (false, false, false, false, false, true,
-false, false);
-                                    Stringa.Chara
-                                      (false, true, true, false, true, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, false, true, false, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, true, false, false, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (false, false, true, false, true, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, false, false, true, true, true,
-true, false);
-                                    Stringa.Chara
-                                      (false, false, false, false, true, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, false, true, false, false, true,
-true, false);
-                                    Stringa.Chara
-                                      (true, false, true, true, true, true,
-false, false)] @
-                                   ShowAST.shows_prec_typ Arith.Zero_nat t [])))
-                             (fun () ->
-                               Predicate.bind
-                                 (eq_o_i (SailEnv.deconstruct_vector_type t))
-                                 (fun ac ->
-                                   (match ac with None -> Predicate.bot_pred
-                                     | Some (_, (_, typb)) ->
-                                       (if SailAST.equal_typa typ typb
- then Predicate.single x else Predicate.bot_pred)))))))))))))
-                             | SailAST.LEXP_vector_range (_, _, _, _) ->
-                               Predicate.bot_pred
-                             | SailAST.LEXP_field (_, _, _) ->
-                               Predicate.bot_pred)))
-                       (Predicate.sup_pred
-                         (Predicate.bind (Predicate.single xa)
-                           (fun a ->
-                             (match a
-                               with SailAST.LEXP_id (_, _) -> Predicate.bot_pred
-                               | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
-                               | SailAST.LEXP_memory (_, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.LEXP_cast (_, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.LEXP_tup (_, _) -> Predicate.bot_pred
-                               | SailAST.LEXP_vector_concat (_, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.LEXP_vector (_, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.LEXP_vector_range
-                                   (tan, lexp, exp1, exp2)
-                                 -> Predicate.bind
-                                      (check_exp_typ_i_i exp1
-SailASTUtils.int_typ)
-                                      (fun () ->
-Predicate.bind (check_exp_typ_i_i exp2 SailASTUtils.int_typ)
-  (fun () ->
-    Predicate.bind (check_lexp_i_o lexp)
-      (fun _ ->
-        Predicate.bind (eq_o_i (SailEnv.get tan))
-          (fun aa ->
-            (match aa with None -> Predicate.bot_pred
-              | Some (_, t2) ->
-                Predicate.bind (eq_o_i (SailEnv.type_of_lexp lexp))
-                  (fun ab ->
-                    (match ab with None -> Predicate.bot_pred
-                      | Some t1 ->
+                      (true, false, true, false, false, true, true, false);
+                    Stringa.Chara
+                      (true, false, false, true, false, false, true, false)]))
+              (fun () ->
+                Predicate.bind (check_pexps_i pexps)
+                  (fun () ->
+                    Predicate.bind (eq_o_i (SailEnv.type_of_exp exp))
+                      (fun aa ->
+                        (match aa with None -> Predicate.bot_pred
+                          | Some typ ->
+                            Predicate.bind (check_exp_s_i_i_i e exp typ)
+                              (fun () -> Predicate.single ())))))
+          | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_internal_plet (_, _, _, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_internal_return (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_internal_value (_, _), _)) -> Predicate.bot_pred
+          | (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+    (Predicate.sup_pred
+      (Predicate.bind (Predicate.single (xa, (xb, xc)))
+        (fun a ->
+          (match a with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_app_infix (_, _, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+            | (e, (SailAST.E_loop (_, _, _, exp1, exp2), _)) ->
+              Predicate.bind
+                (check_exp_s_i_i_i e exp1 SailASTUtils.bool_all_typ)
+                (fun () ->
+                  Predicate.bind (eq_o_i (SailEnv.type_of_exp exp1))
+                    (fun aa ->
+                      (match aa with None -> Predicate.bot_pred
+                        | Some t1 ->
+                          Predicate.bind
+                            (eq_o_i (SailEnv.deconstruct_bool_type t1))
+                            (fun ab ->
+                              (match ab with None -> Predicate.bot_pred
+                                | Some nc ->
+                                  Predicate.bind
+                                    (check_exp_s_i_i_i
+                                      (SailEnv.add_constraint nc e) exp2
+                                      SailASTUtils.unit_typ)
+                                    (fun () -> Predicate.single ()))))))
+            | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+              Predicate.bot_pred
+            | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_vector_access (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+              Predicate.bot_pred
+            | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+              Predicate.bot_pred
+            | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+              Predicate.bot_pred
+            | (_, (SailAST.E_vector_append (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_record_update (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+              Predicate.bot_pred
+            | (_, (SailAST.E_internal_return (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_internal_value (_, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+      (Predicate.sup_pred
+        (Predicate.bind (Predicate.single (xa, (xb, xc)))
+          (fun a ->
+            (match a with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_app_infix (_, _, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_loop (_, _, _, _, _), _)) -> Predicate.bot_pred
+              | (e, (SailAST.E_for (_, _, exp1, exp2, exp3, _, exp4), xaa)) ->
+                Predicate.bind (check_exp_s_i_i_i e exp1 SailASTUtils.int_typ)
+                  (fun () ->
+                    Predicate.bind
+                      (check_exp_s_i_i_i e exp2 SailASTUtils.int_typ)
+                      (fun () ->
                         Predicate.bind
-                          (eq_o_i (SailEnv.deconstruct_vector_type t1))
-                          (fun ac ->
-                            (match ac with None -> Predicate.bot_pred
-                              | Some (_, (order, typ)) ->
-                                Predicate.bind
-                                  (eq_o_i (SailEnv.deconstruct_vector_type t2))
-                                  (fun ad ->
-                                    (match ad with None -> Predicate.bot_pred
-                                      | Some (_, (ordera, typb)) ->
-(if SailAST.equal_typa typ typb && SailAST.equal_order order ordera
-  then Predicate.single [] else Predicate.bot_pred))))))))))))
-                               | SailAST.LEXP_field (_, _, _) ->
-                                 Predicate.bot_pred)))
-                         (Predicate.bind (Predicate.single xa)
-                           (fun a ->
-                             (match a
-                               with SailAST.LEXP_id (_, _) -> Predicate.bot_pred
-                               | SailAST.LEXP_deref (_, _) -> Predicate.bot_pred
-                               | SailAST.LEXP_memory (_, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.LEXP_cast (_, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.LEXP_tup (_, _) -> Predicate.bot_pred
-                               | SailAST.LEXP_vector_concat (_, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.LEXP_vector (_, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.LEXP_vector_range (_, _, _, _) ->
-                                 Predicate.bot_pred
-                               | SailAST.LEXP_field (_, _, _) ->
-                                 Predicate.single [])))))))))))
-and check_lexp_list_i_o
+                          (check_exp_s_i_i_i e exp3 SailASTUtils.int_typ)
+                          (fun () ->
+                            Predicate.bind
+                              (check_exp_s_i_i_i e exp4 SailASTUtils.unit_typ)
+                              (fun () ->
+                                (if SailAST.equal_typa xaa SailASTUtils.unit_typ
+                                  then Predicate.single ()
+                                  else Predicate.bot_pred)))))
+              | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                Predicate.bot_pred
+              | (_, (SailAST.E_internal_return (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_internal_value (_, _), _)) -> Predicate.bot_pred
+              | (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+        (Predicate.sup_pred
+          (Predicate.bind (Predicate.single (xa, (xb, xc)))
+            (fun a ->
+              (match a
+                with (_, (SailAST.E_block (_, []), _)) -> Predicate.bot_pred
+                | (e, (SailAST.E_block (_, [exp]), t)) ->
+                  Predicate.bind (check_exp_s_i_i_i e exp t)
+                    (fun () ->
+                      Predicate.bind
+                        (Predicate.if_pred
+                          (trace
+                            ([Stringa.Chara
+                                (false, true, false, false, false, true, true,
+                                  false);
+                               Stringa.Chara
+                                 (false, false, true, true, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, true, true, true, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, true, false, false, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, true, false, true, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, false, false, false, false, true,
+                                   false, false);
+                               Stringa.Chara
+                                 (true, true, false, false, true, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, false, false, true, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, true, true, true, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, true, true, false, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, false, true, true, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, false, true, false, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, false, false, false, false, true,
+                                   false, false);
+                               Stringa.Chara
+                                 (false, false, true, false, true, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, false, true, true, true, true, false,
+                                   false)] @
+                              ShowAST.shows_prec_typ Arith.Zero_nat t [])))
+                        (fun () -> Predicate.single ()))
+                | (_, (SailAST.E_block (_, _ :: _ :: _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_loop (_, _, _, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+                | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_internal_return (_, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_internal_value (_, _), _)) ->
+                  Predicate.bot_pred
+                | (_, (SailAST.E_constraint (_, _), _)) -> Predicate.bot_pred)))
+          (Predicate.sup_pred
+            (Predicate.bind (Predicate.single (xa, (xb, xc)))
+              (fun a ->
+                (match a
+                  with (_, (SailAST.E_block (_, []), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_block (_, [_]), _)) -> Predicate.bot_pred
+                  | (e, (SailAST.E_block (tan, exp1 :: exp2 :: exps), t)) ->
+                    Predicate.bind
+                      (check_exp_i_i_i e exp1 SailASTUtils.unit_typ)
+                      (fun () ->
+                        Predicate.bind
+                          (check_exp_i_i_i e
+                            (SailAST.E_block (tan, exp2 :: exps)) t)
+                          (fun () -> Predicate.single ()))
+                  | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_loop (_, _, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_assert (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_internal_return (_, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_internal_value (_, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_constraint (_, _), _)) ->
+                    Predicate.bot_pred)))
+            (Predicate.bind (Predicate.single (xa, (xb, xc)))
+              (fun a ->
+                (match a
+                  with (_, (SailAST.E_block (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_app (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_if (_, _, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_loop (_, _, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_for (_, _, _, _, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_vector_access (_, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector_subrange (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector_update (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_vector_update_subrange (_, _, _, _, _), _))
+                    -> Predicate.bot_pred
+                  | (_, (SailAST.E_vector_append (_, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_list (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_cons (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_record (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_record_update (_, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_field (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_case (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_let (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_assign (_, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_sizeof (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_return (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_exit (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_ref (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_throw (_, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_try (_, _, _), _)) -> Predicate.bot_pred
+                  | (e, (SailAST.E_assert (_, assert_exp, _), _)) ->
+                    Predicate.bind (eq_o_i (SailEnv.type_of_exp assert_exp))
+                      (fun aa ->
+                        (match aa with None -> Predicate.bot_pred
+                          | Some t ->
+                            Predicate.bind (check_exp_s_i_i_i e assert_exp t)
+                              (fun () -> Predicate.single ())))
+                  | (_, (SailAST.E_var (_, _, _, _), _)) -> Predicate.bot_pred
+                  | (_, (SailAST.E_internal_plet (_, _, _, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_internal_return (_, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_internal_value (_, _), _)) ->
+                    Predicate.bot_pred
+                  | (_, (SailAST.E_constraint (_, _), _)) ->
+                    Predicate.bot_pred))))))))))))))))))))))))))
+and check_exp_s_i_i_i
+  xa xb xc =
+    Predicate.bind (Predicate.single (xa, (xb, xc)))
+      (fun (_, (exp, t)) ->
+        Predicate.bind (eq_o_i (SailEnv.env_type_of_exp exp))
+          (fun a ->
+            (match a with None -> Predicate.bot_pred
+              | Some (e, ta) ->
+                Predicate.bind (subtype_i_i_i e ta t)
+                  (fun () ->
+                    Predicate.bind (check_exp_i_i_i e exp ta)
+                      (fun () -> Predicate.single ())))))
+and check_fexp_i_i
+  xa xb =
+    Predicate.bind (Predicate.single (xa, xb))
+      (fun (SailAST.FE_Fexp (_, x, exp), rtyp) ->
+        Predicate.bind (eq_o_i (SailEnv.deconstruct_record_type rtyp))
+          (fun a ->
+            (match a with None -> Predicate.bot_pred
+              | Some recid ->
+                Predicate.bind (eq_o_i (SailEnv.get_env_exp exp))
+                  (fun aa ->
+                    (match aa with None -> Predicate.bot_pred
+                      | Some env ->
+                        Predicate.bind
+                          (eq_o_i (SailEnv.lookup_record_field_env env recid x))
+                          (fun ab ->
+                            (match ab with None -> Predicate.bot_pred
+                              | Some t2 ->
+                                Predicate.bind (check_exp_s_i_i_i env exp t2)
+                                  (fun () -> Predicate.single ()))))))))
+and check_fexp_list_i_i
+  xa xb =
+    Predicate.sup_pred
+      (Predicate.bind (Predicate.single (xa, xb))
+        (fun a ->
+          (match a with ([], _) -> Predicate.single ()
+            | (_ :: _, _) -> Predicate.bot_pred)))
+      (Predicate.bind (Predicate.single (xa, xb))
+        (fun a ->
+          (match a with ([], _) -> Predicate.bot_pred
+            | (fexp :: fexp_list, typ) ->
+              Predicate.bind (check_fexp_list_i_i fexp_list typ)
+                (fun () ->
+                  Predicate.bind (check_fexp_i_i fexp typ)
+                    (fun () -> Predicate.single ())))))
+and check_pexp_i_i_i
+  xa xb xc =
+    Predicate.sup_pred
+      (Predicate.bind (Predicate.single (xa, (xb, xc)))
+        (fun a ->
+          (match a
+            with (_, (SailAST.Pat_exp (_, pat, exp), typ)) ->
+              Predicate.bind
+                (Predicate.if_pred
+                  (trace
+                    [Stringa.Chara
+                       (true, true, false, false, false, true, true, false);
+                      Stringa.Chara
+                        (false, false, false, true, false, true, true, false);
+                      Stringa.Chara
+                        (true, false, true, false, false, true, true, false);
+                      Stringa.Chara
+                        (true, true, false, false, false, true, true, false);
+                      Stringa.Chara
+                        (true, true, false, true, false, true, true, false);
+                      Stringa.Chara
+                        (true, true, true, true, true, false, true, false);
+                      Stringa.Chara
+                        (false, false, false, false, true, true, true, false);
+                      Stringa.Chara
+                        (true, false, true, false, false, true, true, false);
+                      Stringa.Chara
+                        (false, false, false, true, true, true, true, false);
+                      Stringa.Chara
+                        (false, false, false, false, true, true, true, false);
+                      Stringa.Chara
+                        (true, false, false, true, false, false, true, false)]))
+                (fun () ->
+                  Predicate.bind (eq_o_i (env_of exp))
+                    (fun aa ->
+                      (match aa with None -> Predicate.bot_pred
+                        | Some env ->
+                          Predicate.bind (check_exp_s_i_i_i env exp typ)
+                            (fun () ->
+                              Predicate.bind
+                                (eq_o_i (SailEnv.env_type_of_pat pat))
+                                (fun ab ->
+                                  (match ab with None -> Predicate.bot_pred
+                                    | Some (e, t) ->
+                                      Predicate.bind (check_pat_i_i_i_o e pat t)
+(fun x ->
+  Predicate.bind (Predicate.if_pred (locals_in env x))
+    (fun () -> Predicate.single ()))))))))
+            | (_, (SailAST.Pat_when (_, _, _, _), _)) -> Predicate.bot_pred)))
+      (Predicate.bind (Predicate.single (xa, (xb, xc)))
+        (fun a ->
+          (match a
+            with (_, (SailAST.Pat_exp (_, _, _), _)) -> Predicate.bot_pred
+            | (_, (SailAST.Pat_when (_, pat, expg, exp), typ)) ->
+              Predicate.bind (eq_o_i (env_of exp))
+                (fun aa ->
+                  (match aa with None -> Predicate.bot_pred
+                    | Some env ->
+                      Predicate.bind (check_exp_s_i_i_i env exp typ)
+                        (fun () ->
+                          Predicate.bind (eq_o_i (SailEnv.env_type_of_pat pat))
+                            (fun ab ->
+                              (match ab with None -> Predicate.bot_pred
+                                | Some (e, t) ->
+                                  Predicate.bind (check_pat_i_i_i_o e pat t)
+                                    (fun x ->
+                                      Predicate.bind
+(Predicate.if_pred (locals_in env x))
+(fun () ->
+  Predicate.bind (eq_o_i (env_of expg))
+    (fun ac ->
+      (match ac with None -> Predicate.bot_pred
+        | Some envg ->
+          Predicate.bind (Predicate.if_pred (locals_in envg x))
+            (fun () ->
+              Predicate.bind
+                (check_exp_s_i_i_i envg expg SailASTUtils.bool_all_typ)
+                (fun () -> Predicate.single ()))))))))))))))
+and check_pexps_i
   xa = Predicate.sup_pred
          (Predicate.bind (Predicate.single xa)
            (fun a ->
-             (match a
-               with [] ->
-                 Predicate.bind
-                   (Predicate.if_pred
-                     (trace
-                       [Stringa.Chara
-                          (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, true, false, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, false, true, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, true, true, true, false, true, false);
-                         Stringa.Chara
-                           (false, false, true, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, false, true, false, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, true, true, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, false, true, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, true, true, true, true, false, true, false);
-                         Stringa.Chara
-                           (false, false, true, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, false, false, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, false, true, true, true, false);
-                         Stringa.Chara
-                           (false, false, true, false, true, true, true, false);
-                         Stringa.Chara
-                           (true, true, true, true, true, false, true, false);
-                         Stringa.Chara
-                           (false, true, true, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, false, false, true, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, true, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, false, false, true, false, false, true,
-                             false)]))
-                   (fun () -> Predicate.single [])
+             (match a with [] -> Predicate.single ()
                | _ :: _ -> Predicate.bot_pred)))
          (Predicate.bind (Predicate.single xa)
            (fun a ->
              (match a with [] -> Predicate.bot_pred
-               | lexp :: lexps ->
-                 Predicate.bind
-                   (Predicate.if_pred
-                     (trace
-                       [Stringa.Chara
-                          (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, true, false, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, false, true, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, true, true, true, false, true, false);
-                         Stringa.Chara
-                           (false, false, true, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, false, true, false, false, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, true, true, true, true, false);
-                         Stringa.Chara
-                           (false, false, false, false, true, true, true,
-                             false);
-                         Stringa.Chara
-                           (true, true, true, true, true, false, true, false);
-                         Stringa.Chara
-                           (false, false, true, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, false, false, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, false, true, true, true, false);
-                         Stringa.Chara
-                           (false, false, true, false, true, true, true, false);
-                         Stringa.Chara
-                           (true, true, true, true, true, false, true, false);
-                         Stringa.Chara
-                           (true, true, false, false, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, true, true, false, true, true, false);
-                         Stringa.Chara
-                           (false, true, true, true, false, true, true, false);
-                         Stringa.Chara
-                           (true, true, false, false, true, true, true, false);
-                         Stringa.Chara
-                           (true, false, false, true, false, false, true,
-                             false)]))
+               | pexp :: pexps ->
+                 Predicate.bind (check_pexps_i pexps)
                    (fun () ->
-                     Predicate.bind (check_lexp_list_i_o lexps)
-                       (fun x ->
-                         Predicate.bind (check_lexp_i_o lexp)
-                           (fun xaa -> Predicate.single (xaa @ x)))))))
+                     Predicate.bind (eq_o_i (SailEnv.env_type_of_pexp pexp))
+                       (fun aa ->
+                         (match aa with None -> Predicate.bot_pred
+                           | Some (e, t) ->
+                             Predicate.bind (check_pexp_i_i_i e pexp t)
+                               (fun () -> Predicate.single ())))))))
 and check_exp_list_i_i
   xa xb =
     Predicate.sup_pred
@@ -18031,22 +17261,12 @@ and check_exp_list_i_i
             | (exp :: exps, typ :: typs) ->
               Predicate.bind (check_exp_list_i_i exps typs)
                 (fun () ->
-                  Predicate.bind (check_exp_typ_i_i exp typ)
-                    (fun () -> Predicate.single ())))))
-and check_exp_typ_env_i_i_i
-  xa xb xc =
-    Predicate.bind (Predicate.single (xa, (xb, xc)))
-      (fun (env, (exp, typ)) ->
-        Predicate.bind (check_exp_i_o exp)
-          (fun _ ->
-            Predicate.bind (eq_o_i (SailEnv.get_e exp))
-              (fun a ->
-                (match a with None -> Predicate.bot_pred
-                  | Some (e, t) ->
-                    Predicate.bind (subtype_i_i_i env t typ)
-                      (fun () ->
-                        Predicate.bind (subenv_i_i env e)
-                          (fun () -> Predicate.single ()))))));;
+                  Predicate.bind (eq_o_i (SailEnv.env_of_exp exp))
+                    (fun aa ->
+                      (match aa with None -> Predicate.bot_pred
+                        | Some e ->
+                          Predicate.bind (check_exp_s_i_i_i e exp typ)
+                            (fun () -> Predicate.single ())))))));;
 
 let rec check_funcls_i_i
   x xa =
@@ -18189,8 +17409,13 @@ let rec check_funcls_i_i
                                 (false, false, true, true, false, true, true,
                                   false)]))
                         (fun () ->
-                          Predicate.bind (check_pexp_i pexp)
-                            (fun () -> Predicate.single ())))))));;
+                          Predicate.bind
+                            (eq_o_i (SailEnv.env_type_of_pexp pexp))
+                            (fun aa ->
+                              (match aa with None -> Predicate.bot_pred
+                                | Some (e, t) ->
+                                  Predicate.bind (check_pexp_i_i_i e pexp t)
+                                    (fun () -> Predicate.single ())))))))));;
 
 let rec check_def_i_i
   x xa =

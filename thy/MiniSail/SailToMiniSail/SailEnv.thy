@@ -84,47 +84,49 @@ primrec get :: "tannot \<Rightarrow> (env*typ) option" where
 fun get_e :: "tannot exp \<Rightarrow> (env*typ) option" where
   "get_e exp  = get (annot_e exp)"
 
-fun get_tan_e :: "tannot exp \<Rightarrow> tannot" where
-  "get_tan_e exp = annot_e exp"
-
-fun get_tan_pat :: "tannot pat \<Rightarrow> tannot" where
-  "get_tan_pat exp = annot_pat exp"
-
-fun get_tan_pexp :: "tannot pexp \<Rightarrow> tannot" where
-  "get_tan_pexp pexp  = annot_pexp pexp"
 
 
-fun get_tan_lexp :: "tannot lexp \<Rightarrow> tannot" where
-  "get_tan_lexp lexp = annot_lexp lexp"
 
-fun get_tan_letbind :: "tannot letbind \<Rightarrow> tannot" where
-  "get_tan_letbind lexp = annot_letbind lexp"
+fun get_env_exp :: "tannot exp \<Rightarrow> env option" where
+  "get_env_exp exp = get_env (annot_e exp)"
+
+fun get_env_letbind :: "tannot letbind \<Rightarrow> env option" where
+  "get_env_letbind lexp  = get_env (annot_letbind lexp)"
+
+fun get_env_lexp :: "tannot lexp \<Rightarrow> env option" where
+  "get_env_lexp exp = get_env (annot_lexp exp)"
+
+fun get_env_pat :: "tannot pat \<Rightarrow> env option" where
+  "get_env_pat lexp  = get_env (annot_pat lexp)"
+
 
 fun type_of_exp :: "tannot exp \<Rightarrow> typ option" where
-  "type_of_exp exp = get_type (get_tan_e exp)"
+  "type_of_exp exp = get_type (annot_e exp)"
 
-fun env_type_of_exp :: "tannot exp \<Rightarrow> (env*typ) option" where
-   "env_type_of_exp exp = (case get_type (get_tan_e exp) of
-                            None \<Rightarrow> None | Some t \<Rightarrow> (case get_env (get_tan_e exp) of
-                                                         None \<Rightarrow> None | Some e \<Rightarrow> Some (e,t)))"
-
-fun env_type_of_pexp :: "tannot pexp \<Rightarrow> (env*typ) option" where
-   "env_type_of_pexp exp = (case get_type (get_tan_pexp exp) of
-                            None \<Rightarrow> None | Some t \<Rightarrow> (case get_env (get_tan_pexp exp) of
-                                                         None \<Rightarrow> None | Some e \<Rightarrow> Some (e,t)))"
+fun type_of_lexp :: "tannot lexp \<Rightarrow> typ option" where
+  "type_of_lexp exp = get_type (annot_lexp exp)"
 
 fun type_of_pat :: "tannot pat \<Rightarrow> typ option" where
-  "type_of_pat pat  = get_type (get_tan_pat pat)"
+  "type_of_pat pat  = get_type (annot_pat pat)"
 
 fun type_of_pexp :: "tannot pexp \<Rightarrow> typ option" where
   "type_of_pexp (Pat_exp _ pat exp) = type_of_pat pat"
 | "type_of_pexp (Pat_when _ pat _ exp) = type_of_pat pat"
 
-fun get_env_exp :: "tannot exp \<Rightarrow> env option" where
-  "get_env_exp exp = get_env (get_tan_e exp)"
+fun env_type_of_exp :: "tannot exp \<Rightarrow> (env*typ) option" where
+   "env_type_of_exp exp = get (annot_e exp)"
 
-fun get_env_letbind :: "tannot letbind \<Rightarrow> env option" where
-  "get_env_letbind lexp  = get_env (get_tan_letbind lexp)"
+fun env_type_of_lexp :: "tannot lexp \<Rightarrow> (env*typ) option" where
+   "env_type_of_lexp lexp = get (annot_lexp lexp)"
+
+fun env_type_of_pexp :: "tannot pexp \<Rightarrow> (env*typ) option" where
+   "env_type_of_pexp exp =  get (annot_pexp exp)"
+
+fun env_type_of_pat :: "tannot pat \<Rightarrow> (env*typ) option" where
+   "env_type_of_pat pat =  get (annot_pat pat)"
+
+
+
 
 definition ret_type :: "tannot \<Rightarrow> typ option" where
   "ret_type t = Option.bind (Option.bind t (Some \<circ> tannot_env) ) ret_typ"
@@ -134,17 +136,13 @@ primrec set_type :: "tannot \<Rightarrow> typ \<Rightarrow> tannot" where
 | "set_type None typ = Some \<lparr> tannot_env = emptyEnv ,   tannot_typ = typ, tannot_effect = ( (Effect_set [])), tannot_expected = None, tannot_instantiations = None  \<rparr>"
 
 
-fun type_of_lexp :: "tannot lexp \<Rightarrow> typ option" where
-  "type_of_lexp lexp = get_type (get_tan_lexp lexp)"
 
-fun env_of_lexp :: "tannot lexp \<Rightarrow> env option" where
-  "env_of_lexp lexp = get_env (get_tan_lexp lexp)"
 
 fun get_tan_exp :: "tannot exp \<Rightarrow> tannot" where
   "get_tan_exp exp = annot_e exp"
 
 fun env_of_exp :: "tannot exp \<Rightarrow> env option" where
-  "env_of_exp lexp = get_env (get_tan_exp lexp)"
+  "env_of_exp lexp = get_env (annot_e lexp)"
 
 section \<open>Generic Lookup\<close>
 fun lookup :: "('a*'b) list \<Rightarrow> 'a \<Rightarrow> 'b option" where
@@ -243,13 +241,15 @@ primrec lookup_local_id :: "tannot \<Rightarrow> id  \<Rightarrow> typ option" w
   "lookup_local_id (Some tan) x = lookup_local_id_env (tannot_env tan) x"
 | "lookup_local_id None x = None"
 
-fun lookup_mutable_env :: "env \<Rightarrow> id \<Rightarrow> typ option" where
-  "lookup_mutable_env env x = (case (lookup (locals env) x) of
+fun lookup_mutable :: "env \<Rightarrow> id \<Rightarrow> typ option" where
+  "lookup_mutable env x = (case (lookup (locals env) x) of
                                      Some (Mutable,t) \<Rightarrow> Some t | None \<Rightarrow> lookup_register_env env x)"
 
-fun lookup_mutable :: "tannot \<Rightarrow> id \<Rightarrow> typ option" where
-  "lookup_mutable (Some tan) x = lookup_mutable_env (tannot_env tan) x"
-| "lookup_mutable None x = None"
+(*
+fun lookup_mutable_tan :: "tannot \<Rightarrow> id \<Rightarrow> typ option" where
+  "lookup_mutable_tan (Some tan) x = lookup_mutable (tannot_env tan) x"
+| "lookup_mutable_tan None x = None"
+*)
 
 fun add_local_env :: "env \<Rightarrow> id \<Rightarrow> typ \<Rightarrow> env" where
   "add_local_env env x typ = env \<lparr> locals := (x,(Immutable,typ)) # (locals env) \<rparr>"
@@ -259,11 +259,17 @@ fun add_local :: "tannot \<Rightarrow> id \<Rightarrow> typ \<Rightarrow> tannot
 | "add_local None _ _ = None"
 (*|  "add_local None x typ =  Some \<lparr> tannot_env = add_local_env (tannot_env tan) x typ , tannot_typ = tannot_typ tan \<rparr>" *)
 
-
+(*
 fun lookup_id :: "tannot \<Rightarrow> id \<Rightarrow> typ option" where
  "lookup_id t x = (case lookup_local_id t x of 
                       Some typ \<Rightarrow> Some typ 
                     | None \<Rightarrow> lookup_register t x)"
+*)
+
+fun lookup_id :: "env \<Rightarrow> id \<Rightarrow> typ option" where
+ "lookup_id t x = (case lookup_local_id_env t x of 
+                      Some typ \<Rightarrow> Some typ 
+                    | None \<Rightarrow> lookup_register_env t x)"
 
 
 fun deconstruct_register_type :: "typ \<Rightarrow> typ option" where
@@ -307,19 +313,16 @@ fun deconstruct_list_type :: "typ \<Rightarrow> typ option" where
 (* FIXME. Is this complete? *)
 fun deconstruct_bool_type :: "typ \<Rightarrow> n_constraint option" where
   "deconstruct_bool_type ( (Typ_id ( (id b)))) = (if b = STR ''bool'' then Some nc_true else None)"
-|   "deconstruct_bool_type ( (Typ_app ( (id b)) [ (A_bool nc )])) = (if b = STR ''atom_bool'' then Some nc  else None)"
+| "deconstruct_bool_type ( (Typ_app ( (id b)) [ (A_bool nc )])) = (if b = STR ''atom_bool'' then Some nc  else None)"
 | "deconstruct_bool_type ( (Typ_exist kids nc typ)) = deconstruct_bool_type typ"
 | "deconstruct_bool_type Typ_internal_unknown = None"
 | "deconstruct_bool_type (Typ_id (operator va)) = None"
 | "deconstruct_bool_type (Typ_var v) = None"
 | "deconstruct_bool_type (Typ_fn v va vb)  = None"
-| " deconstruct_bool_type (Typ_bidir v va vb) = None"
+| "deconstruct_bool_type (Typ_bidir v va vb) = None"
 | "deconstruct_bool_type (Typ_tup v) = None"
 | "deconstruct_bool_type (Typ_app (operator vb) va) = None"
 | "deconstruct_bool_type (Typ_app (id va) _) = None"
-
-
-
 
 
 fun prove :: "env \<Rightarrow> n_constraint \<Rightarrow> bool" where
@@ -337,10 +340,9 @@ fun subst_nexp ::  "(kid*typ_arg) \<Rightarrow> nexp \<Rightarrow> nexp" where
 | "subst_nexp (k1,  (A_bool _)) (Nexp_var k2) = ((Nexp_var k2))"
 | "subst_nexp (k1,  (A_typ _ )) (Nexp_var k2) = ((Nexp_var k2))"
 | "subst_nexp (k1,  (A_order _ )) (Nexp_var k2) = ((Nexp_var k2))"
-
- | "subst_nexp ks (Nexp_constant n) = Nexp_constant n"   \<comment> \<open>constant\<close>
- | "subst_nexp ks (Nexp_app x nes) = Nexp_app x (List.map (subst_nexp ks) nes)"   \<comment> \<open>app\<close>
- | "subst_nexp ks (Nexp_times n1 n2) = Nexp_times (subst_nexp ks n1) (subst_nexp ks n1)" 
+| "subst_nexp ks (Nexp_constant n) = Nexp_constant n"   \<comment> \<open>constant\<close>
+| "subst_nexp ks (Nexp_app x nes) = Nexp_app x (List.map (subst_nexp ks) nes)"   \<comment> \<open>app\<close>
+| "subst_nexp ks (Nexp_times n1 n2) = Nexp_times (subst_nexp ks n1) (subst_nexp ks n1)" 
 | "subst_nexp ks (Nexp_sum n1 n2) = Nexp_sum (subst_nexp ks n1) (subst_nexp ks n1)" 
 | "subst_nexp ks (Nexp_minus n1 n2) = Nexp_minus (subst_nexp ks n1) (subst_nexp ks n1)" 
 | "subst_nexp ks (Nexp_exp n1) = Nexp_exp (subst_nexp ks n1)" 
