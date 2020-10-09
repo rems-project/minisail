@@ -623,7 +623,7 @@ E |- ( exp1 , .... , expn ) : (typ1 , .... , typn )
 
 
 { </ kinded_idi // i /> . bool ( n_constraint )  } ~ t_of exp1
-E |~ exp1 : t_of exp1
+E |~ exp1 : bool
 E , </ kinded_idi // i /> , n_constraint  |~ exp2 : typ
 E , </ kinded_idi // i /> , not(n_constraint) |~ exp3 : typ
 ---------------------------------------------- :: if
@@ -640,13 +640,15 @@ E |- if exp1 then exp2 else exp3 : typ
 % match statements
 % FIXME. Do we add exp1 or the nc for the type for exp1
 E |~ exp1 : bool
-E , assert ( exp1 ) |- exp2 : unit
+{ </ kinded_idi // i /> . bool ( n_constraint )  } ~ t_of exp1
+E , n_constraint |- exp2 : unit
 ------------------------------------------------- :: loop_no_measure
 E |- loop  exp1 exp2 : unit
 
 E |~ exp : int
 E |~ exp1 : bool
-E , assert ( exp1 ) |- exp2 : unit
+{ </ kinded_idi // i /> . bool ( n_constraint )  } ~ t_of exp1
+E , n_constraint |- exp2 : unit
 ------------------------------------------------- :: loop_measure
 E |- loop termination_measure { exp } exp1 exp2 : unit
 
@@ -654,12 +656,12 @@ E |- loop termination_measure { exp } exp1 exp2 : unit
 %E |~ exp1 : { </ kinded_idi // i /> , n_constraint . nexp }
 
 { </ kinded_idi // i /> , n_constraint1 . atom ( nexp1 ) } ~ t_of exp1 
-E |~ exp1 : t_of exp1
+E |~ exp1 : int
 { </ kinded_id'i // i /> , n_constraint2 . atom ( nexp2 ) } ~ t_of exp2
-E |~ exp2 : t_of exp2
+E |~ exp2 : int
 E |~ exp3 : int
 %n_constraint = n_constraint1 /\ n_constraint2 /\ nexp1 <= kid /\ kid <= nexp2
-E' = :Env_cons_var: E , </ kinded_idi // i /> , </ kinded_id'i // i /> , n_constraint1 & n_constraint2 , id : range ( nexp1 , nexp2 )
+E' = :Env_cons_var: E , </ kinded_idi // i /> , </ kinded_id'i // i /> , ncons1 & ncons2 , id : range ( nexp1 , nexp2 )
 E' |~ exp4 : unit
 ------------------------------------------------------------------------------------------------------- :: for
 E |- foreach ( id from exp1 to exp2 by exp3 in order ) exp4 : unit
@@ -801,7 +803,7 @@ defn E |- lexp : typ ~> bindings :: :: check_lexp :: cle_
 by
 
 id / mutable NOTIN E
----------------------------:: id_nb
+---------------------------:: id_notb
 E |- id : typ  ~> id : typ
 
 
@@ -819,7 +821,7 @@ id / mutable : typ'' INN E
 E |- typ ~< typ''
 E |- typ' ~< typ
 ---------------------------:: cast_b
-E |- ( typ ) id : typ'  ~> empty
+E |- ( typ ) id : typ'  ~> id : typ
 
 id / register : typ INN E
 ------------------------------- :: reg

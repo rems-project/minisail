@@ -64,8 +64,9 @@ M :: M_ ::=
 %  | t_of exp :: M :: typ_of_exp {{ tex typ_{[[exp]]} }}
 %  | t_of pat :: M :: typ_of_pat {{ tex typ_{[[pat]]} }}
 
-% Extras for unpacking/packing records
-%ea :: 'EA_' ::= 
+% Extras for pattern matching bit vectors
+ea :: 'EA_' ::=
+  | eqand va1 va2 va3  :: :: equal_and
 
 
 % Extras for Let-context
@@ -82,10 +83,10 @@ ga {{ tex \gamma }} :: 'ga_' ::= {{ com Small context }}
    | ga1 , ga2 :: :: append
    | ga , xa : ta :: :: cons
 
-L :: 'Ltx_' ::= {{ com A context to facilitate conversion to let-normal form. }}
+L :: 'Ltx_' ::= 
   | __ :: :: hole
 %  | continue :: :: continue {{ com continue other branches }}
-  | let xa = ea in __ :: :: let
+  | let xa = ea in L :: :: let
   | let2 xa : ta = sa1 in __ :: :: let2 {{ tex \textbf{let}\ [[xa]] : [[ta]] = [[sa1]] \textbf{ in } \_\_ }}
 %  | if1 va then L else sa :: :: if1
 %  | if2 va then sa else L :: :: if2
@@ -166,6 +167,7 @@ formula :: formula_ ::=
   | id / mut NOTIN E                          :: :: lookup_local_var_not
            {{ tex [[id]] / [[mut]] \notin [[E]] }}
   | fresh xa :: :: fresh_xa
+  | fresh xa1 .. xan :: :: fresh_xas
   | num = is_constant cea :: :: is_constant
 %  | cea1 = cea1 , .. , ceam = ceam SOLVE ka1 = cea'1 , .. , kan = cea'n , ca :: :: linear_solver
 %  | cea = cea :: :: ce_cea_eq
@@ -183,19 +185,20 @@ formula :: formula_ ::=
   | cea = M ( kid ) :: :: lookup_map
   | id1 ... idn ~> f :: :: convert_fid
   | E |- inst_of id ( exp1 , .. , expn ) ~> xa ; L :: :: inst_conv
-  | L4 = let xa = ua in __ :: :: v_update1
+  | L1 = L2 :: :: let_equal
+%  | L4 = let xa = ua in __ :: :: v_update1
   | L5 = let xa4 = update_vector_range xa xa1 xa2 xa3 in __ :: :: v_update2
 
 
 defns record :: '' ::=
 
-defn E |- pack_record xa id1 = xa1 ... idn = xan ~> L :: :: pack_record :: prec_
+defn E |- pack_record ta xa id1 = xa1 ... idn = xan ~> L :: :: pack_record :: prec_
 by
 
-defn E |- unpack_field  xa xa' id  ~> L  :: :: unpack_field :: upf_
+defn E |- unpack_field  ta xa xa' id  ~> L  :: :: unpack_field :: upf_
 by
 
-defn E |- update_record xa xa' id1 = xa1 ... idn = xan ~> L ::  :: update_record :: upr_
+defn E |- update_record ta xa xa' id1 = xa1 ... idn = xan ~> L ::  :: update_record :: upr_
 by
 
 
@@ -512,7 +515,7 @@ fresh xa
 %E |- exp1 : typ1 ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xa1 ; L1 : ta1 ... E |- expn : typn ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xan ; Ln : tan
 </ E |- expi : typi ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xai ; Li : tai // i IN 1...n />
 E |- typ ~> ta
-E |- pack_record xa </ idi = xai // i IN 1...n /> ~> L
+E |- pack_record ta xa </ idi = xai // i IN 1...n /> ~> L
 ----------------------------------------------------------------------------------------------------------------------------------- :: record
 E |- struct { </ idi = expi // i IN 1...n /> } : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xa ; (L1 + ... + Ln ) [ L ] : ta
 
@@ -520,7 +523,7 @@ E |- struct { </ idi = expi // i IN 1...n /> } : typ ~> TCa ; PCa ; BCa ; Ga ; D
 fresh xa
 E |- exp : typ' ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xa' ; L : ta'
 E |- typ ~> ta
-E |- unpack_field xa xa' id ~> L'
+E |- unpack_field ta xa xa' id ~> L'
 -------------------------------------------------------------- :: field
 E |- exp . id : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga|- xa ; L [ L' ] : ta
 
@@ -529,7 +532,7 @@ fresh xa
 E |- exp : typ' ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xa' ; L : ta'
 </ E |- expi : typi ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xai ; Li : tai // i IN 0...n />
 E |- typ ~> ta
-E |- update_record xa xa' </ idi = xai // i IN 0...n /> ~> L'
+E |- update_record ta xa xa' </ idi = xai // i IN 0...n /> ~> L'
 -------------------------------------------------------------------------------- :: record_update
 E |- { exp with </ idi = expi // i IN 0...n /> } : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xa ; (L0 + ... + Ln ) [ L' ] : ta
 
@@ -590,7 +593,7 @@ id1 ~ ua
 E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- xa3 ; L[ let xa2 = ua in __ ] : ta'
 E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- update_record xa1 xa2 id2 = xa3 ~> L'
+E |- update_record ta xa1 xa2 id2 = xa3 ~> L'
 ------------------------------------------------------------------------------------------------ :: field_assign
 E |- var id1 . id2 = exp1 in exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ L' [ ua := xa1 ; sa2 ] ] : ta
 
@@ -723,6 +726,35 @@ E |- blist : ba / xa ba1 / xa1 .. bam / xam  ~> TCa ; PCa ; BCa ; Ga ; Da |- unp
 %
 defns pattern_expansion :: '' ::=
 {{ tex \subsection{Convert patterns} }}
+
+
+defn
+E |- xa1 ; xa2 ; pat1 , ... , patn ~> L ; xa3 :: :: process_vector :: phv_
+by
+
+fresh xa0' .. xa4'
+lit ~> la
+L1 = let xa'0 = ( len la ) in let xa1' = split xa1 xa0' in __ 
+L2 = let xa2' = ( fst xa1' ) in let xa3' = snd xa1' in let xa4' = eqand xa2 xa2' la in __
+E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; xa3
+--------------------------------------------------------------------- :: lit
+E |- xa1 ; xa2 ; lit , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; xa3
+
+fresh xa0' .. xa4'
+id ~ xa
+L1 = let xa'0 = ( len la ) in let xa1' = split xa1 xa0' in __ 
+L2 = let xa = ( fst xa1' ) in let xa3' = snd xa1' in let xa4' = eqand xa2 xa xa in __
+E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; xa3
+--------------------------------------------------------------------- :: var
+E |- xa1 ; xa2 ; id , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; xa3
+
+fresh xa0' .. xa4'
+id ~ xa
+L1 = let xa'0 = ( len la ) in let xa1' = split xa1 xa0' in __ 
+L2 = let xa3' = snd xa1' in let xa4' = eqand xa2 xa1 xa1 in __
+E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; xa3
+--------------------------------------------------------------------- :: wild
+E |- xa1 ; xa2 ; id , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; xa3
 
 
 defn
