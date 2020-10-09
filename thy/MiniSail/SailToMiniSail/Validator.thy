@@ -367,6 +367,7 @@ check_lit_unitI: "check_lit env ( L_unit ) ( (Typ_id ( (id (STR ''unit'')) ) ) )
 
 | check_lit_stringI: "check_lit env ( (L_string _)) ( (Typ_id ( (id (STR ''string'')))))"
 
+
 code_pred (modes: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> bool) check_lit .
 
 values [expected "{()}"] "{ True. check_lit emptyEnv ( L_unit )  unit_typ  }"
