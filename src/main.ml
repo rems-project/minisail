@@ -63,6 +63,9 @@ let options =
       ( "-convert",
         Arg.String (fun s -> Minisail.opt_convert := Some s),
         "<filename> Convert Sail to MiniSail and write to file");
+      ( "-spec",
+        Arg.Set Minisail.opt_spec,
+        "Specialise Type and Order polymorphism (from toplevel lets)");
     ]
 
 let usage_msg = "usage: minisail <options> <file1.sail> ... <fileN.sail>\n"
@@ -80,19 +83,26 @@ let main () =
   Type_check.opt_no_lexp_bounds_check := true;
   Process_file.opt_memo_z3 := true;
   Reporting.opt_warnings := false;
-  Initial_check.opt_undefined_gen := true;
   Initial_check.opt_magic_hash := true;
   Type_check.opt_no_effects := true;
 
   let _, ast, env = load_files options Type_check.initial_env !opt_file_arguments in
+
+  (* Combined scattered defs *)
   let ast, env = descatter env ast in
-  (*  let ast = Rewrites.rewrite_defs_realise_mappings env ast in *)
 
+  (* Desugar bidirectional mappings *)
+  let ast = Rewrites.rewrite_ast_realise_mappings env ast in 
+
+  
   (* Note that this will throw out functions not accessible from top level let-binds *)
-  (*let ast, env = Specialize.(specialize typ_ord_specialization env ast) in*)
+  let ast, env =
+    (if !Minisail.opt_spec then
+      Specialize.(specialize typ_ord_specialization env ast)
+    else
+      (ast,env) ) in 
 
-
-  (*  let _ = Sail_show.show_ast ast in*)
+  (*let _ = Sail_show.show_ast ast in*)
   
   Minisail.minisail env ast
   

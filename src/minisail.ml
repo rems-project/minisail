@@ -6,12 +6,15 @@ open Type_check
 open PPrintEngine
 open PPrintCombinators
 open Sail_pp
-
+open Annot_pp
    
 let opt_validate  = ref false
 let opt_convert : string option ref = ref None
 let opt_dump : string option ref = ref None
+let opt_spec = ref false 
 
+let _ = Sail_pp.pp_json_annot_ref := (Some Annot_pp.pp_json_annot)
+             
 let check_def env n i sdef =
   Printf.eprintf "Checking def %d/%d:\n" i n;
   PPrintEngine.ToChannel.compact stderr ((pp_def sdef) ^^ string "\n");
@@ -66,7 +69,8 @@ let tc_convert env  ast fname : unit =
   let c = open_out fname in   
   let _ = List.iteri (convert_def c env (List.length ast.defs)) ast.defs in
   close_out c
-                                                                                 
+
+let pp_raw_defs ast = string "[" ^^ separate (string ",\n") (List.map pp_json_def ast.defs) ^^ string "]"
   
 let minisail env ast =
   let _ = match !opt_dump with
