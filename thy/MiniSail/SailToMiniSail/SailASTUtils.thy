@@ -1,5 +1,5 @@
 theory SailASTUtils
-  imports  SailAST
+  imports  SailAST.SailAST
 begin
 
 section \<open>AST Utils\<close>
