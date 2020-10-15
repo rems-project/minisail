@@ -14547,8 +14547,48 @@ let rec check_pat_i_i_i_o
         (fun a ->
           (match a
             with (env, (SailAST.P_lit (_, lit), t)) ->
-              Predicate.bind (check_lit_i_i_i env lit t)
-                (fun () -> Predicate.single [])
+              Predicate.bind
+                (Predicate.if_pred
+                  (trace
+                    ([Stringa.Chara
+                        (true, true, false, false, false, true, true, false);
+                       Stringa.Chara
+                         (false, false, false, true, false, true, true, false);
+                       Stringa.Chara
+                         (true, false, true, false, false, true, true, false);
+                       Stringa.Chara
+                         (true, true, false, false, false, true, true, false);
+                       Stringa.Chara
+                         (true, true, false, true, false, true, true, false);
+                       Stringa.Chara
+                         (true, true, true, true, true, false, true, false);
+                       Stringa.Chara
+                         (false, false, false, false, true, true, true, false);
+                       Stringa.Chara
+                         (true, false, false, false, false, true, true, false);
+                       Stringa.Chara
+                         (false, false, true, false, true, true, true, false);
+                       Stringa.Chara
+                         (true, true, true, true, true, false, true, false);
+                       Stringa.Chara
+                         (false, false, true, true, false, true, true, false);
+                       Stringa.Chara
+                         (true, false, false, true, false, true, true, false);
+                       Stringa.Chara
+                         (false, false, true, false, true, true, true, false);
+                       Stringa.Chara
+                         (true, false, false, true, false, false, true, false);
+                       Stringa.Chara
+                         (false, false, false, false, false, true, false,
+                           false);
+                       Stringa.Chara
+                         (false, false, true, false, true, true, true, false);
+                       Stringa.Chara
+                         (true, false, true, true, true, true, false, false)] @
+                      ShowAST.shows_prec_typ Arith.Zero_nat t [])))
+                (fun () ->
+                  Predicate.bind (check_lit_i_i_i env lit t)
+                    (fun () -> Predicate.single []))
             | (_, (SailAST.P_wild _, _)) -> Predicate.bot_pred
             | (_, (SailAST.P_or (_, _, _), _)) -> Predicate.bot_pred
             | (_, (SailAST.P_not (_, _), _)) -> Predicate.bot_pred
@@ -17191,14 +17231,92 @@ and check_exp_s_i_i_i
   xa xb xc =
     Predicate.bind (Predicate.single (xa, (xb, xc)))
       (fun (_, (exp, t)) ->
-        Predicate.bind (eq_o_i (SailEnv.env_type_of_exp exp))
-          (fun a ->
-            (match a with None -> Predicate.bot_pred
-              | Some (e, ta) ->
-                Predicate.bind (subtype_i_i_i e ta t)
-                  (fun () ->
-                    Predicate.bind (check_exp_i_i_i e exp ta)
-                      (fun () -> Predicate.single ())))))
+        Predicate.bind
+          (Predicate.if_pred
+            (trace
+              [Stringa.Chara
+                 (true, true, false, false, false, true, true, false);
+                Stringa.Chara
+                  (false, false, false, true, false, true, true, false);
+                Stringa.Chara
+                  (true, false, true, false, false, true, true, false);
+                Stringa.Chara
+                  (true, true, false, false, false, true, true, false);
+                Stringa.Chara
+                  (true, true, false, true, false, true, true, false);
+                Stringa.Chara
+                  (true, true, true, true, true, false, true, false);
+                Stringa.Chara
+                  (true, false, true, false, false, true, true, false);
+                Stringa.Chara
+                  (false, false, false, true, true, true, true, false);
+                Stringa.Chara
+                  (false, false, false, false, true, true, true, false);
+                Stringa.Chara
+                  (true, true, true, true, true, false, true, false);
+                Stringa.Chara
+                  (true, true, false, false, true, true, true, false);
+                Stringa.Chara
+                  (true, false, false, true, false, false, true, false)]))
+          (fun () ->
+            Predicate.bind (eq_o_i (SailEnv.env_type_of_exp exp))
+              (fun a ->
+                (match a with None -> Predicate.bot_pred
+                  | Some (e, ta) ->
+                    Predicate.bind
+                      (Predicate.if_pred
+                        (trace
+                          ([Stringa.Chara
+                              (true, true, false, false, false, true, true,
+                                false);
+                             Stringa.Chara
+                               (false, false, false, true, false, true, true,
+                                 false);
+                             Stringa.Chara
+                               (true, false, true, false, false, true, true,
+                                 false);
+                             Stringa.Chara
+                               (true, true, false, false, false, true, true,
+                                 false);
+                             Stringa.Chara
+                               (true, true, false, true, false, true, true,
+                                 false);
+                             Stringa.Chara
+                               (true, true, true, true, true, false, true,
+                                 false);
+                             Stringa.Chara
+                               (true, false, true, false, false, true, true,
+                                 false);
+                             Stringa.Chara
+                               (false, false, false, true, true, true, true,
+                                 false);
+                             Stringa.Chara
+                               (false, false, false, false, true, true, true,
+                                 false);
+                             Stringa.Chara
+                               (true, true, true, true, true, false, true,
+                                 false);
+                             Stringa.Chara
+                               (true, true, false, false, true, true, true,
+                                 false);
+                             Stringa.Chara
+                               (true, false, false, true, false, false, true,
+                                 false);
+                             Stringa.Chara
+                               (false, false, false, false, false, true, false,
+                                 false);
+                             Stringa.Chara
+                               (false, false, true, false, true, true, true,
+                                 false);
+                             Stringa.Chara
+                               (true, false, true, true, true, true, false,
+                                 false)] @
+                            ShowAST.shows_prec_typ Arith.Zero_nat ta [])))
+                      (fun () ->
+                        Predicate.bind (subtype_i_i_i e ta t)
+                          (fun () ->
+                            Predicate.bind (check_exp_i_i_i e exp ta)
+                              (fun () -> Predicate.single ())))))))
 and check_fexp_i_i
   xa xb =
     Predicate.bind (Predicate.single (xa, xb))
@@ -17260,45 +17378,75 @@ and check_pexp_i_i_i_i
       (Predicate.bind (Predicate.single (xa, (xb, (xc, xd))))
         (fun a ->
           (match a
-            with (e, (SailAST.Pat_exp (_, pat, exp), (typ_pat, typ_e))) ->
+            with (e, (SailAST.Pat_exp (_, pat, _), (typ_pat, typ_e))) ->
               Predicate.bind
                 (Predicate.if_pred
                   (trace
-                    [Stringa.Chara
-                       (true, true, false, false, false, true, true, false);
-                      Stringa.Chara
-                        (false, false, false, true, false, true, true, false);
-                      Stringa.Chara
-                        (true, false, true, false, false, true, true, false);
-                      Stringa.Chara
+                    ([Stringa.Chara
                         (true, true, false, false, false, true, true, false);
-                      Stringa.Chara
-                        (true, true, false, true, false, true, true, false);
-                      Stringa.Chara
-                        (true, true, true, true, true, false, true, false);
-                      Stringa.Chara
-                        (false, false, false, false, true, true, true, false);
-                      Stringa.Chara
-                        (true, false, true, false, false, true, true, false);
-                      Stringa.Chara
-                        (false, false, false, true, true, true, true, false);
-                      Stringa.Chara
-                        (false, false, false, false, true, true, true, false);
-                      Stringa.Chara
-                        (true, false, false, true, false, false, true, false)]))
+                       Stringa.Chara
+                         (false, false, false, true, false, true, true, false);
+                       Stringa.Chara
+                         (true, false, true, false, false, true, true, false);
+                       Stringa.Chara
+                         (true, true, false, false, false, true, true, false);
+                       Stringa.Chara
+                         (true, true, false, true, false, true, true, false);
+                       Stringa.Chara
+                         (true, true, true, true, true, false, true, false);
+                       Stringa.Chara
+                         (false, false, false, false, true, true, true, false);
+                       Stringa.Chara
+                         (true, false, true, false, false, true, true, false);
+                       Stringa.Chara
+                         (false, false, false, true, true, true, true, false);
+                       Stringa.Chara
+                         (false, false, false, false, true, true, true, false);
+                       Stringa.Chara
+                         (true, false, false, true, false, false, true, false);
+                       Stringa.Chara
+                         (false, false, false, false, false, true, false,
+                           false);
+                       Stringa.Chara
+                         (false, false, true, false, true, true, true, false);
+                       Stringa.Chara
+                         (true, false, false, true, true, true, true, false);
+                       Stringa.Chara
+                         (false, false, false, false, true, true, true, false);
+                       Stringa.Chara
+                         (true, true, true, true, true, false, true, false);
+                       Stringa.Chara
+                         (false, false, false, false, true, true, true, false);
+                       Stringa.Chara
+                         (true, false, false, false, false, true, true, false);
+                       Stringa.Chara
+                         (false, false, true, false, true, true, true, false);
+                       Stringa.Chara
+                         (true, false, true, true, true, true, false, false)] @
+                      ShowAST.shows_prec_typ Arith.Zero_nat typ_pat [] @
+                        [Stringa.Chara
+                           (false, false, false, false, false, true, false,
+                             false);
+                          Stringa.Chara
+                            (false, false, true, false, true, true, true,
+                              false);
+                          Stringa.Chara
+                            (true, false, false, true, true, true, true, false);
+                          Stringa.Chara
+                            (false, false, false, false, true, true, true,
+                              false);
+                          Stringa.Chara
+                            (true, true, true, true, true, false, true, false);
+                          Stringa.Chara
+                            (true, false, true, false, false, true, true,
+                              false);
+                          Stringa.Chara
+                            (true, false, true, true, true, true, false,
+                              false)] @
+                          ShowAST.shows_prec_typ Arith.Zero_nat typ_e [])))
                 (fun () ->
                   Predicate.bind (check_pat_i_i_i_o e pat typ_pat)
-                    (fun x ->
-                      Predicate.bind (eq_o_i (env_of exp))
-                        (fun aa ->
-                          (match aa with None -> Predicate.bot_pred
-                            | Some env ->
-                              Predicate.bind
-                                (Predicate.if_pred (locals_in env x))
-                                (fun () ->
-                                  Predicate.bind
-                                    (check_exp_s_i_i_i env exp typ_e)
-                                    (fun () -> Predicate.single ()))))))
+                    (fun _ -> Predicate.single ()))
             | (_, (SailAST.Pat_when (_, _, _, _), _)) -> Predicate.bot_pred)))
       (Predicate.bind (Predicate.single (xa, (xb, (xc, xd))))
         (fun a ->
@@ -17528,8 +17676,13 @@ let rec check_funcls_i_i
      Stringa.Chara (true, false, true, true, true, true, false, false)] @
     ShowAST.shows_prec_typ Arith.Zero_nat typ_out [])))
                                       (fun () ->
-Predicate.bind (check_pexp_i_i_i_i e pexp (SailAST.Typ_tup typ_in) typ_out)
-  (fun () -> Predicate.single ()))
+Predicate.bind
+  (eq_o_i
+    (match typ_in with [] -> SailAST.Typ_tup [] | [t] -> t
+      | t :: ab :: lista -> SailAST.Typ_tup (t :: ab :: lista)))
+  (fun xb ->
+    Predicate.bind (check_pexp_i_i_i_i e pexp xb typ_out)
+      (fun () -> Predicate.single ())))
                                | Some (_, SailAST.Typ_bidir (_, _, _)) ->
                                  Predicate.bot_pred
                                | Some (_, SailAST.Typ_tup _) ->
