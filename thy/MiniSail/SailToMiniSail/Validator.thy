@@ -186,7 +186,11 @@ match_arg_typ: "match t1 t2 ms \<Longrightarrow> match_arg ( (A_typ t1) ) ( (A_t
 
 | match_intI2: "
   match  ( (Typ_app ( (id (STR ''atom'')) ) _) ) 
-                  ( (Typ_id ( (id (STR ''int'')) )) ) [ (NC_true) ]"                       
+                  ( (Typ_id ( (id (STR ''int'')) )) ) [ (NC_true) ]"    
+
+| match_nat_intI: "
+  match  ( (Typ_id ( (id (STR ''nat'')) ) ) ) 
+                  ( (Typ_id ( (id (STR ''int'')) )) ) [ (NC_true) ]"     
 
 | match_nat1I: "
   match ( (Typ_app ( (id (STR ''atom'')) ) [ (A_nexp nexp )] )) ( (Typ_id ( (id (STR ''nat'')) )) )  [ nc_pos nexp ]" 
@@ -258,12 +262,17 @@ match_arg_typ: "match t1 t2 ms \<Longrightarrow> match_arg ( (A_typ t1) ) ( (A_t
 | match_nexp_sumI: "\<lbrakk> match_nexp ne1 ne1' ms1; match_nexp ne2 ne2' ms2 \<rbrakk> \<Longrightarrow> match_nexp ( (Nexp_sum ne1 ne2 ) _) ( (Nexp_sum ne1' ne2') _) (ms1@ms2)"
 *)
 
-inductive normalise :: "env \<Rightarrow> typ \<Rightarrow> typ \<Rightarrow> bool" where
+(* FIXME. This is a bit hacky. Need to be clear on what we are normalising and why *)
+inductive normalise :: "env \<Rightarrow> typ \<Rightarrow> typ \<Rightarrow> bool" and
+         normalise_list :: "env \<Rightarrow> typ list \<Rightarrow> typ list \<Rightarrow> bool" where
 "normalise env ( ( Typ_exist x y z)) (Typ_exist x y z)"
 | "normalise env ( ( Typ_id i)) (Typ_exist [] ( NC_true) ( (Typ_id i)))"
 | "normalise env ( ( Typ_var k)) (Typ_exist [] ( NC_true) ( (Typ_var k )))"
-| "normalise env ( ( Typ_tup ts)) (Typ_exist [] ( NC_true) ( (Typ_tup ts)))"
+| "normalise env ( ( Typ_tup ts1)) (Typ_exist [] ( NC_true) ( (Typ_tup ts1)))"
 | "normalise env ( ( Typ_app idd tas)) (Typ_exist [] ( NC_true) ( (Typ_app idd tas)))"
+(*| "normalise env t1 t2 \<Longrightarrow> normalise env ( Typ_app (id (STR ''implicit'')) [ A_typ t1 ] ) t2"*)
+| "normalise_list env [] []"
+| "\<lbrakk> normalise env t1 t2 ; normalise_list env ts1 ts2 \<rbrakk> \<Longrightarrow> normalise_list env (t1#ts1) (t2#ts2)"
 
 section \<open>Printing\<close>
 
@@ -284,10 +293,10 @@ fun pp_typ :: "typ \<Rightarrow> string" where
 (* FIXME - Should add 'call out' to SMT solver *)
 inductive subtype :: "env \<Rightarrow> typ \<Rightarrow> typ \<Rightarrow> bool" where
 "\<lbrakk> 
-  normalise env t1 (Typ_exist x1 y1 t1') ;
-  normalise env t2 (Typ_exist x2 y2 t2') ;
-  trace (''t1='' @ show t1);
-  trace (''t2='' @ show t2);
+  normalise env t1 (Typ_exist k1 nc1 t1');
+  normalise env t2 (Typ_exist k2 nc2 t2');
+  trace (''t1='' @ show t1 @ '' t2='' @ show t2);
+  trace (''t1'='' @ show t1' @ '' t2'='' @ show t2');
   match t1' t2' bs;
   trace (''ncs='' @ (List.concat (List.map show bs))) ;
   prove env (nc_and_list bs)
@@ -374,6 +383,8 @@ values [expected "{()}"] "{ True. check_lit emptyEnv ( L_unit )  unit_typ  }"
 
 values [expected "{()}"] "{ True. check_lit emptyEnv ( (L_num 43) )  (num_typ 43)  }"
 
+
+
 (* cf type_checker.subtyp. Call type_checker.subtype_check or need to capture what subtyp does? *)
 (*inductive subtype :: "env \<Rightarrow> typ \<Rightarrow> typ \<Rightarrow> bool" where
 "subtype env t1 t2"*)
@@ -404,9 +415,10 @@ inductive
   where
 
 check_pat_sI: "\<lbrakk>
+  trace (''check_pat_sI t='' @ show t @ '' t' = '' @ show t');
   Some (env',t') = env_type_of_pat pat;
   subtype env t' t;
-  check_pat_s env' pat t' bs
+  check_pat env' pat t' bs
 \<rbrakk> \<Longrightarrow> check_pat_s env pat t bs"
 
 | check_pat_litI: "\<lbrakk> 
@@ -481,7 +493,8 @@ check_pat_sI: "\<lbrakk>
 \<rbrakk> \<Longrightarrow> check_pat_list (pat#pats) (bindings1@bindings2)"
 
 
-code_pred (modes: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> bool) [show_steps,  show_mode_inference,  show_invalid_clauses] check_pat .
+code_pred (modes: check_pat: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> bool and
+                   check_pat_s: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> bool) [show_steps,  show_mode_inference,  show_invalid_clauses] check_pat .
 
 values "{ x . check_pat emptyEnv (P_lit (set_type None unit_typ) L_unit) unit_typ x }"
 
@@ -564,7 +577,7 @@ check_exp_sI: "\<lbrakk>
 (* CHECK LEXP *)
 | check_lexp_id_notbI:"\<lbrakk>   
    trace ''check_lexp_id_notbI'';  
-   None = lookup_mutable env x
+   None = lookup_mutable E x
 \<rbrakk> \<Longrightarrow> E \<turnstile> ( (LEXP_id tan x) ) : t \<leadsto> [ (x,Mutable,t) ]" 
 
 | check_lexp_id_bI:"\<lbrakk>   
@@ -858,18 +871,29 @@ check_exp_sI: "\<lbrakk>
 *)
 
 (* FIXME add mvar to E *)
-| check_varI: "\<lbrakk>     
+| check_var_castI: "\<lbrakk>     
+     trace ''check_var_castI'';
      E |~ exp1 : typ ;
      E |~ exp2 : t2
 \<rbrakk> \<Longrightarrow> E \<turnstile> (E_var tan ( (LEXP_cast _ typ mvar)) exp1 exp2) : t2"
 
-(*
+| check_var_idI: "\<lbrakk> 
+     trace ''check_var_idI'';
+     Some (E1,t1) = env_type_of_exp exp1;    
+     E1 \<turnstile> exp1 : t1 ;
+     E |~ exp2 : t2
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_var tan (LEXP_id _ mvar) exp1 exp2) : t2"
+
+(* FIXME Surely has to be some check of the bindings of lexp in the environment ? *)
 | check_assignI:"\<lbrakk>   
-     check_exp exp bs;
+     trace ''check_assignI'';
+     trace (''check_assignI type_exp='' @ (show t1) @ '' type_lexp ='' @ (show typ));
+     Some (e1,t1) = env_type_of_exp exp;
+     e1 \<turnstile> exp : t1;
      Some (env,typ) = env_type_of_lexp lexp;      
-     env \<turnstile> lexp : typ \<leadsto> bindings   
-\<rbrakk> \<Longrightarrow> E \<turnstile> ( (E_assign tan lexp exp ) ) bindings"
-*)
+     env \<turnstile> lexp : typ \<leadsto> b
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_assign tan lexp exp ) : unit_typ"
+
 
 | check_caseI:"\<lbrakk>
     trace ''check_caseI'';
@@ -878,7 +902,7 @@ check_exp_sI: "\<lbrakk>
     E |~ exp : typ;
     Some (ep,tp) = get tan;
     trace (''check_caseI tp='' @ (show tp));
-    check_pexps E pexps tp typ
+    check_pexps E pexps typ tp
 \<rbrakk> \<Longrightarrow> E \<turnstile> (E_case tan exp pexps)  : t "
 
 
@@ -949,31 +973,33 @@ check_exp_sI: "\<lbrakk>
 (*   (case get_env_exp exp of None \<Rightarrow> trace ''No tan'' | Some env \<Rightarrow> trace (''letbindI '' @ (show_env env))); *)
 | check_letbindI:"\<lbrakk>      
      Some (e',t') = env_type_of_pat pat;
-     check_pat e' pat t' bindings;  
+     check_pat_s e' pat t' bindings;  
      Some (E,t) = env_type_of_exp exp;
      E |~ exp : t 
 \<rbrakk> \<Longrightarrow> 
      check_letbind ( (LB_val tan pat exp) ) bindings "
 
 (* FIXME - Add subtype check; add bindings to E *)
-(*
+
 | check_pexpI:"\<lbrakk>   
      trace (''check_pexpI typ_pat='' @ (show typ_pat) @ '' typ_e='' @  (show typ_e)); 
-     check_pat E pat typ_pat bindings;
+     check_pat_s E pat typ_pat bindings;
      Some env = env_of exp;   
      locals_in env bindings;  
      env |~ exp : typ_e
 \<rbrakk> \<Longrightarrow> check_pexp E (Pat_exp tan pat exp)  typ_pat  typ_e "
-*)
+
+(*
 | check_pexpI:"\<lbrakk>   
      trace (''check_pexpI typ_pat='' @ (show typ_pat) @ '' typ_e='' @  (show typ_e)); 
      check_pat E pat typ_pat bindings
 \<rbrakk> \<Longrightarrow> check_pexp E (Pat_exp tan pat exp)  typ_pat  typ_e "
+*)
 
 (* FIXME expg needs to be bool *)
 | check_pexp_whenI:"\<lbrakk>   
      Some env = env_of exp;    
-     check_pat E pat typ_pat bindings;
+     check_pat_s E pat typ_pat bindings;
      locals_in env bindings;   
      env |~ exp : typ_e;
      locals_in envg bindings;
@@ -991,7 +1017,7 @@ code_pred (modes:
        check_fexp : i \<Rightarrow> i  \<Rightarrow> bool and
        check_fexp_list : i \<Rightarrow> i \<Rightarrow> bool and
        check_exp_list : i \<Rightarrow> i \<Rightarrow> bool and
-       check_lexp : i \<Rightarrow> o \<Rightarrow> bool and
+       check_lexp : i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> bool and
        check_lexp_list : i \<Rightarrow> o \<Rightarrow> bool 
     
 )  [show_steps,  show_mode_inference,  show_invalid_clauses] check_exp .
@@ -1000,6 +1026,8 @@ code_pred (modes:
 
 values [expected "{()}"] "{ x. check_exp emptyEnv  (E_lit (set_type None unit_typ) L_unit) unit_typ }"
 value "True"
+
+values "{x . match unit_typ unit_typ x } "
 
 values [expected "{()}"] "{x . subtype emptyEnv unit_typ unit_typ }"
 
@@ -1157,6 +1185,10 @@ value "eq_id (id (STR ''int'')) (id (STR ''unit''))"
 values [expected "{}"] "{ x . match int_typ unit_typ x }"
 
 values  [expected "{}"] "{ x . subtype emptyEnv int_typ unit_typ }"
+
+values  [expected "{()}"] "{ x . subtype emptyEnv unit_typ unit_typ }"
+
+values  [expected "{()}"] "{ x . subtype emptyEnv int_typ int_typ }"
 
 values  [expected "{}"] "{ x .  emptyEnv |~ ( E_lit (set_type None unit_typ) L_unit ) :  int_typ }"
 
