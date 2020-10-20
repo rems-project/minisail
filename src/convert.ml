@@ -98,7 +98,8 @@ and convert_typ_arg_aux = function
  | A.A_order o -> I.A_order (convert_order o)
  | A.A_bool nc -> I.A_bool (convert_nc nc)
 
-    
+and id_equal (A.Id_aux (Id s1,_)) s2 = (s1 = s2)
+                
 and convert_typ = function
   | A.Typ_aux (ta,_) ->  (convert_typ_aux ta)
 and convert_typ_aux = function
@@ -108,7 +109,13 @@ and convert_typ_aux = function
   | A.Typ_fn (typs, typ, effect ) -> I.Typ_fn (List.map convert_typ typs, convert_typ typ, convert_effect effect)
   | A.Typ_bidir(t1,t2,effect) -> I.Typ_bidir(convert_typ t1, convert_typ t2, convert_effect effect)
   | A.Typ_tup typs -> I.Typ_tup (List.map convert_typ typs)
-  | A.Typ_app(id,tas) -> I.Typ_app(convert_id id, List.map convert_typ_arg tas)
+  | A.Typ_app(id,tas) -> if id_equal id "implicit" then
+                           (match tas with
+                             [ A_aux (A_typ typ,_) ] -> convert_typ typ
+                           | [ A_aux (A_nexp nexp, _) ] -> I.Typ_app (I.Id "atom", [ I.A_nexp (convert_nexp nexp) ])
+                           | [ A_aux (A_bool nc, _) ] -> I.Typ_app (I.Id "bool",[I.A_bool (convert_nc nc) ]))
+                         else
+                           I.Typ_app(convert_id id, List.map convert_typ_arg tas)
   | A.Typ_exist(ks, nc, typ) -> I.Typ_exist(List.map convert_kinded_id ks, convert_nc nc, convert_typ typ)
 
 let convert_typ_expanded (_,tan) typ =

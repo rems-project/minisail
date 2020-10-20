@@ -12,6 +12,8 @@ let prove ncs nc =
   Printf.eprintf "smt prover\n";
   let ncs' = List.map convert_nc ncs in
   let env = List.fold_left (fun x y -> Type_check.Env.add_constraint y x) Type_check.initial_env ncs' in
-  Type_check.prove_smt env (convert_nc nc)
+  let f = Type_check.prove_smt env (convert_nc nc) in
+  let _ = Printf.eprintf "  returns %b\n" f in
+  f
               
                

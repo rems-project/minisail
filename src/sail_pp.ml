@@ -501,7 +501,7 @@ and pp_x x =  string_of_text x
 
 and pp_ix x =  string_of_text x
 
-and pp_l _ = string "\"<loc>\"" 
+and pp_l _ = string "" 
 
 and pp_id_aux x = match x with
 | Id(x) -> pp_x x
@@ -544,7 +544,7 @@ and pp_order_aux x = match x with
 | Ord_inc -> string "inc"
 | Ord_dec -> string "dec"
 
-and pp_annot _ = string "\"<annot>\""
+and pp_annot _ = string ""
 and pp_order x = match x with
 | Ord_aux(order_aux,l) -> group(string "" ^^ pp_order_aux order_aux ^^ break 1 ^^ pp_l l ^^ string "")
 
@@ -676,6 +676,7 @@ and pp_lit_aux x = match x with
 | L_hex(hex) -> pp_hex hex
 | L_bin(bin) -> pp_bin bin
 | L_undef -> string "undefined"
+| L_string(s) -> string s
 | L_real(real) -> pp_real real
 
 and pp_lit x = match x with
@@ -1074,7 +1075,7 @@ and pp_json_n_constraint_aux x = match x with
 | NC_bounded_le(nexp,nexp_prime) -> string "{ \"tag\" : \"NC_bounded_le\"" ^^ string ", " ^^ string "\"nexp\":" ^^ pp_json_nexp nexp ^^ string "," ^^ string "\"nexp'\":" ^^ pp_json_nexp nexp_prime ^^ string "}"
 | NC_bounded_lt(nexp,nexp_prime) -> string "{ \"tag\" : \"NC_bounded_lt\"" ^^ string ", " ^^ string "\"nexp\":" ^^ pp_json_nexp nexp ^^ string "," ^^ string "\"nexp'\":" ^^ pp_json_nexp nexp_prime ^^ string "}"
 | NC_not_equal(nexp,nexp_prime) -> string "{ \"tag\" : \"NC_not_equal\"" ^^ string ", " ^^ string "\"nexp\":" ^^ pp_json_nexp nexp ^^ string "," ^^ string "\"nexp'\":" ^^ pp_json_nexp nexp_prime ^^ string "}"
-| NC_set(kid,num0) -> string "{ \"tag\" : \"NC_set\"" ^^ string ", " ^^ string "\"kid\":" ^^ pp_json_kid kid ^^ string "," ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (num0) -> string "" ^^ string "\"num[0]\" : " ^^ pp_json_num num0 ^^ string "") num0) ^^ string "]" ^^ string "}"
+| NC_set(kid,num0) -> string "{ \"tag\" : \"NC_set\"" ^^ string ", " ^^ string "\"kid\":" ^^ pp_json_kid kid ^^ string "," ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (num0) -> string "" ^^ pp_json_num num0 ^^ string "") num0) ^^ string "]" ^^ string "}"
 | NC_or(n_constraint,n_constraint_prime) -> string "{ \"tag\" : \"NC_or\"" ^^ string ", " ^^ string "\"n_constraint\":" ^^ pp_json_n_constraint n_constraint ^^ string "," ^^ string "\"n_constraint'\":" ^^ pp_json_n_constraint n_constraint_prime ^^ string "}"
 | NC_and(n_constraint,n_constraint_prime) -> string "{ \"tag\" : \"NC_and\"" ^^ string ", " ^^ string "\"n_constraint\":" ^^ pp_json_n_constraint n_constraint ^^ string "," ^^ string "\"n_constraint'\":" ^^ pp_json_n_constraint n_constraint_prime ^^ string "}"
 | NC_app(id,typ_arg0) -> string "{ \"tag\" : \"NC_app\"" ^^ string ", " ^^ string "\"id\":" ^^ pp_json_id id ^^ string "," ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (typ_arg0) -> string "" ^^ pp_json_typ_arg typ_arg0 ^^ string "") typ_arg0) ^^ string "]" ^^ string "}"
@@ -1146,13 +1147,14 @@ and pp_json_lit_aux x = match x with
 | L_hex(hex) -> string "{ \"tag\" : \"L_hex\"" ^^ string ", " ^^ string "\"hex\" : " ^^ pp_json_hex hex ^^ string "}"
 | L_bin(bin) -> string "{ \"tag\" : \"L_bin\"" ^^ string ", " ^^ string "\"bin\" : " ^^ pp_json_bin bin ^^ string "}"
 | L_undef -> string "{ \"tag\" : \"L_undef\"" ^^ string "}"
-| L_string( s ) -> string "{ \"tag\" : \"L_string\", \"string\" : "  ^^ string s ^^ string "}"
+| L_string( s ) -> string "{ \"tag\" : \"L_string\", \"string\" : \""  ^^ string s ^^ string "\" }"
 | L_real(real) -> string "{ \"tag\" : \"L_real\"" ^^ string ", " ^^ string "\"real\" : " ^^ pp_json_real real ^^ string "}"
 
 and pp_json_lit x = match x with
 | L_aux(lit_aux,l) -> string "{ \"tag\" : \"L_aux\"" ^^ string ", " ^^ string "\"lit_aux\":" ^^ pp_json_lit_aux lit_aux ^^ string "," ^^ string "\"l\":" ^^ pp_json_l l ^^ string "}"
 
-and pp_json_semi_opt _ = string "" 
+and pp_json_semi_opt x = if x then string"\";\"" else string "\"\""
+
 
 and pp_json_typ_pat_aux x = match x with
 | TP_wild -> string "{ \"tag\" : \"TP_wild\"" ^^ string "}"
@@ -1352,7 +1354,8 @@ and pp_json_val_spec x = match x with
 and pp_json_cast_opt _ = string ""
 
 and pp_json_val_spec_aux x = match x with
-| VS_val_spec (ts,_,_,_) -> pp_json_typschm ts
+| VS_val_spec (ts,nme,_,_) -> string "{ \"tag\" : \"VS_val_spec_aux\"" ^^ string ", \"id\" : "^^ pp_json_id nme ^^ string ","
+           ^^ string "\"typschm\" : " ^^ pp_json_typschm ts ^^ string "}"
 
 
 and pp_json_default_spec_aux x = match x with
