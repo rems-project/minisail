@@ -198,6 +198,13 @@ fun lookup_variant :: "tannot \<Rightarrow> id \<Rightarrow> id \<Rightarrow> ty
  "lookup_variant (Some tan) x y = lookup_variant_env (tannot_env tan) x y"
 | "lookup_variant None _ _ = None"
 
+
+
+fun deconstruct_variant_typ :: "env \<Rightarrow> typ \<Rightarrow> id \<Rightarrow> typ option" where
+  "deconstruct_variant_typ env (Typ_app tud args) ctor = lookup_variant_env env tud ctor"
+| "deconstruct_variant_typ env (Typ_id tud) ctor = lookup_variant_env env tud ctor"
+| "deconstruct_variant_typ _ _ _ = None"
+
 section \<open>Val Specs\<close>
 fun get_val_spec_env :: "env \<Rightarrow> id \<Rightarrow> (typquant * typ) option" where
   "get_val_spec_env env x = lookup (top_val_specs env) x"

@@ -227,6 +227,12 @@ match_arg_typ: "match t1 t2 ms \<Longrightarrow> match_arg ( (A_typ t1) ) ( (A_t
 | match_bool21: "
   match   ( (Typ_id ( (id (STR ''bool'')) )) ) ( (Typ_app ( (id (STR ''atom_bool'')) ) [ (A_bool nc) ])) [nc ]"
 
+(* FIXME - do something with nc1 nc2 and kids1 kids2 ncs *)
+| match_existI: "\<lbrakk>
+  match t1 t2 ncs
+\<rbrakk> \<Longrightarrow>  match (Typ_exist kids1 nc1 t1) (Typ_exist kids2 nc2 t2) ncs"
+  
+
 (* match list *)
 | match_list_nilI: "match_list [] [] []"
 
@@ -295,8 +301,8 @@ inductive subtype :: "env \<Rightarrow> typ \<Rightarrow> typ \<Rightarrow> bool
 "\<lbrakk> 
   normalise env t1 (Typ_exist k1 nc1 t1');
   normalise env t2 (Typ_exist k2 nc2 t2');
-  trace (''t1='' @ show t1 @ '' t2='' @ show t2);
-  trace (''t1'='' @ show t1' @ '' t2'='' @ show t2');
+  trace (''t1='' @ show t1 @  ''\<newline>'' @ ''t2='' @ show t2);
+  trace (''t1'='' @ show t1' @ ''\<newline>'' @ ''t2'='' @ show t2');
   match t1' t2' bs;
   trace (''ncs='' @ (List.concat (List.map show bs))) ;
   prove env (nc_and_list bs)
@@ -411,11 +417,12 @@ subsection \<open>Patterns\<close>
 inductive 
   check_pat :: "env \<Rightarrow> tannot pat \<Rightarrow> typ \<Rightarrow> bindings \<Rightarrow> bool" ( "_ \<turnstile> _ : _ \<leadsto> _" ) and
   check_pat_s ::  "env \<Rightarrow> tannot pat \<Rightarrow> typ \<Rightarrow> bindings \<Rightarrow> bool" ( "_ |~ _ : _ \<leadsto> _" ) and
-  check_pat_list :: "tannot pat list \<Rightarrow> bindings \<Rightarrow> bool"
+  check_pat_list :: "tannot pat list \<Rightarrow> bindings \<Rightarrow> bool" and 
+  check_pat_s_list ::  "env \<Rightarrow> (tannot pat) list \<Rightarrow> typ list \<Rightarrow> bindings \<Rightarrow> bool" 
   where
 
 check_pat_sI: "\<lbrakk>
-  trace (''check_pat_sI t='' @ show t @ '' t' = '' @ show t');
+  trace (''check_pat_sI pat='' @ '' t='' @ show t @ '' t' = '' @ show t');
   Some (env',t') = env_type_of_pat pat;
   subtype env t' t;
   check_pat env' pat t' bs
@@ -425,7 +432,9 @@ check_pat_sI: "\<lbrakk>
    trace (''check_pat_litI t='' @ (show t));
    check_lit env lit t \<rbrakk> \<Longrightarrow> check_pat env ( (P_lit tan lit)) t []"
 
-| check_pat_wildI: "check_pat env ( P_wild _ ) t []"
+| check_pat_wildI: "\<lbrakk>
+   trace (''check_pat_wildI t='' @ (show t))
+\<rbrakk> \<Longrightarrow> check_pat env ( P_wild _ ) t []"
 
 | check_pat_orI: "\<lbrakk>
    check_pat_s env p1 t bs1;
@@ -433,12 +442,17 @@ check_pat_sI: "\<lbrakk>
 \<rbrakk> \<Longrightarrow> check_pat env ( (P_or _ p1 p2) ) t (bs1@bs2)"
 
 | check_pat_notI: "\<lbrakk>
-   check_pat env p1 t bs1
+   trace (''check_pat_notI t='' @ (show t));
+   check_pat_s env p1 t bs1
 \<rbrakk> \<Longrightarrow> check_pat env ( (P_not _ p1)  ) t (bs1)"
 
 | check_pat_asI:"check_pat env pat t bindings \<Longrightarrow> check_pat env ( (P_as  _ pat _)  ) t bindings" (* FIXME *)
 
-| check_pat_typI:"check_pat env pat t bindings  \<Longrightarrow> check_pat env ( (P_typ _ _ pat)  ) t bindings"
+(* FIXME do something with typ *)
+| check_pat_typI:"\<lbrakk>
+   trace (''check_pat_typI t='' @ show t);
+   check_pat_s env pat t bindings
+\<rbrakk>  \<Longrightarrow> check_pat env ( (P_typ _ typ pat)  ) t bindings"
 
 | check_pat_idI: "\<lbrakk>      
       trace ''check_pat_idI'';
@@ -452,14 +466,18 @@ check_pat_sI: "\<lbrakk>
 
 (* FIXME check typ pat *)
 | check_pat_varI:"\<lbrakk>
-   check_pat env pat t bindings
+   trace ''check_pat_varI'';
+   check_pat_s env pat t bindings
 \<rbrakk> \<Longrightarrow> check_pat env ( (P_var _ pat _ )  ) t bindings"
 
-(* FIXME Need to get and check type for ctor*)
+(* FIXE Need to check that ctor is environment *)
 | check_pat_appI:"\<lbrakk>
-   check_pat env parg t bindings
-\<rbrakk> \<Longrightarrow> check_pat env ( (P_app _ ctor [ parg ])  ) t bindings"
+   Some arg_typ = deconstruct_variant_typ env typ ctor  ;
+   trace (''check_pat_appI ctor= '' @ (show ctor) @ '' arg_typ= '' @ (show arg_typ));
+   check_pat_s env pat arg_typ bindings
+\<rbrakk> \<Longrightarrow> check_pat env ( (P_app _ ctor [pat])  ) typ bindings"
 
+(* FIXME These prob need to use check_pat_s *)
 | check_pat_vectorI: "\<lbrakk>
    check_pat_list pats bs
 \<rbrakk> \<Longrightarrow> check_pat env ( (P_vector _ pats) ) t bs"
@@ -492,9 +510,19 @@ check_pat_sI: "\<lbrakk>
    check_pat_list pats bindings2
 \<rbrakk> \<Longrightarrow> check_pat_list (pat#pats) (bindings1@bindings2)"
 
+| check_pat_s_list_nilI: "check_pat_s_list _ [] [] []"
+
+| check_pat_s_list_consI: "\<lbrakk>
+   trace ''check_pat_s_list_consI'';
+   check_pat_s env pat typ bindings1;
+   check_pat_s_list env pats typs bindings2
+\<rbrakk> \<Longrightarrow> check_pat_s_list env (pat#pats) (typ#typs) (bindings1@bindings2)"
+
 
 code_pred (modes: check_pat: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> bool and
-                   check_pat_s: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> bool) [show_steps,  show_mode_inference,  show_invalid_clauses] check_pat .
+                   check_pat_s: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> bool and
+                   check_pat_s_list: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> bool
+) [show_steps,  show_mode_inference,  show_invalid_clauses] check_pat .
 
 values "{ x . check_pat emptyEnv (P_lit (set_type None unit_typ) L_unit) unit_typ x }"
 
@@ -609,6 +637,7 @@ check_exp_sI: "\<lbrakk>
 \<rbrakk> \<Longrightarrow> env \<turnstile> ( (LEXP_cast tan t x)  ) : t' \<leadsto>  []" 
 
 | check_lexp_derefI: "\<lbrakk>    
+    trace (''check_lexp_derefI t='' @ (show t ) @ ''t2='' @ (show t2) @ '' t1='' @ (show t1));
     Some (e,t) = env_type_of_exp exp;
     e \<turnstile> exp : t;    
     Some t1 = deconstruct_register_type t;  
@@ -665,10 +694,11 @@ check_exp_sI: "\<lbrakk>
 \<rbrakk> \<Longrightarrow> env \<turnstile> (LEXP_vector tan lexp exp) : typ \<leadsto> bindings"
 
 | check_lexp_vector_rangeI: "\<lbrakk>   
+    trace ''check_lexp_vector_rangeI'';
     env |~  exp1 : int_typ;
     env |~  exp2 : int_typ;
     Some (env1,t1) = env_type_of_lexp lexp;  
-    env1 \<turnstile> lexp : typ \<leadsto> bindings ;
+    env1 \<turnstile> lexp : t1 \<leadsto> bindings ;
     Some (nexp', order, typ) = deconstruct_vector_type t1;
     Some (nexp , order, typ) = deconstruct_vector_type t2
 \<rbrakk> \<Longrightarrow> env \<turnstile> ( (LEXP_vector_range tan lexp exp1 exp2) ) : t2 \<leadsto> []"
@@ -749,7 +779,7 @@ check_exp_sI: "\<lbrakk>
 *)
 | check_appI: "\<lbrakk>   
     Some (in_typs,rett_typ ) = lookup_fun tan fid;
-    trace (''E_app '' @ (show_tannot tan));    
+    trace (''E_app tan='' @ (show_tannot tan) @ '' fid='' @ (show fid));    
     Some in_typs2 = subst_inst_list tan in_typs;
     trace ''E_app after subst_inst in args'';
     check_exp_list exps in_typs2;
@@ -795,6 +825,7 @@ check_exp_sI: "\<lbrakk>
 \<rbrakk> \<Longrightarrow> E \<turnstile> (E_exit tan exp) : typ"
 
 | check_throwI: "\<lbrakk>
+   trace ''check_throwI'';
    E |~ exp : exception_typ
 \<rbrakk> \<Longrightarrow> E \<turnstile> (E_throw tan exp) : exception_typ"
 
@@ -805,7 +836,7 @@ check_exp_sI: "\<lbrakk>
 
 | check_refI: "\<lbrakk> 
     Some t1 = lookup_register tan x;
-    subtype_tan t1 tan
+    subtype_tan (Typ_app (id (STR ''register'')) [ A_typ t1 ] ) tan
 \<rbrakk> \<Longrightarrow> E \<turnstile> (E_ref tan x) : typ"
 
 | check_vectorI: "\<lbrakk>  
