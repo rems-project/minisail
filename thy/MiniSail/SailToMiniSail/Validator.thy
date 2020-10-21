@@ -126,6 +126,8 @@ definition nc_ge_zero :: "nexp \<Rightarrow> n_constraint" where
 definition nc_bool_equiv :: "n_constraint \<Rightarrow> n_constraint \<Rightarrow> n_constraint" where
  "nc_bool_equiv nc1 nc2 = (nc_or (nc_and nc1 nc2) (nc_and (nc_not nc1) (nc_not nc2)))"
 
+fun trace :: "char list \<Rightarrow> bool" where
+  "trace s = (let _ = Debug.trace (String.implode s) in True)"
 
 inductive 
 match :: "typ \<Rightarrow> typ \<Rightarrow> n_constraint list  \<Rightarrow> bool" and
@@ -156,7 +158,9 @@ match_arg_typ: "match t1 t2 ms \<Longrightarrow> match_arg ( (A_typ t1) ) ( (A_t
 
 (* match *)
 
-| match_appI: "\<lbrakk> match_arg_list args1 args2 ms ;  eq_id id1 id2 
+| match_appI: "\<lbrakk>
+  trace ''match_appI'';
+   match_arg_list args1 args2 ms ;  eq_id id1 id2 
 \<rbrakk> \<Longrightarrow> match ( (Typ_app id1 args1)  ) ( (Typ_app id2 args2) ) ms"
 
 (* In the example with ast we some times get Ty_id ast and sometimes Ty_app ast [] *)
@@ -282,8 +286,7 @@ inductive normalise :: "env \<Rightarrow> typ \<Rightarrow> typ \<Rightarrow> bo
 
 section \<open>Printing\<close>
 
-fun trace :: "char list \<Rightarrow> bool" where
-  "trace s = (let _ = Debug.trace (String.implode s) in True)"
+
 
 fun nc_and_list :: "n_constraint list \<Rightarrow> n_constraint" where
 "nc_and_list ncs = List.fold nc_and ncs ( NC_true)"
@@ -528,7 +531,12 @@ values "{ x . check_pat emptyEnv (P_lit (set_type None unit_typ) L_unit) unit_ty
 
 text \<open>The type we get from the type annotation on a node is a subtype of the supplied type \<close>
 inductive subtype_tan :: "typ \<Rightarrow> tannot \<Rightarrow> bool" where
-"\<lbrakk> Some env = get_env tan ; Some t' = get_type tan ; subtype env  t t' \<rbrakk> \<Longrightarrow> subtype_tan t tan"
+"\<lbrakk> trace ''subtype_tanI'';
+   trace (''subtype_tanI t'='' @ (show t));
+   Some env = get_env tan ; 
+   Some t' = get_type tan ; 
+   subtype env  t t' 
+\<rbrakk> \<Longrightarrow> subtype_tan t tan"
 
 subsection \<open>L-values\<close>
 
@@ -596,11 +604,11 @@ where
 (* FIXME NEed to check env *)
 check_exp_sI: "\<lbrakk>
      trace ''check_exp_sI'';
-     Some (e,t) = env_type_of_exp exp;
-     trace (''check_exp_sI t='' @ (show t));
-     subtype e t t';
-     e \<turnstile> exp : t
-\<rbrakk> \<Longrightarrow> e' |~ exp : t'"
+     Some (e,t_has) = env_type_of_exp exp;
+     trace (''check_exp_sI t_has='' @ (show t_has) @ '' t_want = '' @ (show t_want)) ;
+     subtype e t_has t_want;
+     e \<turnstile> exp : t_has
+\<rbrakk> \<Longrightarrow> e' |~ exp : t_want"
 
 (* CHECK LEXP *)
 | check_lexp_id_notbI:"\<lbrakk>   
@@ -724,6 +732,7 @@ check_exp_sI: "\<lbrakk>
 
 (* FIXME *)
 | check_lexp_fieldI: "\<lbrakk>
+   trace ''check_lexp_fieldI'';
    Some (env,typ) = env_type_of_lexp lexp;
    env \<turnstile> lexp : typ \<leadsto> bindings
 \<rbrakk> \<Longrightarrow>  env' \<turnstile> ( (LEXP_field tan lexp fid ) ) : typ' \<leadsto> []"
@@ -732,18 +741,21 @@ check_exp_sI: "\<lbrakk>
 
 (* Value like things *)
 | check_litI: "\<lbrakk>
+   trace (''check_litI t='' @ (show t));
    check_lit env lit t
 \<rbrakk>  \<Longrightarrow> env \<turnstile> ( (E_lit tan lit) ) : t"
 
 | check_idI: "\<lbrakk> 
-   trace ''check_idI'';
+   trace (''check_idI x='' @ (show x));
    Some t1 = lookup_id env x;
+   trace (''check_idI t='' @ (show t1)); 
    subtype env t1 t2
 \<rbrakk> \<Longrightarrow> env \<turnstile> ( (E_id tan x)  ) : t2"
 
 (*  subtype env ( (Typ_tup [t1,t2]) ) typ *)
 (* Or do we check_exp the components of the tuple and do as line LEXP_vector? *)
 | check_tupleI: "\<lbrakk>   
+    trace ''check_tupleI'';
     ( (Typ_tup typs)) = t;
     check_exp_list exps typs      
 \<rbrakk> \<Longrightarrow> e  \<turnstile> ( (E_tuple tan exps)   ) : t"
@@ -775,16 +787,16 @@ check_exp_sI: "\<lbrakk>
 \<rbrakk> \<Longrightarrow> check_exp_list (exp#exps) (typ#typs)"
 
 (* \<open>Check the actual arguments against function arguments and check return type,
-   with substutition of instantiations, against 'tan' type\<close>
+   with substitution of instantiations, against 'tan' type\<close>
 *)
 | check_appI: "\<lbrakk>   
     Some (in_typs,rett_typ ) = lookup_fun tan fid;
     trace (''E_app tan='' @ (show_tannot tan) @ '' fid='' @ (show fid));    
     Some in_typs2 = subst_inst_list tan in_typs;
-    trace ''E_app after subst_inst in args'';
+    trace (''E_app after subst_inst in args '' @ (show in_typs2));
     check_exp_list exps in_typs2;
     Some ret_typ2 = subst_inst tan rett_typ;  
-    trace ''E_app after subst_inst ret'';  
+    trace (''E_app after subst_inst ret'' @ (show ret_typ2));  
     trace (''E_app subtype'' @ ''t1='' @ show ret_typ2 @ ''t2='' @ show t);
     subtype_tan ret_typ2 tan
 \<rbrakk> \<Longrightarrow> env \<turnstile> E_app tan fid exps : t"
@@ -825,9 +837,9 @@ check_exp_sI: "\<lbrakk>
 \<rbrakk> \<Longrightarrow> E \<turnstile> (E_exit tan exp) : typ"
 
 | check_throwI: "\<lbrakk>
-   trace ''check_throwI'';
+   trace (''check_throwI typ='' @ (show typ));
    E |~ exp : exception_typ
-\<rbrakk> \<Longrightarrow> E \<turnstile> (E_throw tan exp) : exception_typ"
+\<rbrakk> \<Longrightarrow> E \<turnstile> (E_throw tan exp) : typ"
 
 | check_tryI: "\<lbrakk> 
    E |~ exp : exception_typ;
@@ -991,7 +1003,7 @@ check_exp_sI: "\<lbrakk>
 \<rbrakk> \<Longrightarrow> check_exp ( (E_block ( exp1#exp2#exps)) tan)"
 *)
 | check_block_consI:"\<lbrakk> 
-     E \<turnstile> exp1 : unit_typ ;    
+     E |~ exp1 : unit_typ ;    
      E \<turnstile> E_block tan (exp2#exps) : t
 \<rbrakk> \<Longrightarrow> E \<turnstile> E_block tan (exp1#exp2#exps) : t"
 
