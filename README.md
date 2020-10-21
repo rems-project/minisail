@@ -13,6 +13,13 @@ The ./thy directory contains a mechanisation in Isabelle of the above plus a saf
 The ./src directory contains a wrapper for code exported from Isabelle for the Sail type validator and converter. 
 It invokes the Sail type checker and if that passes can invoke the validator and converter.
 
+# What can be validated?
+
+The validator will validate as correct:
+
+* All of Sail type check tests except one using exisentials.
+* ?? of RISCV model.
+
 
 [1] - 'ISA Semantics for ARMv8-A, RISC-V, and CHERI-MIPS' https://www.cl.cam.ac.uk/users/pes20/sail/sail-popl2019.pdf
 

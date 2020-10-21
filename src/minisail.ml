@@ -11,8 +11,10 @@ open Annot_pp
 let opt_validate  = ref false
 let opt_convert : string option ref = ref None
 let opt_dump : string option ref = ref None
-let opt_spec = ref false 
-
+let opt_spec = ref false
+let opt_break_ast = ref false
+let opt_exit_on_error = ref false
+                      
 let _ = Sail_pp.pp_json_annot_ref := (Some Annot_pp.pp_json_annot)
              
 let check_def env n i sdef =
@@ -23,9 +25,7 @@ let check_def env n i sdef =
              {equal=fun x y -> (x == y)} (Validator.check_def_i_i Minisail_isa.SailEnv.emptyEnv def) in
   match res with
     [] -> Printf.eprintf "Failed. No derivations.\n\n";
-          (*          ToChannel.pretty 1. 80 stderr (Sail_pp.pp_raw_def sdef); *)
-          (*Printf.eprintf "\n";*)
-          exit(2)
+          if !opt_exit_on_error then  exit(2) else  ()
   |  xs -> Printf.eprintf "OK.\n\n"
 
                    
@@ -66,17 +66,36 @@ let convert_def c env n i sdef =
 (* Pretty_print_sail.pp_defs_ott_pp c ast; close_out c) in*)
                    
 let tc_convert env  ast fname : unit =
-  let c = open_out fname in   
+  let c = open_out fname in
+  
   let _ = List.iteri (convert_def c env (List.length ast.defs)) ast.defs in
+  
   close_out c
 
-let pp_raw_defs ast = string "[" ^^ separate (string ",\n") (List.map pp_json_def ast.defs) ^^ string "]"
+(*let pp_raw_defs ast = string "[" ^^ separate (string ",\n") (List.map pp_json_def ast.defs) ^^ string "]"*)
+
+let rec iter_sep f g = function
+    [] -> ()
+  | [a] -> f a
+  | a::l::m -> f a; g () ; iter_sep f g (l::m)
+
   
 let minisail env ast =
   let _ = match !opt_dump with
-      Some file -> (let c = open_out file in ToChannel.pretty 1. 80 c (pp_raw_defs ast); close_out c)  
+      Some file -> (let c = open_out file in
+                    ToChannel.pretty 1. 80 c (string "[");
+                    iter_sep (fun d -> ToChannel.pretty 1. 80 c (pp_json_def d))
+                      (fun _ -> ToChannel.pretty 1. 80 c (string ",\n"))
+                      ast.defs;
+                    ToChannel.pretty 1. 80 c (string "]");
+                    close_out c)  
     | None -> () in
 
+  let _ = if !opt_break_ast then
+(              Printf.eprintf "transform\n";
+            Convert.setup_breaking_ast ())
+          else () in
+  
   let _ = if ! opt_validate then  tc_check env ast else () in
   
   let _ = match !opt_convert with

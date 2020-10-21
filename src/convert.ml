@@ -3,7 +3,24 @@ module I = Minisail_isa.SailAST
 module E = Minisail_isa.SailEnv
 open Type_check
 open Ast_util
-   
+
+(* This is a simple mechanism to apply basic transforms to some of the AST nodes. It is used to 
+   'break' the AST from the Sail to type-checker to check that the validator then flags the
+   AST as being invalid.
+*)
+let do_transform_nexp  =  ref (None : (I.nexp -> I.nexp) option)
+
+let transform_nexp nexp =
+  match !do_transform_nexp with
+  | None -> nexp
+  | Some f ->   Printf.eprintf "transform\n"; f nexp
+
+let setup_breaking_ast _ =
+  do_transform_nexp := (Some (fun nexp -> match nexp with
+                                         I.Nexp_constant n -> I.Nexp_constant (Z.succ n)
+                                       | _ -> nexp))
+            
+(* Begin conversion functions *)            
 let convert_loop = function
   | A.While -> I.While
   | A.Until -> I.Until
@@ -61,7 +78,7 @@ let convert_id = function
 
                             
 let rec convert_nexp = function
-  | A.Nexp_aux (nexp,_) -> ( convert_nexp_aux nexp)
+  | A.Nexp_aux (nexp,_) -> transform_nexp ( convert_nexp_aux nexp)
 and convert_nexp_aux = function
   | A.Nexp_id id -> I.Nexp_id (convert_id id)
   | A.Nexp_var kid -> I.Nexp_var (convert_kid kid)

@@ -18,6 +18,11 @@ let options =
       ( "-convert",
         Arg.String (fun s -> Minisail.opt_convert := Some s),
         "<filename> Convert Sail to MiniSail and write to file");
+      ( "-break_ast",
+        Arg.Set Minisail.opt_break_ast,
+        " Introduce errors into AST to check validator fails it");
+        
+      (* These from Sail main *)
       ( "-spec",
         Arg.Set Minisail.opt_spec,
         "Specialise Type and Order polymorphism (from toplevel lets)");
@@ -46,12 +51,13 @@ let main () =
     usage_msg;
 
   (* These options are either needed for ARM, or increase performance significantly (memo_z3) *)
-  Nl_flow.opt_nl_flow := true;
+  (*Nl_flow.opt_nl_flow := true;
   Type_check.opt_no_lexp_bounds_check := true;
-  Process_file.opt_memo_z3 := true;
   Reporting.opt_warnings := false;
   Initial_check.opt_magic_hash := true;
-  Type_check.opt_no_effects := true;
+  Type_check.opt_no_effects := true;*)
+  
+  Process_file.opt_memo_z3 := true;
 
   let _, ast, env = load_files options Type_check.initial_env !opt_file_arguments in
 
