@@ -129,6 +129,10 @@ definition nc_bool_equiv :: "n_constraint \<Rightarrow> n_constraint \<Rightarro
 fun trace :: "char list \<Rightarrow> bool" where
   "trace s = (let _ = Debug.trace (String.implode s) in True)"
 
+fun is_not_tyvar :: "typ \<Rightarrow> bool" where
+  "is_not_tyvar (Typ_var _) = False"
+| "is_not_tyvar _ = True"
+
 inductive 
 match :: "typ \<Rightarrow> typ \<Rightarrow> n_constraint list  \<Rightarrow> bool" and
 match_list :: "typ list \<Rightarrow> typ list \<Rightarrow> n_constraint list  \<Rightarrow> bool" and
@@ -164,22 +168,30 @@ match_arg_typ: "match t1 t2 ms \<Longrightarrow> match_arg ( (A_typ t1) ) ( (A_t
 \<rbrakk> \<Longrightarrow> match ( (Typ_app id1 args1)  ) ( (Typ_app id2 args2) ) ms"
 
 (* In the example with ast we some times get Ty_id ast and sometimes Ty_app ast [] *)
-| match_app1I: "\<lbrakk> eq_id id1 id2 
+| match_app1I: "\<lbrakk> trace ''match_app1I'' ; eq_id id1 id2 
 \<rbrakk> \<Longrightarrow> match ( (Typ_id id1 )  ) ( (Typ_app id2 []) ) []"
 
-| match_app2I: "\<lbrakk>  eq_id id1 id2 
+| match_app2I: "\<lbrakk> trace ''match_app2I'';  eq_id id1 id2 
 \<rbrakk> \<Longrightarrow> match ( (Typ_app id1 [])  ) ( (Typ_id id2) ) []"
 
-| match_idI: "\<lbrakk>  eq_id id1 id2 
+| match_idI: "\<lbrakk>  trace ''match_idI''; eq_id id1 id2 
 \<rbrakk> \<Longrightarrow> match ( (Typ_id id1)  ) ( (Typ_id id2) ) []"
 
 (* FIXME allow for unification / where one side is concrete type *)
-| match_varI: "\<lbrakk>  eq_kid kid1 kid2 
+| match_varI: "\<lbrakk>  
+  trace ''match_varI''
+ 
 \<rbrakk> \<Longrightarrow> match ( (Typ_var kid1) ) ( (Typ_var kid2) ) []"
 
-| match_var_leftI: " match ( (Typ_var kid1) ) _ []"
+| match_var_leftI: "\<lbrakk>
+   trace ''match_var_leftI'';
+   is_not_tyvar t
+\<rbrakk> \<Longrightarrow>  match ( (Typ_var kid1) ) t []"
 
-| match_var_rightI: " match _ ( (Typ_var kid2) ) []"
+| match_var_rightI: "\<lbrakk>
+  trace ''match_var_rightI'';
+  is_not_tyvar t
+\<rbrakk> \<Longrightarrow>  match t ( (Typ_var kid2) ) []"
 
 | match_tupleI: "\<lbrakk> match_list ts1 ts2 bs
 \<rbrakk> \<Longrightarrow> match ( (Typ_tup ts1)) ( (Typ_tup ts2)) bs"
