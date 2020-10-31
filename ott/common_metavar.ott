@@ -107,7 +107,8 @@ metavar real_val ::=
   {{ com Real number literal }}
   {{ ocamllex 'r'['0'-'9' '.']+ }}
 
-metavar ctor {{ tex \dot{[[ctor]]} }} ::= {{ com Constructor }}
+% Would like to use C here but this is the prefix of other names and Ott gets confused
+metavar ctor {{ tex C }} ::= {{ com Constructor }}
   {{ isa string }}
   {{ ocaml string }}
   {{ ocamllex [a-z]+ }}

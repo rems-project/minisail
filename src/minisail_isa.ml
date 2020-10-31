@@ -12607,10 +12607,10 @@ module Validator : sig
   val match_nc_i_i_o :
     SailAST.n_constraint ->
       SailAST.n_constraint -> (SailAST.n_constraint list) Predicate.pred
+  val is_not_tyvar : SailAST.typ -> bool
   val nc_ge_zero : SailAST.nexp -> SailAST.n_constraint
   val nc_between :
     SailAST.nexp -> SailAST.nexp -> SailAST.nexp -> SailAST.n_constraint
-  val eq_kid_i_i : SailAST.kid -> SailAST.kid -> unit Predicate.pred
   val eq_id_i_i : SailAST.id -> SailAST.id -> unit Predicate.pred
   val match_i_i_o :
     SailAST.typ -> SailAST.typ -> (SailAST.n_constraint list) Predicate.pred
@@ -13593,18 +13593,20 @@ let rec match_nc_i_i_o
     Predicate.bind (Predicate.single (x, xa))
       (fun (nc1, nc2) -> Predicate.single [nc_bool_equiv nc1 nc2]);;
 
+let rec is_not_tyvar = function SailAST.Typ_var uu -> false
+                       | SailAST.Typ_internal_unknown -> true
+                       | SailAST.Typ_id v -> true
+                       | SailAST.Typ_fn (v, va, vb) -> true
+                       | SailAST.Typ_bidir (v, va, vb) -> true
+                       | SailAST.Typ_tup v -> true
+                       | SailAST.Typ_app (v, va) -> true
+                       | SailAST.Typ_exist (v, va, vb) -> true;;
+
 let rec nc_ge_zero n = SailAST.NC_bounded_ge (n, SailAST.Nexp_constant Z.zero);;
 
 let rec nc_between
   n1 n n2 =
     nc_and (SailAST.NC_bounded_le (n1, n)) (SailAST.NC_bounded_ge (n, n1));;
-
-let rec eq_kid_i_i
-  xa xb =
-    Predicate.bind (Predicate.single (xa, xb))
-      (fun (SailAST.Var x, SailAST.Var y) ->
-        Predicate.bind (eq_i_i Stringa.equal_literal x y)
-          (fun () -> Predicate.single ()));;
 
 let rec eq_id_i_i
   xa xb =
@@ -13684,8 +13686,35 @@ let rec match_i_i_o
                 Predicate.bot_pred
               | (SailAST.Typ_id _, SailAST.Typ_tup _) -> Predicate.bot_pred
               | (SailAST.Typ_id id1, SailAST.Typ_app (id2, [])) ->
-                Predicate.bind (eq_id_i_i id1 id2)
-                  (fun () -> Predicate.single [])
+                Predicate.bind
+                  (Predicate.if_pred
+                    (trace
+                      [Stringa.Chara
+                         (true, false, true, true, false, true, true, false);
+                        Stringa.Chara
+                          (true, false, false, false, false, true, true, false);
+                        Stringa.Chara
+                          (false, false, true, false, true, true, true, false);
+                        Stringa.Chara
+                          (true, true, false, false, false, true, true, false);
+                        Stringa.Chara
+                          (false, false, false, true, false, true, true, false);
+                        Stringa.Chara
+                          (true, true, true, true, true, false, true, false);
+                        Stringa.Chara
+                          (true, false, false, false, false, true, true, false);
+                        Stringa.Chara
+                          (false, false, false, false, true, true, true, false);
+                        Stringa.Chara
+                          (false, false, false, false, true, true, true, false);
+                        Stringa.Chara
+                          (true, false, false, false, true, true, false, false);
+                        Stringa.Chara
+                          (true, false, false, true, false, false, true,
+                            false)]))
+                  (fun () ->
+                    Predicate.bind (eq_id_i_i id1 id2)
+                      (fun () -> Predicate.single []))
               | (SailAST.Typ_id _, SailAST.Typ_app (_, _ :: _)) ->
                 Predicate.bot_pred
               | (SailAST.Typ_id _, SailAST.Typ_exist (_, _, _)) ->
@@ -13709,8 +13738,43 @@ let rec match_i_i_o
                 | (SailAST.Typ_app (_, []), SailAST.Typ_internal_unknown) ->
                   Predicate.bot_pred
                 | (SailAST.Typ_app (id1, []), SailAST.Typ_id id2) ->
-                  Predicate.bind (eq_id_i_i id1 id2)
-                    (fun () -> Predicate.single [])
+                  Predicate.bind
+                    (Predicate.if_pred
+                      (trace
+                        [Stringa.Chara
+                           (true, false, true, true, false, true, true, false);
+                          Stringa.Chara
+                            (true, false, false, false, false, true, true,
+                              false);
+                          Stringa.Chara
+                            (false, false, true, false, true, true, true,
+                              false);
+                          Stringa.Chara
+                            (true, true, false, false, false, true, true,
+                              false);
+                          Stringa.Chara
+                            (false, false, false, true, false, true, true,
+                              false);
+                          Stringa.Chara
+                            (true, true, true, true, true, false, true, false);
+                          Stringa.Chara
+                            (true, false, false, false, false, true, true,
+                              false);
+                          Stringa.Chara
+                            (false, false, false, false, true, true, true,
+                              false);
+                          Stringa.Chara
+                            (false, false, false, false, true, true, true,
+                              false);
+                          Stringa.Chara
+                            (false, true, false, false, true, true, false,
+                              false);
+                          Stringa.Chara
+                            (true, false, false, true, false, false, true,
+                              false)]))
+                    (fun () ->
+                      Predicate.bind (eq_id_i_i id1 id2)
+                        (fun () -> Predicate.single []))
                 | (SailAST.Typ_app (_, []), SailAST.Typ_var _) ->
                   Predicate.bot_pred
                 | (SailAST.Typ_app (_, []), SailAST.Typ_fn (_, _, _)) ->
@@ -13733,8 +13797,39 @@ let rec match_i_i_o
                   | (SailAST.Typ_id _, SailAST.Typ_internal_unknown) ->
                     Predicate.bot_pred
                   | (SailAST.Typ_id id1, SailAST.Typ_id id2) ->
-                    Predicate.bind (eq_id_i_i id1 id2)
-                      (fun () -> Predicate.single [])
+                    Predicate.bind
+                      (Predicate.if_pred
+                        (trace
+                          [Stringa.Chara
+                             (true, false, true, true, false, true, true,
+                               false);
+                            Stringa.Chara
+                              (true, false, false, false, false, true, true,
+                                false);
+                            Stringa.Chara
+                              (false, false, true, false, true, true, true,
+                                false);
+                            Stringa.Chara
+                              (true, true, false, false, false, true, true,
+                                false);
+                            Stringa.Chara
+                              (false, false, false, true, false, true, true,
+                                false);
+                            Stringa.Chara
+                              (true, true, true, true, true, false, true,
+                                false);
+                            Stringa.Chara
+                              (true, false, false, true, false, true, true,
+                                false);
+                            Stringa.Chara
+                              (false, false, true, false, false, true, true,
+                                false);
+                            Stringa.Chara
+                              (true, false, false, true, false, false, true,
+                                false)]))
+                      (fun () ->
+                        Predicate.bind (eq_id_i_i id1 id2)
+                          (fun () -> Predicate.single []))
                   | (SailAST.Typ_id _, SailAST.Typ_var _) -> Predicate.bot_pred
                   | (SailAST.Typ_id _, SailAST.Typ_fn (_, _, _)) ->
                     Predicate.bot_pred
@@ -13761,8 +13856,40 @@ let rec match_i_i_o
                       Predicate.bot_pred
                     | (SailAST.Typ_var _, SailAST.Typ_id _) ->
                       Predicate.bot_pred
-                    | (SailAST.Typ_var kid1, SailAST.Typ_var kid2) ->
-                      Predicate.bind (eq_kid_i_i kid1 kid2)
+                    | (SailAST.Typ_var _, SailAST.Typ_var _) ->
+                      Predicate.bind
+                        (Predicate.if_pred
+                          (trace
+                            [Stringa.Chara
+                               (true, false, true, true, false, true, true,
+                                 false);
+                              Stringa.Chara
+                                (true, false, false, false, false, true, true,
+                                  false);
+                              Stringa.Chara
+                                (false, false, true, false, true, true, true,
+                                  false);
+                              Stringa.Chara
+                                (true, true, false, false, false, true, true,
+                                  false);
+                              Stringa.Chara
+                                (false, false, false, true, false, true, true,
+                                  false);
+                              Stringa.Chara
+                                (true, true, true, true, true, false, true,
+                                  false);
+                              Stringa.Chara
+                                (false, true, true, false, true, true, true,
+                                  false);
+                              Stringa.Chara
+                                (true, false, false, false, false, true, true,
+                                  false);
+                              Stringa.Chara
+                                (false, true, false, false, true, true, true,
+                                  false);
+                              Stringa.Chara
+                                (true, false, false, true, false, false, true,
+                                  false)]))
                         (fun () -> Predicate.single [])
                     | (SailAST.Typ_var _, SailAST.Typ_fn (_, _, _)) ->
                       Predicate.bot_pred
@@ -13786,7 +13913,58 @@ let rec match_i_i_o
                       with (SailAST.Typ_internal_unknown, _) ->
                         Predicate.bot_pred
                       | (SailAST.Typ_id _, _) -> Predicate.bot_pred
-                      | (SailAST.Typ_var _, _) -> Predicate.single []
+                      | (SailAST.Typ_var _, t) ->
+                        Predicate.bind
+                          (Predicate.if_pred
+                            (trace
+                              [Stringa.Chara
+                                 (true, false, true, true, false, true, true,
+                                   false);
+                                Stringa.Chara
+                                  (true, false, false, false, false, true, true,
+                                    false);
+                                Stringa.Chara
+                                  (false, false, true, false, true, true, true,
+                                    false);
+                                Stringa.Chara
+                                  (true, true, false, false, false, true, true,
+                                    false);
+                                Stringa.Chara
+                                  (false, false, false, true, false, true, true,
+                                    false);
+                                Stringa.Chara
+                                  (true, true, true, true, true, false, true,
+                                    false);
+                                Stringa.Chara
+                                  (false, true, true, false, true, true, true,
+                                    false);
+                                Stringa.Chara
+                                  (true, false, false, false, false, true, true,
+                                    false);
+                                Stringa.Chara
+                                  (false, true, false, false, true, true, true,
+                                    false);
+                                Stringa.Chara
+                                  (true, true, true, true, true, false, true,
+                                    false);
+                                Stringa.Chara
+                                  (false, false, true, true, false, true, true,
+                                    false);
+                                Stringa.Chara
+                                  (true, false, true, false, false, true, true,
+                                    false);
+                                Stringa.Chara
+                                  (false, true, true, false, false, true, true,
+                                    false);
+                                Stringa.Chara
+                                  (false, false, true, false, true, true, true,
+                                    false);
+                                Stringa.Chara
+                                  (true, false, false, true, false, false, true,
+                                    false)]))
+                          (fun () ->
+                            Predicate.bind (Predicate.if_pred (is_not_tyvar t))
+                              (fun () -> Predicate.single []))
                       | (SailAST.Typ_fn (_, _, _), _) -> Predicate.bot_pred
                       | (SailAST.Typ_bidir (_, _, _), _) -> Predicate.bot_pred
                       | (SailAST.Typ_tup _, _) -> Predicate.bot_pred
@@ -13800,7 +13978,62 @@ let rec match_i_i_o
                         with (_, SailAST.Typ_internal_unknown) ->
                           Predicate.bot_pred
                         | (_, SailAST.Typ_id _) -> Predicate.bot_pred
-                        | (_, SailAST.Typ_var _) -> Predicate.single []
+                        | (t, SailAST.Typ_var _) ->
+                          Predicate.bind
+                            (Predicate.if_pred
+                              (trace
+                                [Stringa.Chara
+                                   (true, false, true, true, false, true, true,
+                                     false);
+                                  Stringa.Chara
+                                    (true, false, false, false, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, false, true, false, true, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (true, true, false, false, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, false, false, true, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (true, true, true, true, true, false, true,
+                                      false);
+                                  Stringa.Chara
+                                    (false, true, true, false, true, true, true,
+                                      false);
+                                  Stringa.Chara
+                                    (true, false, false, false, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, true, false, false, true, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (true, true, true, true, true, false, true,
+                                      false);
+                                  Stringa.Chara
+                                    (false, true, false, false, true, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (true, false, false, true, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (true, true, true, false, false, true, true,
+                                      false);
+                                  Stringa.Chara
+                                    (false, false, false, true, false, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (false, false, true, false, true, true,
+                                      true, false);
+                                  Stringa.Chara
+                                    (true, false, false, true, false, false,
+                                      true, false)]))
+                            (fun () ->
+                              Predicate.bind
+                                (Predicate.if_pred (is_not_tyvar t))
+                                (fun () -> Predicate.single []))
                         | (_, SailAST.Typ_fn (_, _, _)) -> Predicate.bot_pred
                         | (_, SailAST.Typ_bidir (_, _, _)) -> Predicate.bot_pred
                         | (_, SailAST.Typ_tup _) -> Predicate.bot_pred
@@ -16074,7 +16307,7 @@ true, false);
                     | (_, (SailAST.E_id (_, _), _)) -> Predicate.bot_pred
                     | (_, (SailAST.E_lit (_, _), _)) -> Predicate.bot_pred
                     | (_, (SailAST.E_cast (_, _, _), _)) -> Predicate.bot_pred
-                    | (_, (SailAST.E_app (tan, fid, _), t)) ->
+                    | (_, (SailAST.E_app (tan, fid, exps), t)) ->
                       Predicate.bind
                         (Predicate.if_pred
                           (trace
@@ -16177,70 +16410,12 @@ true, false);
              (false, false, false, false, false, true, false, false)] @
           Show.shows_prec_list ShowAST.show_typ Arith.Zero_nat in_typs2 [])))
     (fun () ->
-      Predicate.bind (eq_o_i (SailEnv.subst_inst tan rett_typ))
-        (fun ac ->
-          (match ac with None -> Predicate.bot_pred
-            | Some ret_typ2 ->
-              Predicate.bind
-                (Predicate.if_pred
-                  (trace
-                    ([Stringa.Chara
-                        (true, false, true, false, false, false, true, false);
-                       Stringa.Chara
-                         (true, true, true, true, true, false, true, false);
-                       Stringa.Chara
-                         (true, false, false, false, false, true, true, false);
-                       Stringa.Chara
-                         (false, false, false, false, true, true, true, false);
-                       Stringa.Chara
-                         (false, false, false, false, true, true, true, false);
-                       Stringa.Chara
-                         (false, false, false, false, false, true, false,
-                           false);
-                       Stringa.Chara
-                         (true, false, false, false, false, true, true, false);
-                       Stringa.Chara
-                         (false, true, true, false, false, true, true, false);
-                       Stringa.Chara
-                         (false, false, true, false, true, true, true, false);
-                       Stringa.Chara
-                         (true, false, true, false, false, true, true, false);
-                       Stringa.Chara
-                         (false, true, false, false, true, true, true, false);
-                       Stringa.Chara
-                         (false, false, false, false, false, true, false,
-                           false);
-                       Stringa.Chara
-                         (true, true, false, false, true, true, true, false);
-                       Stringa.Chara
-                         (true, false, true, false, true, true, true, false);
-                       Stringa.Chara
-                         (false, true, false, false, false, true, true, false);
-                       Stringa.Chara
-                         (true, true, false, false, true, true, true, false);
-                       Stringa.Chara
-                         (false, false, true, false, true, true, true, false);
-                       Stringa.Chara
-                         (true, true, true, true, true, false, true, false);
-                       Stringa.Chara
-                         (true, false, false, true, false, true, true, false);
-                       Stringa.Chara
-                         (false, true, true, true, false, true, true, false);
-                       Stringa.Chara
-                         (true, true, false, false, true, true, true, false);
-                       Stringa.Chara
-                         (false, false, true, false, true, true, true, false);
-                       Stringa.Chara
-                         (false, false, false, false, false, true, false,
-                           false);
-                       Stringa.Chara
-                         (false, true, false, false, true, true, true, false);
-                       Stringa.Chara
-                         (true, false, true, false, false, true, true, false);
-                       Stringa.Chara
-                         (false, false, true, false, true, true, true, false)] @
-                      ShowAST.shows_prec_typ Arith.Zero_nat ret_typ2 [])))
-                (fun () ->
+      Predicate.bind (check_exp_list_i_i exps in_typs2)
+        (fun () ->
+          Predicate.bind (eq_o_i (SailEnv.subst_inst tan rett_typ))
+            (fun ac ->
+              (match ac with None -> Predicate.bot_pred
+                | Some ret_typ2 ->
                   Predicate.bind
                     (Predicate.if_pred
                       (trace
@@ -16262,6 +16437,24 @@ true, false);
                              (false, false, false, false, false, true, false,
                                false);
                            Stringa.Chara
+                             (true, false, false, false, false, true, true,
+                               false);
+                           Stringa.Chara
+                             (false, true, true, false, false, true, true,
+                               false);
+                           Stringa.Chara
+                             (false, false, true, false, true, true, true,
+                               false);
+                           Stringa.Chara
+                             (true, false, true, false, false, true, true,
+                               false);
+                           Stringa.Chara
+                             (false, true, false, false, true, true, true,
+                               false);
+                           Stringa.Chara
+                             (false, false, false, false, false, true, false,
+                               false);
+                           Stringa.Chara
                              (true, true, false, false, true, true, true,
                                false);
                            Stringa.Chara
@@ -16271,40 +16464,106 @@ true, false);
                              (false, true, false, false, false, true, true,
                                false);
                            Stringa.Chara
+                             (true, true, false, false, true, true, true,
+                               false);
+                           Stringa.Chara
                              (false, false, true, false, true, true, true,
                                false);
                            Stringa.Chara
-                             (true, false, false, true, true, true, true,
+                             (true, true, true, true, true, false, true, false);
+                           Stringa.Chara
+                             (true, false, false, true, false, true, true,
                                false);
                            Stringa.Chara
-                             (false, false, false, false, true, true, true,
+                             (false, true, true, true, false, true, true,
+                               false);
+                           Stringa.Chara
+                             (true, true, false, false, true, true, true,
+                               false);
+                           Stringa.Chara
+                             (false, false, true, false, true, true, true,
+                               false);
+                           Stringa.Chara
+                             (false, false, false, false, false, true, false,
+                               false);
+                           Stringa.Chara
+                             (false, true, false, false, true, true, true,
                                false);
                            Stringa.Chara
                              (true, false, true, false, false, true, true,
-                               false)] @
-                          [Stringa.Chara
-                             (false, false, true, false, true, true, true,
                                false);
-                            Stringa.Chara
-                              (true, false, false, false, true, true, false,
-                                false);
-                            Stringa.Chara
-                              (true, false, true, true, true, true, false,
-                                false)] @
-                            ShowAST.shows_prec_typ Arith.Zero_nat ret_typ2 [] @
+                           Stringa.Chara
+                             (false, false, true, false, true, true, true,
+                               false)] @
+                          ShowAST.shows_prec_typ Arith.Zero_nat ret_typ2 [])))
+                    (fun () ->
+                      Predicate.bind
+                        (Predicate.if_pred
+                          (trace
+                            ([Stringa.Chara
+                                (true, false, true, false, false, false, true,
+                                  false);
+                               Stringa.Chara
+                                 (true, true, true, true, true, false, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, false, false, false, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, false, false, false, true, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, false, false, false, true, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, false, false, false, false, true,
+                                   false, false);
+                               Stringa.Chara
+                                 (true, true, false, false, true, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, false, true, false, true, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, true, false, false, false, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, false, true, false, true, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, false, false, true, true, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (false, false, false, false, true, true, true,
+                                   false);
+                               Stringa.Chara
+                                 (true, false, true, false, false, true, true,
+                                   false)] @
                               [Stringa.Chara
                                  (false, false, true, false, true, true, true,
                                    false);
                                 Stringa.Chara
-                                  (false, true, false, false, true, true, false,
+                                  (true, false, false, false, true, true, false,
                                     false);
                                 Stringa.Chara
                                   (true, false, true, true, true, true, false,
                                     false)] @
-                                ShowAST.shows_prec_typ Arith.Zero_nat t [])))
-                    (fun () ->
-                      Predicate.bind (subtype_tan_i_i ret_typ2 tan)
-                        (fun () -> Predicate.single ())))))))))))
+                                ShowAST.shows_prec_typ Arith.Zero_nat ret_typ2
+                                  [] @
+                                  [Stringa.Chara
+                                     (false, false, true, false, true, true,
+                                       true, false);
+                                    Stringa.Chara
+                                      (false, true, false, false, true, true,
+false, false);
+                                    Stringa.Chara
+                                      (true, false, true, true, true, true,
+false, false)] @
+                                    ShowAST.shows_prec_typ Arith.Zero_nat t
+                                      [])))
+                        (fun () ->
+                          Predicate.bind (subtype_tan_i_i ret_typ2 tan)
+                            (fun () -> Predicate.single ()))))))))))))
                     | (_, (SailAST.E_app_infix (_, _, _, _), _)) ->
                       Predicate.bot_pred
                     | (_, (SailAST.E_tuple (_, _), _)) -> Predicate.bot_pred

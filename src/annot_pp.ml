@@ -3,6 +3,8 @@ open PPrintCombinators
 open Sail_pp
 open Type_check
 open Ast_util
+
+let opt_pp_env = ref true
    
 let pp_json_env env = string "{ " ^^
                        string "\"locals\" : [ " ^^ separate (string ",")
@@ -30,9 +32,13 @@ let pp_json_env env = string "{ " ^^
 let pp_json_annot (_,tannot) = match Type_check.destruct_tannot tannot with
                                None -> string "\"undefined\"" |
                                Some (e,t,_) -> string "{" ^^
-                                                 string "\"typ\" :" ^^ pp_json_typ t ^^ string "," ^^
-                                                 string "\"env\" : " ^^ pp_json_env e ^^
-                                               string "}"
+                                                 string "\"typ\" :" ^^ pp_json_typ t ^^
+                                                   ( if !opt_pp_env then 
+                                                       string ",\"env\" : " ^^ pp_json_env e 
+                                                     else
+                                                       string ""
+                                                   )
+                                               ^^ string "}"
 
 
                        

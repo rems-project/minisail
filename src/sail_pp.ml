@@ -1095,7 +1095,7 @@ and pp_json_kinded_id x = match x with
 and pp_json_quant_item_aux x = match x with
 | QI_id(kinded_id) -> string "{ \"tag\" : \"QI_id\"" ^^ string ", " ^^ string "\"kinded_id\":" ^^ pp_json_kinded_id kinded_id ^^ string "}"
 | QI_constraint(n_constraint) -> string "{ \"tag\" : \"QI_constraint\"" ^^ string ", " ^^ string "\"n_constraint\":" ^^ pp_json_n_constraint n_constraint ^^ string "}"
-| QI_constant(kinded_id0) -> string "{ \"tag\" : \"QI_constant\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (kinded_id0) -> string "" ^^ string "\"kinded_id[0]\":" ^^ pp_json_kinded_id kinded_id0 ^^ string "") kinded_id0) ^^ string "]" ^^ string "}"
+| QI_constant(kinded_id0) -> string "{ \"tag\" : \"QI_constant\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (kinded_id0) -> string "" ^^ string "" ^^ pp_json_kinded_id kinded_id0 ^^ string "") kinded_id0) ^^ string "]" ^^ string "}"
 
 and pp_json_quant_item x = match x with
 | QI_aux(quant_item_aux,l) -> string "{ \"tag\" : \"QI_aux\"" ^^ string ", " ^^ string "\"quant_item_aux\":" ^^ pp_json_quant_item_aux quant_item_aux ^^ string "," ^^ string "\"l\":" ^^ pp_json_l l ^^ string "}"
@@ -1175,16 +1175,19 @@ and pp_json_pat_aux x = match x with
 | P_var(pat,typ_pat) -> string "{ \"tag\" : \"P_var\"" ^^ string ", " ^^ string "\"pat\":" ^^ pp_json_pat pat ^^ string "," ^^ string "\"typ_pat\":" ^^ pp_json_typ_pat typ_pat ^^ string "}"
 | P_app(id,pat0) -> string "{ \"tag\" : \"P_app\"" ^^ string ", " ^^ string "\"id\":" ^^ pp_json_id id ^^ string "," ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (pat0) -> string "" ^^ pp_json_pat pat0 ^^ string "") pat0) ^^ string "]" ^^ string "}"
 | P_vector(pat0) -> string "{ \"tag\" : \"P_vector\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (pat0) -> string "" ^^ pp_json_pat pat0 ^^ string "") pat0) ^^ string "]" ^^ string "}"
-| P_vector_concat(pat0) -> string "{ \"tag\" : \"P_vector_concat\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (pat0) -> string "" ^^ string "\"pat[0]\":" ^^ pp_json_pat pat0 ^^ string "") pat0) ^^ string "]" ^^ string "}"
+| P_vector_concat(pat0) -> string "{ \"tag\" : \"P_vector_concat\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (pat0) -> string "" ^^ string "" ^^ pp_json_pat pat0 ^^ string "") pat0) ^^ string "]" ^^ string "}"
 | P_tup(pat0) -> string "{ \"tag\" : \"P_tup\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (pat0) -> string "" ^^ pp_json_pat pat0 ^^ string "") pat0) ^^ string "]" ^^ string "}"
 | P_list(pat0) -> string "{ \"tag\" : \"P_list\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (pat0) -> string "" ^^ pp_json_pat pat0 ^^ string "") pat0) ^^ string "]" ^^ string "}"
 | P_cons(pat1,pat2) -> string "{ \"tag\" : \"P_cons\"" ^^ string ", " ^^ string "\"pat1\":" ^^ pp_json_pat pat1 ^^ string "," ^^ string "\"pat2\":" ^^ pp_json_pat pat2 ^^ string "}"
-| P_string_append(pat0) -> string "{ \"tag\" : \"P_string_append\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (pat0) -> string "" ^^ string "\"pat[0]\":" ^^ pp_json_pat pat0 ^^ string "") pat0) ^^ string "]" ^^ string "}"
+| P_string_append(pat0) -> string "{ \"tag\" : \"P_string_append\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (pat0) -> string "" ^^ string "" ^^ pp_json_pat pat0 ^^ string "") pat0) ^^ string "]" ^^ string "}"
 
 and pp_json_pat x = match x with
 | P_aux(pat_aux,annot) -> string "{ \"tag\" : \"P_aux\"" ^^ string ", " ^^ string "\"pat_aux\":" ^^ pp_json_pat_aux pat_aux ^^ string "," ^^ string "\"annot\":" ^^ pp_json_annot annot ^^ string "}"
 
-and pp_json_loop  _ = string "<loop>"
+and pp_json_loop  = function
+  | While -> string "\"While\""
+  | Until -> string "\"Until\""
+           
 and pp_json_internal_loop_measure_aux x = match x with
 | Measure_none -> string "{ \"tag\" : \"Measure_none\"" ^^ string "}"
 | Measure_some(exp) -> string "{ \"tag\" : \"Measure_some\"" ^^ string ", " ^^ string "\"exp\":" ^^ pp_json_exp exp ^^ string "}"
@@ -1239,7 +1242,7 @@ and pp_json_lexp_aux x = match x with
 | LEXP_memory(id,exp0) -> string "{ \"tag\" : \"LEXP_memory\"" ^^ string ", " ^^ string "\"id\":" ^^ pp_json_id id ^^ string "," ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (exp0) -> string "" ^^ pp_json_exp exp0 ^^ string "") exp0) ^^ string "]" ^^ string "}"
 | LEXP_cast(typ,id) -> string "{ \"tag\" : \"LEXP_cast\"" ^^ string ", " ^^ string "\"typ\":" ^^ pp_json_typ typ ^^ string "," ^^ string "\"id\":" ^^ pp_json_id id ^^ string "}"
 | LEXP_tup(lexp0) -> string "{ \"tag\" : \"LEXP_tup\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (lexp0) -> string "" ^^ pp_json_lexp lexp0 ^^ string "") lexp0) ^^ string "]" ^^ string "}"
-| LEXP_vector_concat(lexp0) -> string "{ \"tag\" : \"LEXP_vector_concat\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (lexp0) -> string "" ^^ string "\"lexp[0]\":" ^^ pp_json_lexp lexp0 ^^ string "") lexp0) ^^ string "]" ^^ string "}"
+| LEXP_vector_concat(lexp0) -> string "{ \"tag\" : \"LEXP_vector_concat\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (lexp0) -> string "" ^^ string "" ^^ pp_json_lexp lexp0 ^^ string "") lexp0) ^^ string "]" ^^ string "}"
 | LEXP_vector(lexp,exp) -> string "{ \"tag\" : \"LEXP_vector\"" ^^ string ", " ^^ string "\"lexp\":" ^^ pp_json_lexp lexp ^^ string "," ^^ string "\"exp\":" ^^ pp_json_exp exp ^^ string "}"
 | LEXP_vector_range(lexp,exp1,exp2) -> string "{ \"tag\" : \"LEXP_vector_range\"" ^^ string ", " ^^ string "\"lexp\":" ^^ pp_json_lexp lexp ^^ string "," ^^ string "\"exp1\":" ^^ pp_json_exp exp1 ^^ string "," ^^ string "\"exp2\":" ^^ pp_json_exp exp2 ^^ string "}"
 | LEXP_field(lexp,id) -> string "{ \"tag\" : \"LEXP_field\"" ^^ string ", " ^^ string "\"lexp\":" ^^ pp_json_lexp lexp ^^ string "," ^^ string "\"id\":" ^^ pp_json_id id ^^ string "}"
@@ -1310,11 +1313,11 @@ and pp_json_mpat_aux x = match x with
 | MP_id(id) -> string "{ \"tag\" : \"MP_id\"" ^^ string ", " ^^ string "\"id\":" ^^ pp_json_id id ^^ string "}"
 | MP_app(id,mpat0) -> string "{ \"tag\" : \"MP_app\"" ^^ string ", " ^^ string "\"id\":" ^^ pp_json_id id ^^ string "," ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (mpat0) -> string "" ^^ pp_json_mpat mpat0 ^^ string "") mpat0) ^^ string "]" ^^ string "}"
 | MP_vector(mpat0) -> string "{ \"tag\" : \"MP_vector\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (mpat0) -> string "" ^^ pp_json_mpat mpat0 ^^ string "") mpat0) ^^ string "]" ^^ string "}"
-| MP_vector_concat(mpat0) -> string "{ \"tag\" : \"MP_vector_concat\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (mpat0) -> string "" ^^ string "\"mpat[0]\":" ^^ pp_json_mpat mpat0 ^^ string "") mpat0) ^^ string "]" ^^ string "}"
+| MP_vector_concat(mpat0) -> string "{ \"tag\" : \"MP_vector_concat\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (mpat0) -> string "" ^^ string "" ^^ pp_json_mpat mpat0 ^^ string "") mpat0) ^^ string "]" ^^ string "}"
 | MP_tup(mpat0) -> string "{ \"tag\" : \"MP_tup\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (mpat0) -> string "" ^^ pp_json_mpat mpat0 ^^ string "") mpat0) ^^ string "]" ^^ string "}"
 | MP_list(mpat0) -> string "{ \"tag\" : \"MP_list\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (mpat0) -> string "" ^^ pp_json_mpat mpat0 ^^ string "") mpat0) ^^ string "]" ^^ string "}"
 | MP_cons(mpat1,mpat2) -> string "{ \"tag\" : \"MP_cons\"" ^^ string ", " ^^ string "\"mpat1\":" ^^ pp_json_mpat mpat1 ^^ string "," ^^ string "\"mpat2\":" ^^ pp_json_mpat mpat2 ^^ string "}"
-| MP_string_append(mpat0) -> string "{ \"tag\" : \"MP_string_append\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (mpat0) -> string "" ^^ string "\"mpat[0]\":" ^^ pp_json_mpat mpat0 ^^ string "") mpat0) ^^ string "]" ^^ string "}"
+| MP_string_append(mpat0) -> string "{ \"tag\" : \"MP_string_append\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (mpat0) -> string "" ^^ string "" ^^ pp_json_mpat mpat0 ^^ string "") mpat0) ^^ string "]" ^^ string "}"
 | MP_typ(mpat,typ) -> string "{ \"tag\" : \"MP_typ\"" ^^ string ", " ^^ string "\"mpat\":" ^^ pp_json_mpat mpat ^^ string "," ^^ string "\"typ\":" ^^ pp_json_typ typ ^^ string "}"
 | MP_as(mpat,id) -> string "{ \"tag\" : \"MP_as\"" ^^ string ", " ^^ string "\"mpat\":" ^^ pp_json_mpat mpat ^^ string "," ^^ string "\"id\":" ^^ pp_json_id id ^^ string "}"
 
@@ -1421,6 +1424,6 @@ and pp_json_def x = match x with
 | DEF_measure(id,pat,exp) -> string "{ \"tag\" : \"DEF_measure\"" ^^ string ", " ^^ string "\"id\":" ^^ pp_json_id id ^^ string "," ^^ string "\"pat\":" ^^ pp_json_pat pat ^^ string "," ^^ string "\"exp\":" ^^ pp_json_exp exp ^^ string "}"
 | DEF_loop_measures(id,loop_measure0) -> string "{ \"tag\" : \"DEF_loop_measures\"" ^^ string ", " ^^ string "\"id\":" ^^ pp_json_id id ^^ string "," ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (loop_measure0) -> string "" ^^ pp_json_loop_measure loop_measure0 ^^ string "") loop_measure0) ^^ string "]" ^^ string "}"
 | DEF_reg_dec(dec_spec) -> string "{ \"tag\" : \"DEF_reg_dec\"" ^^ string ", " ^^ string "\"dec_spec\":" ^^ pp_json_dec_spec dec_spec ^^ string "}"
-| DEF_internal_mutrec(fundef0) -> string "{ \"tag\" : \"DEF_internal_mutrec\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (fundef0) -> string "" ^^ string "\"fundef[0]\":" ^^ pp_json_fundef fundef0 ^^ string "") fundef0) ^^ string "]" ^^ string "}"
+| DEF_internal_mutrec(fundef0) -> string "{ \"tag\" : \"DEF_internal_mutrec\"" ^^ string ", " ^^ string "\"list\" : [" ^^ separate  (string ",") (List.map (function (fundef0) -> string "" ^^ string "" ^^ pp_json_fundef fundef0 ^^ string "") fundef0) ^^ string "]" ^^ string "}"
 | DEF_pragma(string1,string2,l) -> string "{ \"tag\" : \"DEF_pragma\"" ^^ string ", " ^^ string "\"string1\" : " ^^ pp_json_string string1 ^^ string "," ^^ string "\"string2\" : " ^^ pp_json_string string2 ^^ string "," ^^ string "\"l\":" ^^ pp_json_l l ^^ string "}"
 
