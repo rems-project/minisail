@@ -309,7 +309,9 @@ formula :: formula_ ::=
   | xa : ba [ ca ] INN Ga                       :: :: lookup_var_anf {{ tex [[xa]] : [[ba]] [ [[ca]] ] \in [[Ga]] }}
   | ua : ta INN Da                             :: :: lookup_mvar_anf {{ tex [[ua]] : [[ta]] \in [[Da]] }}
   | union  tid = { ctor1 : ta1 , ... , ctorn : tan } INN TCa :: :: lookup_tdef
+  | union  tid = { '..' , ctor : ta , '..' } INN TCa :: :: lookup_tdef2
   | union  tid = forall bv . { ctor1 : ta1 , ... , ctorn : tan } INN TCa :: :: lookup_tdef_poly
+  | union  tid = forall bv . { '..' , ctor : ta , '..'  } INN TCa :: :: lookup_tdef_poly2
   | xa  IND Ga a                                     :: :: in_domain_g_anf {{ tex [[xa]]  \in \text{dom}([[Ga]]) }}
   | val f : ( xa : ba [ ca ] ) -> ta NOTIN PCa         :: :: valspec_not_in
   | val f : ( xa : ba [ ca ] ) -> ta INN PCa         :: :: valspec_in
@@ -539,15 +541,15 @@ TCa |-w rcl_v2 : ba2
 ----------------------------------------------- :: pair
 TCa |-w ( rcl_v1 , rcl_v2 ) : ba1 * ba2
 
-TCa |-w rcl_v : ba
-union  tid = { </ ctori : tai // i />  } INN TCa
+TCa |-w rcl_v : [ ta ]b
+union  tid = { .. , ctor : ta , ..  } INN TCa
 --------------------------------------------------- :: cons
-TCa  |-w ctorj tid rcl_v : tid
+TCa  |-w ctor tid rcl_v : tid
 
-TCa |-w rcl_v  :  [ taj ]b [ ba2 / bv ] 
-union  tid = forall bv . { </ ctori : tai // i />  } INN TCa
+TCa |-w rcl_v  :  [ ta ]b [ ba2 / bv ] 
+union  tid = forall bv . { .. , ctor : ta , .. } INN TCa
 -------------------------------------------------------------- :: consp
-TCa |-w ctorj tid ba2 rcl_v : bapp tid ba2
+TCa |-w ctor tid ba2 rcl_v : bapp tid ba2
 
 
 
@@ -727,16 +729,16 @@ TCa ; BCa |-w Ga
 TCa ; BCa ; Ga |-w () : unit
 
 
-TCa ; BCa ; Ga |-w va : [ taj ]b
-union  tid = { </ ctori : tai // i />  } INN TCa
+TCa ; BCa ; Ga |-w va : [ ta ]b
+union  tid = { .. , ctor : ta , .. } INN TCa
 -------------------------------------------- :: cons
-TCa ; BCa ; Ga |-w ctorj tid va : tid
+TCa ; BCa ; Ga |-w ctor tid va : tid
 
-TCa ; BCa ; Ga |-w va : [ taj ]b  [ ba2 / bv ]
+TCa ; BCa ; Ga |-w va : [ ta ]b  [ ba2 / bv ]
 TCa ; BCa |-w ba2 
-union  tid = forall bv . { </ ctori : tai // i />  } INN TCa
+union  tid = forall bv . { .. , ctor : ta , .. } INN TCa
 ---------------------------------------------------------------- :: consp
-TCa ; BCa ; Ga |-w ctorj tid [ ba2 ] va : bapp tid ba2
+TCa ; BCa ; Ga |-w ctor tid [ ba2 ] va : bapp tid ba2
 
 TCa ; BCa ; Ga |-w va1 : ba1
 TCa ; BCa ; Ga |-w va2 : ba2
@@ -1022,16 +1024,16 @@ TCa ; BCa ; Ga |v- va2 => { za2 : ba2 | ca2 }
 TCa ; BCa ; Ga |v- (va1,va2) =>  { za : ba1*ba2 | za = (va1,va2) }
 
 za # Ga
-union tid = { </ ctori : tai // i /> } INN TCa
+union tid = { .. , ctor : ta , ..  } INN TCa
 TCa ; BCa ; Ga |v- va <= ta
 ---------------------------------------------------------------------- :: data_cons
-TCa ; BCa ; Ga |v- ctorj tid va => { za : tid | za = ctorj tid va }
+TCa ; BCa ; Ga |v- ctor tid va => { za : tid | za = ctor tid va }
 
 za # Ga
-union tid = forall bv . { </ ctori : tai // i /> } INN TCa
+union tid = forall bv . { .. , ctor : ta , ..  } INN TCa
 TCa ; BCa ; Ga |v- va <= ta[ba/bv]
 ---------------------------------------------------------------------- :: data_cons_poly
-TCa ; BCa ; Ga |v- ctorj tid [ ba ] va => { za : tid | za = ctorj tid [ ba ] va }
+TCa ; BCa ; Ga |v- ctor tid [ ba ] va => { za : tid | za = ctor tid [ ba ] va }
 
 
 
