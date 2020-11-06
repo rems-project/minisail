@@ -1,14 +1,23 @@
 (*<*)
 theory IVSubstTypingL
-  imports  "HOL-Eisbach.Eisbach_Tools" Explorer ContextSubtypingL
+  imports  SubstMethods Explorer ContextSubtypingL
 begin
 (*>*)
 
 chapter \<open>Immutable Variable Substitution Lemmas\<close>
 text \<open> Lemmas that show that types are preserved, in some way, under immutable variable substitution\<close>
 
+section \<open>Proof Methods\<close>
+
+
+method subst_mth = (metis  subst_g_inside  infer_e_wf infer_v_wf infer_v_wf)
+
+method subst_tuple_mth uses add = (
+        (unfold fresh_prodN), (simp add: add  )+,
+        (rule,metis fresh_z_subst_g add fresh_Pair ),
+        (metis fresh_subst_dv add fresh_Pair ) )
+
 section \<open>Misc\<close>
-(* MOVE *)
 
 lemma subst_top_eq:
    "\<lbrace> z : b  | TRUE \<rbrace> = \<lbrace> z : b  | TRUE \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v" 
@@ -77,6 +86,8 @@ next
     qed
   qed
 qed
+
+
 
 section \<open>Satisfiability\<close>
 
@@ -890,21 +901,10 @@ next
     thus  "atom x' \<sharp> \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>" using infer_e_appPI fresh_subst_gv  wfD_wf subst_g_inside fresh_Pair by metis
     show "\<tau>'[bv::=b']\<^sub>b[x'::=v'[x::=v]\<^sub>v\<^sub>v]\<^sub>v = \<tau>[x::=v]\<^sub>\<tau>\<^sub>v"  using  infer_e_appPI subst_tv_commute[OF * ] subst_defs by metis
     show "atom bv \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>, \<Delta>[x::=v]\<^sub>\<Delta>\<^sub>v, b', v'[x::=v]\<^sub>v\<^sub>v, \<tau>[x::=v]\<^sub>\<tau>\<^sub>v)" 
-     (* Methodical breakdown by subgoals to direct the proof to the facts/methods we know work rather than use auto across all and
-        try to clean up what is left. Convert this to Eisbach method using pattern matching to know which steps to use to solve a subgoal  *)
-      apply(unfold fresh_prodN, intro conjI)
-         apply(simp add: infer_e_appPI)
-         apply(simp add: infer_e_appPI)
-         apply(simp add: infer_e_appPI)
-         apply(subst subst_g_inside[symmetric])  
-            apply((insert infer_e_appPI wfX_wfY) [1], fast)
-            apply(metis fresh_subst_gv_if infer_e_appPI)
-         apply(simp add: fresh_prodN fresh_subst_dv_if infer_e_appPI)
-         apply(simp add: infer_e_appPI)
-         apply(simp add: fresh_prodN fresh_subst_v_if subst_v_v_def infer_e_appPI)
-         apply(simp add: fresh_prodN fresh_subst_v_if subst_v_\<tau>_def infer_e_appPI)
-      done
-
+      apply (fresh_mth add: infer_e_appPI)     
+      apply(insert  infer_e_appPI wfX_wfY, fast)
+      apply(metis fresh_subst_gv_if infer_e_appPI)
+      using fresh_prodN fresh_subst_dv_if infer_e_appPI by metis
   qed
 next
   case (infer_e_fstI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v' z' b1 b2 c z)
@@ -1171,8 +1171,6 @@ qed
 
 section \<open>Statements\<close>
 
-method subst_mth = (metis  subst_g_inside  infer_e_wf infer_v_wf infer_v_wf)
-
 lemma subst_infer_check_v1:
   fixes v::v and v'::v and \<Gamma>::\<Gamma>
   assumes "\<Gamma> = \<Gamma>\<^sub>1@((x,b\<^sub>1,c0[z0::=[x]\<^sup>v]\<^sub>c\<^sub>v)#\<^sub>\<Gamma>\<Gamma>\<^sub>2)"  and 
@@ -1182,12 +1180,6 @@ lemma subst_infer_check_v1:
         shows "\<Theta> ; \<B>  ; \<Gamma>[x::=v]\<^sub>\<Gamma>\<^sub>v \<turnstile>  v'[x::=v]\<^sub>v\<^sub>v \<Leftarrow> \<tau>\<^sub>2[x::=v]\<^sub>\<tau>\<^sub>v"
   using  subst_g_inside check_v_wf assms subst_infer_check_v by metis
 
-method subst_tuple_mth uses add = (
-        (unfold fresh_prodN), (simp add: add  )+,
-        (rule,metis fresh_z_subst_g add fresh_Pair ),
-        (metis fresh_subst_dv add fresh_Pair ) )
-
-thm subst_valid_simple
 
 lemma infer_v_c_valid:
   assumes " \<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> \<tau>"  and   "\<Theta> ; \<B> ; \<Gamma>  \<turnstile> \<tau> \<lesssim> \<lbrace> z : b  | c \<rbrace>"
@@ -1304,9 +1296,6 @@ next
       thus  \<open>atom x \<sharp> \<Gamma>\<^sub>1\<close> using check_assertI wfG_suffix wfG_elims by metis    
 
       moreover have "\<Theta> ; \<B> ; \<Gamma>\<^sub>1 \<turnstile>\<^sub>w\<^sub>f  \<lbrace> z : b  | c \<rbrace>" using subtype_wfT check_assertI by metis
-
-     (* hence "atom x \<notin> atom_dom \<Gamma>\<^sub>1" using wfG_x_fresh check_assertI infer_v_wf by metis
-      moreover have " \<Theta> ; \<B> ; \<Gamma>\<^sub>1 \<turnstile>\<^sub>w\<^sub>f c" using check_assertI *)
       moreover have "x \<noteq> z" using fresh_Pair check_assertI fresh_x_neq by metis
       ultimately show  \<open>atom x \<sharp> c\<close> using check_assertI wfT_fresh_c by metis
       

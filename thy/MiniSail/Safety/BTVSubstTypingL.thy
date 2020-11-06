@@ -541,7 +541,7 @@ next
    then show ?case unfolding subst_branchlb.simps using Typing.check_branch_list_finalI by simp
 next
    case (check_branch_s_branchI \<Theta> \<B> \<Gamma> \<Delta> \<tau> const x \<Phi> tid cons v s)
-(*  have teq: "const = const[bv::=b]\<^sub>\<tau>\<^sub>b" using wfTh_lookup_supp_empty fresh_def  forget_subst subst_b_\<tau>_def sory*)
+
   show ?case unfolding subst_b_simps proof(rule Typing.check_branch_s_branchI) 
     show "\<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f \<Delta>[bv::=b]\<^sub>\<Delta>\<^sub>b  "  using check_branch_s_branchI wf_b_subst subst_db.simps by metis
     show "\<turnstile>\<^sub>w\<^sub>f \<Theta> " using check_branch_s_branchI by auto
@@ -562,7 +562,7 @@ next
        bot.extremum_uniqueI ex_in_conv fresh_def supp_empty_fset  subst_b_c_of_forget by metis
     ultimately show  "\<Theta> ; \<Phi> ; {||} ; (x, b_of const, CE_val (v[bv::=b]\<^sub>v\<^sub>b)  ==  CE_val(V_cons tid cons (V_var x)) AND c_of const x) #\<^sub>\<Gamma> \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b ; \<Delta>[bv::=b]\<^sub>\<Delta>\<^sub>b   \<turnstile> s[bv::=b]\<^sub>s\<^sub>b \<Leftarrow> \<tau>[bv::=b]\<^sub>\<tau>\<^sub>b"  
       using check_branch_s_branchI subst_gb.simps by auto
-(*    show "atom z \<sharp> v[bv::=b]\<^sub>v\<^sub>b" using check_branch_list_finalI  subst_b_v_def subst_b_\<Gamma>_def subst_b_fresh_x fresh_prod4 subst_b_c_def by metis*)
+
     qed
 
 next

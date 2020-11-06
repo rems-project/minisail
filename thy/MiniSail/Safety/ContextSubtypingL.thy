@@ -63,8 +63,6 @@ next
 qed
 
 
-
-
 lemma wfD_rig_single:
   fixes \<Delta>::\<Delta> and x::x and c::c and G::\<Gamma>
   assumes "\<Theta> ; \<B> ; G \<turnstile>\<^sub>w\<^sub>f \<Delta> " and  "wfG \<Theta> \<B> (G[x\<longmapsto>c])"
@@ -84,8 +82,6 @@ next
   thus ?thesis using wf_replace_inside1 assms * ** 
     by (simp add: wf_replace_inside2(6))
 qed
-
-
 
 lemma wfD_rig:
   assumes  "\<Theta> ; \<B> \<turnstile> G \<langle> xcs \<rangle> \<leadsto> G'" and "wfD \<Theta> \<B> G \<Delta>" 
@@ -114,6 +110,7 @@ proof -
 qed
 
 text \<open> Wellscoping for an eXchange list\<close>
+
 inductive wsX:: "\<Gamma> \<Rightarrow> (x*c) list \<Rightarrow> bool" where
   wsX_NilI: "wsX G []"
  |  wsX_ConsI: "\<lbrakk> wsX G xcs ; atom x \<in> atom_dom G ; x \<notin> fst ` set xcs \<rbrakk> \<Longrightarrow> wsX G ((x,c)#xcs)"
@@ -464,24 +461,6 @@ qed
  
 section \<open>Literals\<close>
 
-(*
-lemma ctx_subtype_l2:
-  fixes l::l
-  assumes
-        "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> l \<Rightarrow> t1" and 
-        "\<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
-  shows "\<exists>t2.  \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> l \<Rightarrow> t2 \<and>  \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> t1"
-proof -
-  have "wfG \<Theta> \<B> (\<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>))"proof -
-    have "wfG \<Theta> \<B> (\<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>))" using infer_l_wf assms  by metis
-    thus ?thesis using wfG_inside_valid2 assms  by simp
-  qed
-  hence  "\<Theta>; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> l \<Rightarrow> t1" using infer_l_wf assms infer_l_any by metis
-  moreover hence "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t1 \<lesssim> t1" 
-    using subtype_reflI2 infer_l_wf by presburger
-  ultimately show ?thesis by metis
-qed
-*)
 section \<open>Values\<close>
 
 lemma lookup_inside_unique_b[simp]:
@@ -489,7 +468,6 @@ lemma lookup_inside_unique_b[simp]:
     and  "Some (b, c) = lookup (\<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>) y" and  "Some (b0,c0) = lookup (\<Gamma>'@((x,b0,c0))#\<^sub>\<Gamma>\<Gamma>) x" and "x=y"
   shows "b = b0"
   by (metis assms(2) assms(3) assms(5) lookup_inside_wf old.prod.exhaust option.inject prod.inject)
-
 
 
 text \<open> I think using rule induction for values and expressions is only going to save us 

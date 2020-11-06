@@ -872,44 +872,7 @@ next
     show "\<Theta> ; \<B> ; GNil  \<turnstile> v \<Leftarrow> \<lbrace> z : b_of const  | c_of const z \<rbrace>" 
       using check_branch_s_branchI z by auto
   qed
-(*
-  proof -
-    obtain t' where "\<Theta> ; \<B> ; GNil  \<turnstile> v \<Rightarrow> t' \<and> \<Theta> ; \<B> ; GNil \<turnstile> t' \<lesssim> const" 
-      using check_v_elims check_branch_s_branchI by metis
-    moreover have "\<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b_of const  | [ va ]\<^sup>c\<^sup>e  ==  [ V_cons tid cons [ z ]\<^sup>v ]\<^sup>c\<^sup>e  AND c_of const z \<rbrace>" 
-    proof(rule wfG_wfT)
-      show \<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, b_of const, ([ va ]\<^sup>c\<^sup>e  ==  [ V_cons tid cons [ z ]\<^sup>v ]\<^sup>c\<^sup>e   AND  c_of const z )[z::=[ x ]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> GNil \<close>
-      proof -
-        have 1: "va[z::=[ x ]\<^sup>v]\<^sub>v\<^sub>v  = va" using  forget_subst_v subst_v_v_def  z fresh_prodN by metis
-        moreover have  2:"(c_of const z)[z::=[ x ]\<^sup>v]\<^sub>c\<^sub>v = c_of const x" using  c_of_switch[of z const x]  z fresh_prodN by metis
-        ultimately show ?thesis
-          unfolding subst_cv.simps subst_cev.simps subst_vv.simps
-          using    check_branch_s_branchI(17)[THEN check_s_wf] \<open>\<Gamma> = GNil\<close> by simp
-      qed      
-      show \<open>atom x \<sharp> ([ va ]\<^sup>c\<^sup>e  ==  [ V_cons tid cons [ z ]\<^sup>v ]\<^sup>c\<^sup>e   AND  c_of const z )\<close> unfolding c.fresh ce.fresh v.fresh
-        apply(intro conjI )        
-        using  check_branch_s_branchI fresh_at_base z freshers apply simp
-        using  check_branch_s_branchI fresh_at_base z freshers apply simp
-        using pure_supp apply force
-        using z fresh_x_neq fresh_prod5 apply metis
-        apply(rule  c_of_fresh[of x const z], unfold fresh_prodN, intro conjI)
-        using check_branch_s_branchI apply simp
-        using z fresh_x_neq fresh_prodN by metis
-    qed
 
-    thm subtype_eq_if_\<tau>[rotated 1] subtype_baseI
-    have  "\<Theta> ; \<B> ; GNil \<turnstile> const \<lesssim>  \<lbrace> z : b_of const  | [ va ]\<^sup>c\<^sup>e  ==  [ V_cons tid cons [ z ]\<^sup>v ]\<^sup>c\<^sup>e   AND c_of const z \<rbrace>" 
-    proof -
-        have  "\<Theta> ; \<B> ; GNil \<turnstile> \<lbrace> z : b_of const | c_of const z \<rbrace> \<lesssim>  \<lbrace> z : b_of const  | [ va ]\<^sup>c\<^sup>e  ==  [ V_cons tid cons [ z ]\<^sup>v ]\<^sup>c\<^sup>e   AND c_of const z \<rbrace>" 
-        proof
-(*    proof(rule subtype_eq_if_\<tau>[rotated 1])
-      show "atom z \<sharp> const" using z \<tau>.fresh by auto
-      show "\<Theta> ; \<B> ; GNil   \<turnstile>\<^sub>w\<^sub>f const" using check_branch_s_branchI check_v_wf by auto
-    qed
-*)
-    ultimately show  ?thesis using check_v_subtypeI subtype_trans by metis
-  qed
-*)
   text \<open>Main body of proof for this case\<close>
   have "\<Theta> ; \<Phi> ; \<B> ; (?G)[x::=v]\<^sub>\<Gamma>\<^sub>v ; \<Delta>[x::=v]\<^sub>\<Delta>\<^sub>v  \<turnstile> s[x::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>[x::=v]\<^sub>\<tau>\<^sub>v"
   proof(rule subst_check_check_s)
@@ -1060,8 +1023,6 @@ proof(nominal_induct  "{||}::bv fset" GNil \<Delta> "AS_while s1 s2" \<tau> and 
   qed
 qed(auto+)
 
-thm split.intros
-
 
 lemma check_s_narrow:
   fixes s::s and x::x
@@ -1071,7 +1032,6 @@ lemma check_s_narrow:
 proof -
   let ?B = "({||}::bv fset)"
   let ?v = "V_lit L_true"
-
 
   obtain z::x where z: "atom z \<sharp> (x, [ L_true ]\<^sup>v,c)" using obtain_fresh by metis
 
@@ -1521,8 +1481,6 @@ next
 
   thus  ?case using elim config_typeI D ** by metis
 qed
-
-thm valid_wfC
 
 lemma preservation_many:
   fixes s::s and s'::s 

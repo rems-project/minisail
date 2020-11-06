@@ -1,6 +1,6 @@
 theory SubstMethods
 (* Its seems that it's best to load the Eisbach tools last *)
-imports  WellformedLemmas  "HOL-Eisbach.Eisbach_Tools" 
+imports  IVSubst WellformedL "HOL-Eisbach.Eisbach_Tools" 
 begin
 
 (* See Eisbach/Examples.thy as well as Eisbach User Manual. *)
@@ -20,6 +20,8 @@ method fresh_subst_mth_aux uses add = (
        (match conclusion in  "atom z \<sharp> (\<Gamma>::\<Gamma>)[x::=v]\<^sub>\<Gamma>\<^sub>v" for z x v \<Gamma>  \<Rightarrow> \<open>auto simp add: fresh_subst_gv_if[of "atom z" \<Gamma> v x] add\<close>)
      | (match conclusion in  "atom z \<sharp> (v'::v)[x::=v]\<^sub>v\<^sub>v" for z x v v' \<Rightarrow> \<open>auto simp add: v.fresh fresh_subst_v_if pure_fresh subst_v_v_def  add\<close> )
      | (match conclusion in  "atom z \<sharp> (ce::ce)[x::=v]\<^sub>c\<^sub>e\<^sub>v" for z x v ce \<Rightarrow> \<open>auto simp add: fresh_subst_v_if subst_v_ce_def  add\<close> )
+     | (match conclusion in  "atom z \<sharp> (\<Delta>::\<Delta>)[x::=v]\<^sub>\<Delta>\<^sub>v" for z x v \<Delta> \<Rightarrow> \<open>auto simp add: fresh_subst_v_if fresh_subst_dv_if  add\<close> )
+     | (match conclusion in  "atom z \<sharp> \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>" for z x v \<Gamma>' \<Gamma> \<Rightarrow> \<open>subst subst_g_inside[symmetric] \<close> )
 (* tbc delta and types *)
      | (auto simp add: add x_fresh_b pure_fresh) (* Cases where there is no subst and so can most likely get what we want from induction premises *)
 )
