@@ -902,7 +902,8 @@ next
     show "\<tau>'[bv::=b']\<^sub>b[x'::=v'[x::=v]\<^sub>v\<^sub>v]\<^sub>v = \<tau>[x::=v]\<^sub>\<tau>\<^sub>v"  using  infer_e_appPI subst_tv_commute[OF * ] subst_defs by metis
     show "atom bv \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>, \<Delta>[x::=v]\<^sub>\<Delta>\<^sub>v, b', v'[x::=v]\<^sub>v\<^sub>v, \<tau>[x::=v]\<^sub>\<tau>\<^sub>v)" 
       apply (fresh_mth add: infer_e_appPI)     
-      apply(insert  infer_e_appPI wfX_wfY, fast)
+     (* apply(insert  infer_e_appPI wfX_wfY, fast)*)
+      apply(use  infer_e_appPI wfX_wfY in fast)
       apply(metis fresh_subst_gv_if infer_e_appPI)
       using fresh_prodN fresh_subst_dv_if infer_e_appPI by metis
   qed

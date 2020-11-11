@@ -1,0 +1,17 @@
+FILES = [
+"Nominal-Utils.thy",
+"Syntax.thy",
+"IVSubst.thy",
+"BTVSubst.thy",
+"Wellformed.thy",
+"RCLogic.thy",
+"Typing.thy",
+"Operational.thy",
+"SyntaxL.thy",
+"WellformedL.thy",
+"RCLogicL.thy",
+"TypingL.thy",
+"ContextSubtypingL.thy",
+"IVSubstTypingL.thy",
+"BTVSubstTypingL.thy",
+"Safety.thy"]

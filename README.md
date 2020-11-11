@@ -8,7 +8,10 @@ The ./ott directory contains the following:
 
 PDF files are included here, and commentary on MiniSail can be found in [1] and [2].
 
-The ./thy directory contains a mechanisation in Isabelle of the above plus a safety proof for MiniSail
+The ./thy/MiniSail directory contains the following
+* ./Safety - A mechanisation in Isabelle of MiniSail using Nominal2 Isabelle with a safety proof.
+* ./SailToMiniSail - Declarative type system for Sail and converter for Sail to MiniSail.
+* ./SafetyDBI - A mechanisation of MiniSail using de Bruijn indicies. Partially complete. 
 
 The ./src directory contains a wrapper for code exported from Isabelle for the Sail type validator and converter. 
 It invokes the Sail type checker and if that passes can invoke the validator and converter.
