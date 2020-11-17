@@ -18,7 +18,7 @@ subsection \<open>Datatypes\<close>
 (* Type and function/type definition contexts *)
 type_synonym \<Phi> = "fun_def list"
 type_synonym \<Theta> = "type_def list"
-type_synonym \<B> = "bvf set"
+type_synonym \<B> = "bv set"
 
 lemma \<Phi>_induct [case_names PNil PConsNone PConsSome] : "P [] \<Longrightarrow> (\<And>f  b c \<tau> s' \<Phi>'. P \<Phi>' \<Longrightarrow> P ((AF_fundef f (AF_fun_typ_none (AF_fun_typ  b c \<tau> s'))) # \<Phi>')) \<Longrightarrow>
                                                                   (\<And>f  b c \<tau> s' \<Phi>'. P \<Phi>' \<Longrightarrow> P ((AF_fundef f (AF_fun_typ_some  (AF_fun_typ  b c \<tau> s'))) # \<Phi>'))  \<Longrightarrow> P \<Phi>"
@@ -41,7 +41,7 @@ qed
 qed
 
 lemma \<Theta>_induct [case_names TNil AF_typedef AF_typedef_poly] : "P [] \<Longrightarrow> (\<And>tid dclist \<Theta>'. P \<Theta>' \<Longrightarrow> P ((AF_typedef tid dclist) # \<Theta>')) \<Longrightarrow>
-                                                                  (\<And>tid  dclist \<Theta>'. P \<Theta>' \<Longrightarrow> P ((AF_typedef_poly tid dclist ) # \<Theta>'))  \<Longrightarrow> P \<Theta>"
+                                                                  (\<And>tid  dclist \<Theta>'. P \<Theta>' \<Longrightarrow> P ((AF_typedef_poly tid  dclist ) # \<Theta>'))  \<Longrightarrow> P \<Theta>"
 proof(induct \<Theta> rule: list.induct)
   case Nil
   then show ?case by auto

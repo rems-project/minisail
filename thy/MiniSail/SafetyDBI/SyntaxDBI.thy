@@ -113,9 +113,6 @@ text  \<open> Refined type \<close>
 datatype "\<tau>" = 
    T_refined_type   b c     ("\<lbrace>  : _  | _ \<rbrace>" [50, 50] 1000)
 
-(* Problems encountered with case statment want a simple branch statatement case_br and have AS_match "v" "case_br list" but got
-   'exception UnequalLengths raised (line 519 of "library.ML"'. Also we enforce here that a case has to have at least one branch 
-   but this duplicates however wanted to use option but this didn't work.  *)
 text \<open> Statements \<close>
 
 datatype s = 
