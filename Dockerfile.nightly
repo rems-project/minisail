@@ -1,0 +1,10 @@
+FROM sail:nightly
+
+RUN opam install -y dune ppx_import ppx_deriving
+
+WORKDIR /minisail
+COPY . /minisail
+
+RUN eval `opam env` && cd src && make
+
+ENTRYPOINT [ "/minisail/src/minisail" ]
