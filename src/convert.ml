@@ -10,6 +10,8 @@ open Ast_util
 *)
 let do_transform_nexp  =  ref (None : (I.nexp -> I.nexp) option)
 
+let opt_convert_var = ref false
+                        
 let transform_nexp nexp =
   match !do_transform_nexp with
   | None -> nexp
@@ -272,8 +274,51 @@ and convert_letbind_aux tan = function
 and convert_letbind = function
   | A.LB_aux (lb,tan) -> convert_letbind_aux tan lb
 
+(*
+General case with 1 or more non-assignments before assignment:
+
+    { e1 , ... , ek , lexp = e , e'1 , ... , e'p }
+==> 
+    { e1 , ... , ek , var lexp e { e'1 , .. , e'p } }
+
+With no exp before assign
+
+    { lexp = e , e'1 , ... , e'p }
+==> 
+    var lexp e { e'1 , .. , e'p } 
+
+The tricky bit is arranging the tannots/tan correctly
+*)
+
+and is_lexp_cast_new (_,tan) lexp =
+  match destruct_tannot tan with
+    Some (env,_,_) -> (match lexp with
+                      | A.LEXP_aux (A.LEXP_cast (typ, x), _) -> not (Env.is_mutable x env)
+                      | _ -> false)
+                       
+and convert_seq_aux tan = function
+  | [] -> []
+  | (A.E_aux (A.E_assign(lexp,exp), tan1)) :: exp0 when is_lexp_cast_new tan lexp
+    -> [I.E_var (convert_tannot tan, convert_lexp lexp, convert_exp exp ,
+                 I.E_block (convert_tannot tan, List.map convert_exp exp0))]
+  | exp1 :: exp2 -> convert_exp exp1 :: convert_seq_aux tan exp2
+  
+
+(* If option is set and if mutable variable is being introduced in a cast then convert it to an E_var *)                 
+and convert_seq tan exp0 =
+  if !opt_convert_var then
+    match exp0 with
+      [] -> I.E_block (convert_tannot tan, [])
+    | (A.E_aux (A.E_assign(lexp,exp), tan1)) :: exp0 when is_lexp_cast_new tan lexp
+      -> I.E_var (convert_tannot tan, convert_lexp lexp, convert_exp exp ,
+                  I.E_block (convert_tannot tan1, List.map convert_exp exp0))
+    | exp1 :: exp2 -> I.E_block (convert_tannot tan, convert_exp exp1 :: convert_seq_aux tan exp2 )
+
+  else
+    I.E_block (convert_tannot tan,List.map convert_exp exp0)
+                       
 and convert_exp_aux tan = function
-    | A.E_block(exp0) -> I.E_block (convert_tannot tan,List.map convert_exp exp0)
+    | A.E_block(exp0) -> convert_seq tan exp0
     | A.E_id(id) -> I.E_id (convert_tannot tan,convert_id id)
     | A.E_lit(lit) -> I.E_lit (convert_tannot tan,convert_lit lit)
     | A.E_cast(typ,exp) -> I.E_cast (convert_tannot tan,convert_typ_expanded tan typ, convert_exp exp)

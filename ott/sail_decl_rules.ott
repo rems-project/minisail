@@ -87,9 +87,9 @@ formula :: formula_ ::=
   | id / mut_immut : typ INN E                          :: :: lookup_local_var
            {{ tex [[id]] / [[mut_immut]] : [[typ]] \in [[E]] }}	   
   | id / register : typ INN E                          :: :: lookup_register
-           {{ tex [[id]] / register : [[typ]] \in [[E]] }}
+           {{ tex [[id]] / \textbf{register} : [[typ]] \in [[E]] }}
   | id / enum : typ INN E                          :: :: lookup_enum
-           {{ tex [[id]] / enum : [[typ]] \in [[E]] }}
+           {{ tex [[id]] / \textbf{enum} : [[typ]] \in [[E]] }}
 
   | id / mut_immut NOTIN E                          :: :: lookup_local_var_not
            {{ tex [[id]] / [[mut_immut]] \notin [[E]] }}
@@ -733,14 +733,6 @@ E , bindings |~ exp : typ
 E |- letbind in exp : typ
 
 
-E |~ exp1 : t_of exp1
-E |~ lexp : t_of exp1 ~> bindings
-distinct E , bindings
-E , bindings |~ exp2 : typ
------------------------------------------- :: assign
-E |- var lexp = exp1 in exp2   : typ
-
-
 %Not required if dealing with type annotated AST.
 %--------------------------- :: sizeof
 %E |- sizeof nexp  : typ
@@ -776,9 +768,16 @@ E |- assert ( exp , exp' ) : unit
 
 E |~ exp' : typ'
 E |- lexp : typ' ~> bindings
+distinct E , bindings
 E , bindings |~ exp : typ
 ---------------------------- :: var
 E |- var lexp = exp' in exp : typ
+
+% empty indicates no new vars are introduced
+E |~ exp' : typ'
+E |- lexp : typ' ~> empty
+--------------------------- :: assign
+E |- lexp = exp' : unit
 
 % Not required if dealing with type annotated AST.
 %-------------------------------------- :: constraint
@@ -802,9 +801,9 @@ E |~ lexp : typ ~> bindings
 defn E |- lexp : typ ~> bindings :: :: check_lexp :: cle_
 by
 
-id / mutable NOTIN E
----------------------------:: id_notb
-E |- id : typ  ~> id : typ
+%id / mutable NOTIN E
+%---------------------------:: id_notb
+%E |- id : typ  ~> id : typ
 
 
 id / mutable : typ' INN E
@@ -817,11 +816,11 @@ E |- typ' ~< typ
 -------------------------- :: cast_nb
 E |- ( typ ) id : typ' ~> id : typ
 
-id / mutable : typ'' INN E
-E |- typ ~< typ''
-E |- typ' ~< typ
----------------------------:: cast_b
-E |- ( typ ) id : typ'  ~> id : typ
+%id / mutable : typ'' INN E
+%E |- typ ~< typ''
+%E |- typ' ~< typ
+%---------------------------:: cast_b
+%E |- ( typ ) id : typ'  ~> id : typ
 
 id / register : typ INN E
 ------------------------------- :: reg

@@ -21,7 +21,10 @@ let options =
       ( "-break_ast",
         Arg.Set Minisail.opt_break_ast,
         " Introduce errors into AST to check validator fails it");
-        
+      ( "-convert_var",
+        Arg.Set Convert.opt_convert_var,
+        " Convert assignments to var-statement");
+      
       (* These from Sail main *)
       ( "-spec",
         Arg.Set Minisail.opt_spec,
