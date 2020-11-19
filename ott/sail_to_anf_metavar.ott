@@ -5,7 +5,7 @@
 %
 
 % Do not include k as its used for kid variables
-indexvar q ::=
+indexvar q , r ::=
   {{ phantom }}
   {{ com Index variables for meta-lists }}
 

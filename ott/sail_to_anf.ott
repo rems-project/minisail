@@ -75,6 +75,7 @@ sa :: 'SA_' ::= {{ com Statement  }}
    | L [[ sa ]]      :: M :: ctx_apply_continue
    | switch va { lp1 => sa1 | ... | lpn => san } :: M :: switch
    | unpack va into xa1 , ... , xan in sa :: M :: unpack_tuple
+   | switch_vec { L1 va1 => sa1 | ... | Ln van => san } :: M :: switch_vec
 
 
 ga {{ tex \gamma }} :: 'ga_' ::= {{ com Small context }}
@@ -102,11 +103,17 @@ L :: 'Ltx_' ::=
 
 
 
-lp :: 'LP_' ::= {{ com Literals for patterns. Augmenting with wild and identifier }}
+lp :: 'LP_' ::= {{ com Literals for patterns. Augmenting with unit, wild and identifier }}
   | la :: :: lit
+  | () :: :: unit
   | _  :: :: wild
   | id :: :: var
 
+
+ctorp :: 'CP_' ::= {{ com Constructor index for pattern matricies }}
+  | ctor ba xa :: :: ctor
+  | _ :: :: wild
+  | id :: :: id
 
 branch {{ tex \pi }} :: 'B_' ::= {{ com Pattern branch }} 
   | pat1 .. patn => exp  :: :: branch {{ com patterns and associated term variables }}
@@ -172,7 +179,8 @@ formula :: formula_ ::=
 %  | cea1 = cea1 , .. , ceam = ceam SOLVE ka1 = cea'1 , .. , kan = cea'n , ca :: :: linear_solver
 %  | cea = cea :: :: ce_cea_eq
   | quant_item1 , ... , quant_itemn ~> kinded_id1 .. kinded_idm , n_constraint :: :: convert_quant_list
-  | ba INN { int , bool  }  :: :: is_ground  {{ tex [[ba]] \in \{ [[int]] , [[bool]] \} }}
+  | ba INN { int , bool , unit }  :: :: is_ground  {{ tex [[ba]] \in \{ [[int]] , [[bool]] , [[unit]] \} }}
+  | ba INN { bvec }  :: :: is_bvec  {{ tex [[ba]] \in \{ [[bvec]] \} }}	
   | is_ctor ba :: :: is_ctor
   | ba = ( ba1 , ... , ban ) :: :: is_tuple
   | fresh xa1 .. xan :: :: fresh_xa_list
@@ -186,6 +194,9 @@ formula :: formula_ ::=
   | id1 ... idn ~> f :: :: convert_fid
   | E |- inst_of id ( exp1 , .. , expn ) ~> va ; L :: :: inst_conv
   | L1 = L2 :: :: let_equal
+  | ( ctor, ba ) INN E :: :: ctor_args {{ tex ( [[ctor]] , [[ba]] ) \in [[E]] }}
+  | ctor NOTIN ctor1 .. ctorn :: :: ctor_in_list 
+
 %  | L4 = let xa = ua in __ :: :: v_update1
 % xa = va1[va2..va3] = va4
   | L5 = let xa = update_vector_range va1 va2 va3 va4 in __ :: :: v_update2
@@ -695,12 +706,13 @@ E |- exp : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 ---------------------------------------------------------- :: empty
 E |-   => exp , blist :  ~>  TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 
-E |- blist : unit / xa ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
---------------------------------------------------------------------------------- :: unit
-E |- ()  => exp , blist : unit / va ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+%E |- blist : unit / xa ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+%--------------------------------------------------------------------------------- :: unit
+%E |- ()  => exp , blist : unit / va ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 
 
-ba INN { int , bool }
+
+ba INN { int , bool , unit }
 E |- blist ~> blist1 ; lp1 || .. || blistn ; lpn 
 </ E |- blisti : ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- sai : ta // i IN 1..n />
 --------------------------------------------------- :: ground
@@ -714,50 +726,88 @@ E |- blist ~> blist1 ; ctor1 ba'1 xa'1 || .. || blistn ; ctorn ba'n xa'n
 E |- blist : tid / va ba1 / va1 .. bam / vam  ~>  TCa ; PCa ; BCa ; Ga ; Da |- match va of </ ctori xa'i => sai // i IN 1..n /> : ta
 %, .. , ctorn xa'n => san : ta
 
-
 ba = ( ba'1 , ... , ba'n )
 E |- blist : ba ~> blist' ; ba'1 / xa'1 ... ba'n / xa'n
 E |- blist' : ba'1 / xa'1 ... ba'n / xa'n ba1 / va1 .. bam / vam  ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 ---------------------------------------------------------------------------------------- :: tuple
 E |- blist : ba / va ba1 / va1 .. bam / vam  ~> TCa ; PCa ; BCa ; Ga ; Da |- unpack va into xa'1 , ... , xa'n in sa : ta
 
+ba INN { bvec }
+E |- blist / va ~> blist1 ; L1 va'1 || .. || blistn ; Ln va'n
+</ E |- blisti : ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- sai : ta // i IN 1..n />
+--------------------------------------------------- :: vector
+E |- blist : ba / va  ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- switch_vec { </ Li va'i => sai // i IN 1..n /> } : ta
+
+
+
 %
 % Using pattern expansion judgements from 'Sound and Complete Bidirectional Typechecking for
 % Higher-Rank Polymorphism with Existentials and Indexed Types', 2019, Dunfield and Krishnaswami
 % Doing this we obtain a decision tree that we can compile to match/if/let statements in MS-ANF
 %
+% General form is that we have tree. A node has a list of children indexed by a let-guard
+% this is a combination of assignment to pattern variables and a boolean check.
+%
+%  
 defns pattern_expansion :: '' ::=
 {{ tex \subsection{Convert patterns} }}
 
-
 defn
-E |- xa1 ; xa2 ; pat1 , ... , patn ~> L ; xa3 :: :: process_vector :: phv_
+E |- blist / va ~> blist1 ; L1 va1 || .. || blistn ; Ln van :: :: process_bvec :: phbv_
 by
+
+E |- blist / va ~> blist1 ; L1 va1 || .. || blistn ; Ln van
+E |- va ; true ; pat ~> L  ; va3
+------------------------------------------------------------------------------------------------------------ :: vec
+E |- ( pat pat1 .. patn => exp ) , blist / va ~> blist1 ; L1 va1 || .. || blistn ; Ln van || (pat1 .. patn => exp ) ; L va3
+
+
+------------------------------------------------------------------------------------------------------------ :: wild
+E |- ( _ pat1 .. patn => exp ) , blist / va ~> (pat1 .. patn => exp ) ; __ true
+
+
+id ~> xa
+------------------------------------------------------------------------------------------------------------ :: var
+E |- ( id pat1 .. patn => exp ) , blist / va ~> (pat1 .. patn => exp ) ; ( let xa = va in __ ) true
+
+
+% va1 is the match value
+% va2 is current boolean for the branch
+% va3 is the rest of the vector
+defn
+E |- va1 ; va2 ; pat1 , .. , patn ~> L ; va3 :: :: process_vector :: phv_
+by
+
+---------------------------- :: empty
+E |- va1 ; va2 ; ~> L ; va1
 
 fresh xa0' .. xa4'
 lit ~> la
-L1 = let xa'0 = ( len la ) in let xa1' = split xa1 xa0' in __ 
-L2 = let xa2' = ( fst xa1' ) in let xa3' = snd xa1' in let xa4' = eqand xa2 xa2' la in __
-E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; xa3
+L1 = let xa'0 = ( len la ) in let xa1' = split va1 xa0' in __ 
+L2 = let xa2' = ( fst xa1' ) in let xa3' = snd xa1' in let xa4' = eqand va2 xa2' la in __
+E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; va3
 --------------------------------------------------------------------- :: lit
-E |- xa1 ; xa2 ; lit , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; xa3
+E |- va1 ; va2 ; lit , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; va3
 
 fresh xa0' .. xa4'
 id ~> xa
-L1 = let xa'0 = ( len la ) in let xa1' = split xa1 xa0' in __ 
-L2 = let xa = ( fst xa1' ) in let xa3' = snd xa1' in let xa4' = eqand xa2 xa xa in __
-E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; xa3
+L1 = let xa'0 = ( len la ) in let xa1' = split va1 xa0' in __ 
+L2 = let xa = ( fst xa1' ) in let xa3' = snd xa1' in let xa4' = va2 in __
+E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; va3
 --------------------------------------------------------------------- :: var
-E |- xa1 ; xa2 ; id , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; xa3
+E |- va1 ; va2 ; id , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; va3
 
 fresh xa0' .. xa4'
-id ~> xa
-L1 = let xa'0 = ( len la ) in let xa1' = split xa1 xa0' in __ 
-L2 = let xa3' = snd xa1' in let xa4' = eqand xa2 xa1 xa1 in __
-E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; xa3
+L1 = let xa'0 = ( len la ) in let xa1' = split va1 xa0' in __ 
+L2 = let xa3' = snd xa1' in let xa4' = va2 in __
+E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; va3
 --------------------------------------------------------------------- :: wild
-E |- xa1 ; xa2 ; id , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; xa3
+E |- va1 ; va2 ; _ , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; va3
 
+
+E |- va1 ; va2 ; pat'1 , ... , pat'm , pat1 , .. , patn ~> L ; va3
+------------------------------------------------------------------- :: concat
+E |- va1 ; va2 ; pat'1 @ ... @ pat'm , pat1 , .. , patn ~> L ; va3
 
 defn
 E |- blist ~> blist1 ; lp1 || .. || blistn ; lpn  :: :: process_head_ground :: phg_
@@ -771,15 +821,13 @@ by
 ------------------ :: empty
 E |-  ~> 
 
-% Case where la is in tail
+% Case where la is in lp-index child list
 lit ~> la
-%E |- blist ~> blist1 ; lp1 || .. || blistq ; lpq || blist' ; lp || blist'1 ; lp'1 || .. || blist'm ; lp'm
 E |- blist ~> </ blisti ; lpi // i IN 1..q /> || blist' ; la || </ blist'i ; lp'i // i IN 1.. m />
 ------------------------------------------------------------------------------------------------------------ :: lit1
 E |- ( lit pat1 .. patn => exp ) , blist ~> </ blisti ; lpi // i IN 1..q /> || ( pat1 .. patn => exp ) , blist' ; la || </ blist'i ; lp'i // i IN 1.. m />
-%E |- ( lit pat1 .. patn => exp ) , blist ~> blist1 ; lp1 || .. || blistq ; lpq || ( pat1 .. patn => exp ) , blist' ; lp || blist'1 ; lp'1 || .. || blist'm ; le'm
 
-% Case where la is not in tail
+% Case where la is not in list
 lit ~> la
 la NOTIN lp1 .. lpm
 E |- blist ~> blist1 ; lp1 || .. || blistm ; lpm 
@@ -803,27 +851,34 @@ E |- ( id pat1 .. patn => exp ) , blist ~> (pat1 .. patn => exp ) ; id
 % when we hit a wild or var we hand to all ctors with empty blist its blist and then process no more
 %
 defn
-E |- blist ~> blist1 ; ctor1 ba1 xa1 || .. || blistn ; ctorn ban xan :: :: process_head_ctor :: phc_
+E |- blist ~> blist1 ; ctorp1 || .. || blistn ; ctorpn  :: :: process_head_ctor :: phc_
 by
 
 ------------------ :: empty
 E |-  ~>
 
-
+fresh xa'
+(ctor,ba') INN E
 E |- id ~> ctor , tid
-E |- blist ~> blist1 ; ctor1 ba1 xa1 || .. || blistn ; ctorn ban xan
-% Add  ( pat'1 , .. , pat'm ) pat1 .. patn => exp to the appropriate branch
------------------------------------------------------------------------ :: ctor
-E |- :P_app: id ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist ~> blist1 ; ctor1 ba1 xa1 || .. || blistn ; ctorn ban xan
+E |- blist ~> </ blisti ; ctorpi // i IN 1..q /> || blist'  ; ctor ba' xa' || </ blist'i ; ctorp'i // i IN 1.. r />
+--------------------------------------------------------------------------------------------------------------------- :: ctor1
+E |- :P_app: id ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist ~> </ blisti ; ctorpi // i IN 1..q /> || ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist'  ; ctor ba' xa' || </ blist'i ; ctorp'i  // i IN 1.. r />
+
+fresh xa'
+E |- id ~> ctor , tid
+(ctor,ba') INN E
+ctor NOTIN ctor1 .. ctorn
+E |- blist ~> blist1 ; ctorp1  || .. || blistn ; ctorpn 
+----------------------------------------------------------------------- :: ctor2
+E |- :P_app: id ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist ~> blist1 ; ctorp1  || .. || blistn ; ctorpn  || ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist'  ; ctor ba' xa'
 
 
-E |- blist ~> blist1 ; ctor1 ba1 xa1 || .. || blistn ; ctorn ban xan
 ---------------------------------------------------------------------------- :: var
-E |- id pat1 .. patn => exp , blist ~> blist1 ; ctor1 ba1 xa1 || .. || blistn ; ctorn ban xan
+E |- id pat1 .. patn => exp , blist ~> pat1 .. patn => exp , blist ; id
 
 %E |- blist ~> blist1 ; ctor1 ba1 xa1 || ... || blistn ; ctorn ban xan
-%---------------------------------------------------------------------------- :: wild
-%E |- _ pat1 .. patn => exp , blist ~> pat1 .. patn => exp , blist 
+---------------------------------------------------------------------------- :: wild
+E |- _ pat1 .. patn => exp , blist ~> pat1 .. patn => exp , blist ; _ 
 
 
 
