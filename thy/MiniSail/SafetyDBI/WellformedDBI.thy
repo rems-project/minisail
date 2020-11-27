@@ -81,10 +81,18 @@ inductive wfV :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarro
                  \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_bitvec 
                  \<rbrakk> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_len v1 : B_int"
 
+(*
 | wfTI : "\<lbrakk>   
             
             \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f b;
             \<Theta> ; \<B> ; (b,C_true)#\<Gamma> \<turnstile>\<^sub>w\<^sub>f (lift_x c 0 (lengthG \<Gamma>)) 
+\<rbrakk> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<lbrace> : b | c \<rbrace>"
+*)
+
+| wfTI : "\<lbrakk>   
+            
+            \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f b;
+            \<Theta> ; \<B> ; (b,C_true)#\<Gamma> \<turnstile>\<^sub>w\<^sub>f c 
 \<rbrakk> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<lbrace> : b | c \<rbrace>"
 
 | wfC_eqI: "\<lbrakk>  
@@ -202,6 +210,8 @@ values "{ True . wfC [] {} ((B_bool, TRUE)#(B_int, TRUE)#GNil)  (CE_val (V_var (
 values "{ True . wfC [] {} ((B_int, TRUE)#(B_bool, TRUE)#GNil)  (CE_val (V_var (XBVar 0)) == CE_val (V_lit (L_num 42))) }"
 
 values "{ True . wfT [] {} GNil  \<lbrace> : B_int | CE_val (V_var (XBVar 0)) == CE_val (V_lit (L_num 42))\<rbrace> }"
+
+values "{ x .  wfT [] {} (GCons ( B_int, C_true)  GNil)   \<lbrace> : B_int  | [ V_var (XBVar 0) ]\<^sup>c\<^sup>e  ==  [ V_var (XBVar 1) ]\<^sup>c\<^sup>e  \<rbrace>  } "
 
 inductive
          wfE :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta> \<Rightarrow> e \<Rightarrow> b \<Rightarrow> bool" (" _ ; _ ; _ ; _ ; _ \<turnstile>\<^sub>w\<^sub>f _ : _ " [50,50,50] 50)  and

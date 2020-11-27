@@ -333,8 +333,26 @@ check_valI:  "\<lbrakk>
 | check_letI: "\<lbrakk>
      
        \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> e \<Rightarrow> \<lbrace>  : b | c \<rbrace> ; 
-       \<Theta> ; \<Phi> ; \<B> ; (GCons (b,c) \<Gamma>) ; \<Delta> \<turnstile> (lift_x s 0 1) \<Leftarrow> \<tau> \<rbrakk> \<Longrightarrow> 
+       \<Theta> ; \<Phi> ; \<B> ; (GCons (b,c) \<Gamma>) ; \<Delta> \<turnstile> s \<Leftarrow> \<tau> \<rbrakk> \<Longrightarrow> 
        \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> (AS_let e s) \<Leftarrow> \<tau>"
+
+(*
+|check_branch_s_branchI: "\<lbrakk> 
+       \<Theta> ; \<B> ;\<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ; 
+        \<turnstile>\<^sub>w\<^sub>f \<Theta> ; 
+       \<Theta> ; \<B> ;\<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau> ;
+       \<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f const;
+       atom x \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>, \<Delta>, tid, cons , const, v, \<tau>);
+       \<Theta> ; \<Phi> ;  \<B> ; ((x,b_of const,  ([v]\<^sup>c\<^sup>e == [ V_cons tid cons [x]\<^sup>v]\<^sup>c\<^sup>e ) AND (c_of const x))#\<^sub>\<Gamma>\<Gamma>) ; \<Delta> \<turnstile> s \<Leftarrow> \<tau>  
+\<rbrakk> \<Longrightarrow> 
+       \<Theta> ; \<Phi> ;  \<B> ; \<Gamma> ; \<Delta> ; tid ; cons ; const ; v \<turnstile> (AS_branch cons x s) \<Leftarrow> \<tau>"
+*)
+
+(* FIXME *)
+|check_case_sI:  "\<lbrakk>
+    \<Theta> ; \<Phi> ;  \<B> ; ( (b_of t, C_true) # \<Gamma>) ; \<Delta>  \<turnstile> s \<Leftarrow> \<tau>  
+\<rbrakk> \<Longrightarrow> 
+    \<Theta> ; \<Phi> ;  \<B> ;  \<Gamma> ; \<Delta> ; tid ; dc ; t  \<turnstile> AS_branch cons s \<Leftarrow> \<tau>"
 
 |check_case_s_finalI: "\<lbrakk> 
        \<Theta> ; \<Phi> ;  \<B> ;  \<Gamma> ; \<Delta> ; tid ; dc ; t  \<turnstile> cs \<Leftarrow> \<tau>  \<rbrakk> \<Longrightarrow> 
@@ -458,19 +476,22 @@ declare smt_valid_i.check_e.intros[code_pred_intro]
 declare smt_valid_i.check_s_check_case_s_check_case_ss.intros[code_pred_intro]
 declare smt_valid_i.check_fundef.intros[code_pred_intro]
 
-
 code_pred  (modes: 
        smt_valid_i_subtype: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> bool and
        smt_valid_i_infer_v: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> bool and
        smt_valid_i_check_v: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> bool and
        smt_valid_i_infer_e: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> bool and 
-       smt_valid_i_check_e: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> bool and 
+       smt_valid_i_check_e: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> bool)
+[show_steps,  show_mode_inference,  show_invalid_clauses]  smt_valid_i_check_e 
+  sorry
+
+code_pred  (modes:       
        smt_valid_i_check_s: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> bool and
        smt_valid_i_check_case_s: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> bool and
        smt_valid_i_check_case_ss: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> i \<Rightarrow>  bool and
        smt_valid_i_check_fundef: i \<Rightarrow> i \<Rightarrow> i \<Rightarrow> bool
 )
-[show_steps,  show_mode_inference,  show_invalid_clauses]  smt_valid_i_check_case_ss 
+[show_steps,  show_mode_inference,  show_invalid_clauses]  smt_valid_i_check_s
   sorry
 (*
 proof(goal_cases)
@@ -527,12 +548,40 @@ next
 qed
 *)
 
+value "lift_x (AS_val (V_var (XBVar  0))) 0 1 "
 
 
 values "{ x . smt_valid_i_infer_v [] {} GNil (V_lit (L_num 10 )) x  }"
 
 
+values "{ x . smt_valid_i_check_s [] [] {} GNil DNil (AS_val (V_lit (L_num 10 ))) \<lbrace> : B_int | C_true \<rbrace>  }"
+
+values "{ x . smt_valid_i_infer_e [] [] {} GNil DNil  (AE_val (V_lit (L_num 10 ))) x }"
+
+values "{ x .  wfT [] {} (GCons ( B_int, C_true)  GNil)   \<lbrace> : B_int  | [ V_var (XBVar 0) ]\<^sup>c\<^sup>e  ==  [ V_var (XBVar 1) ]\<^sup>c\<^sup>e  \<rbrace>  } "
+
+values "{ x . smt_valid_i_subtype [] {} (GCons ( B_int, C_true)  GNil) 
+     \<lbrace> : B_int  | [ V_var (XBVar 0) ]\<^sup>c\<^sup>e  ==  [ V_var (XBVar 1) ]\<^sup>c\<^sup>e  \<rbrace> 
+     \<lbrace> : B_int | C_true \<rbrace>  }"
+
+values "{ x . smt_valid_i_infer_v [] {} (GCons ( B_int, C_true)  GNil) (V_var (XBVar  0)) x  }"
+
+
+values "{ x . smt_valid_i_check_s [] [] {} (GCons ( B_int, C_true)  GNil) DNil (AS_val (V_var (XBVar  0))) \<lbrace> : B_int | C_true \<rbrace>  }"
+
 values "{ x . smt_valid_i_check_s [] [] {} GNil DNil (AS_let (AE_val (V_lit (L_num 10 ))) (AS_val (V_var (XBVar  0)))) \<lbrace> : B_int | C_true \<rbrace>  }"
+
+values "{ x . smt_valid_i_check_s [] [] {} GNil DNil 
+          (AS_let (AE_val (V_lit (L_num 10 ))) 
+              (AS_let (AE_val (V_lit L_true ))  
+                   (AS_val (V_pair (V_var (XBVar 0)) (V_var (XBVar 1)))))) \<lbrace> : B_pair B_bool B_int | C_true \<rbrace>  }"
+
+(* fail *)
+values "{ x . smt_valid_i_check_s [] [] {} GNil DNil 
+          (AS_let (AE_val (V_lit (L_num 10 ))) 
+              (AS_let (AE_val (V_lit L_true ))  
+                   (AS_val (V_pair (V_var (XBVar 0)) (V_var (XBVar 1)))))) \<lbrace> : B_pair B_int B_bool | C_true \<rbrace>  }"
+
 
 
 

@@ -1,5 +1,5 @@
 theory ConvertDBI
-imports  WellformedDBI MiniSail.Wellformed CodeGenNominalSetup
+imports  WellformedDBI MiniSail.Wellformed 
 begin
 
 
@@ -18,6 +18,15 @@ type_synonym u_list = "Syntax.u list"
 fun mk_x :: "nat \<Rightarrow> Syntax.x" where
   "mk_x k = Abs_x (Atom (Sort ''Syntax.x'' []) k)"
 *)
+
+setup_lifting type_definition_x
+(* And I guess more for those with binders *)
+
+fun mk_atom_x :: "nat \<Rightarrow> atom" where
+  "mk_atom_x n = Atom (Sort ''Syntax.x'' []) n"
+
+lift_definition mk_x :: "nat \<Rightarrow> x" is mk_atom_x using mk_atom_x.simps by auto
+
 fun fresh_x :: "x_list \<Rightarrow> Syntax.x" where
    "fresh_x xlist = mk_x (length xlist)"
 
@@ -97,20 +106,12 @@ fun convert_g :: "SyntaxDBI.\<Gamma> \<Rightarrow> Syntax.\<Gamma>" where
                                 let x = mk_x (length xlist) in 
                                 Syntax.GCons (x, convert_b [] b , convert_c (x#xlist) c) g)" 
 
-value "convert_b [] SyntaxDBI.B_int"
-value "convert_c [] SyntaxDBI.C_true"
 
 fun mk_v_eq :: "SyntaxDBI.l \<Rightarrow> SyntaxDBI.c" where
  "mk_v_eq l = (SyntaxDBI.C_eq (SyntaxDBI.CE_val (SyntaxDBI.V_var (XBVar 0))) (SyntaxDBI.CE_val (SyntaxDBI.V_lit l)))"
 
 fun mk_v_eq_x :: "nat \<Rightarrow> SyntaxDBI.c" where
  "mk_v_eq_x k = (SyntaxDBI.C_eq (SyntaxDBI.CE_val (SyntaxDBI.V_var (XBVar 0))) (SyntaxDBI.CE_val (SyntaxDBI.V_var (XBVar k))))"
-
-value "convert_ce [mk_x 0] ((SyntaxDBI.CE_val (SyntaxDBI.V_var (XBVar 0))))"
-
-value "convert_c [mk_x 0] (mk_v_eq SyntaxDBI.L_true)"
-
-value "convert_g (SyntaxDBI.GCons (SyntaxDBI.B_int, mk_v_eq_x 1) (SyntaxDBI.GCons (SyntaxDBI.B_int, mk_v_eq SyntaxDBI.L_true) SyntaxDBI.GNil))"
 
 (*
 lemma "convert_g (SyntaxDBI.GCons (SyntaxDBI.B_int, SyntaxDBI.C_true) SyntaxDBI.GNil) = (mk_x 0, B_int, C_true) # GNil"
@@ -123,9 +124,18 @@ section \<open>Wellformedness\<close>
 lemmas wf_intros = Wellformed.wfV_wfC_wfG_wfT_wfTs_wfTh_wfB_wfCE_wfTD.intros Wellformed.wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.intros
 
 lemma convert_lookup:
-  assumes "Some (b, c) = SyntaxLemmasDBI.lookup \<Gamma> x" and "V_var xx = convert_v (map fst (tolist (convert_g \<Gamma>))) (v.V_var x) " 
-  shows "Some (convert_b [] b, convert_c (map fst (tolist (convert_g \<Gamma>))) c) = Syntax.lookup (convert_g \<Gamma>) xx" 
-  sorry
+  assumes "Some (b, c) = SyntaxLemmasDBI.lookup \<Gamma> x" and "V_var xx = convert_v (map fst (tolist (convert_g \<Gamma>))) (v.V_var x) " and
+           "bb = convert_b [] b" and "cc = convert_c (map fst (tolist (convert_g \<Gamma>))) c" and "G = convert_g \<Gamma>"       
+         shows "Some (bb,cc) = Syntax.lookup G xx" 
+using assms proof(induct \<Gamma>  arbitrary: b c x xx bb cc  )
+  case GNil  
+  then show ?case using GNil by auto
+next
+  case (GCons bc G')
+  then show ?case 
+qed
+
+  
 
 lemma convert_wf:
   fixes T::SyntaxLemmasDBI.\<Theta> and G::SyntaxDBI.\<Gamma> and v::SyntaxDBI.v
