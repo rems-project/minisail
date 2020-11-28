@@ -1,6 +1,6 @@
 (*<*)
 theory BTVSubstTypingL
-  imports  "HOL-Eisbach.Eisbach_Tools" Explorer ContextSubtypingL
+  imports  "HOL-Eisbach.Eisbach_Tools" Explorer ContextSubtypingL SubstMethods
 begin
 (*>*)
 
@@ -314,22 +314,30 @@ next
     hence "b' = b'[bv::=b]\<^sub>b\<^sub>b" using subst_b_simps 
       using has_subst_b_class.forget_subst subst_b_b_def by force
     moreover have  ceq:"c = c[bv::=b]\<^sub>c\<^sub>b" using subst_b_simps proof -
-      have "atom bv \<sharp> c" using infer_e_appI wfPhi_f_supp_c[OF  infer_e_appI(3)  \<open>\<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close>]  fresh_def[of "atom bv" c] 
-            using fresh_def fresh_finsert insert_absorb insert_subset ms_fresh_all supp_at_base x_not_in_b_set by metis
+      have "supp c \<subseteq> {atom x}" using infer_e_appI wfPhi_f_supp_c[OF  _  \<open>\<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close>]  by simp
+      hence "atom bv \<sharp> c" using
+            fresh_def[of "atom bv" c] 
+        using fresh_def fresh_finsert insert_absorb 
+        insert_subset ms_fresh_all supp_at_base x_not_in_b_set fresh_prodN by metis
       thus ?thesis 
         using forget_subst subst_b_c_def  fresh_def[of "atom bv" c] by metis    
     qed 
-    show   "\<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b  \<turnstile> v[bv::=b]\<^sub>v\<^sub>b \<Leftarrow> \<lbrace> x : b'  | c \<rbrace>"  using subst_b_check_v subst_tb.simps subst_vb.simps infer_e_appI 
+    show   "\<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b  \<turnstile> v[bv::=b]\<^sub>v\<^sub>b \<Leftarrow> \<lbrace> x : b'  | c \<rbrace>"  
+      using subst_b_check_v subst_tb.simps subst_vb.simps infer_e_appI 
     proof -
       have "\<Theta> ; {|bv|} ; \<Gamma> \<turnstile> v \<Leftarrow> \<lbrace> x : b' | c \<rbrace>"
         by (metis \<open>\<B> = {|bv|}\<close> \<open>\<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Leftarrow> \<lbrace> x : b' | c \<rbrace>\<close>) (* 0.0 ms *)
       then show ?thesis 
         by (metis (no_types) \<open>\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f b\<close> \<open>b' = b'[bv::=b]\<^sub>b\<^sub>b\<close> subst_b_check_v subst_tb.simps ceq) 
     qed
-    show "atom x \<sharp> \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b" using subst_g_b_x_fresh infer_e_appI by auto
+    show "atom x \<sharp> (\<Theta>, \<Phi>, {||}::bv fset, \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b, \<Delta>[bv::=b]\<^sub>\<Delta>\<^sub>b, v[bv::=b]\<^sub>v\<^sub>b, \<tau>[bv::=b]\<^sub>\<tau>\<^sub>b)"
+      apply (fresh_mth add:  fresh_prodN subst_g_b_x_fresh infer_e_appI )
+      using subst_b_fresh_x infer_e_appI apply metis+
+      done            
     have "supp \<tau>' \<subseteq> { atom x }" using wfPhi_f_simple_supp_t  infer_e_appI by auto
     hence "atom bv \<sharp> \<tau>'" using fresh_def fresh_at_base by force
-    then  show  "\<tau>'[x::=v[bv::=b]\<^sub>v\<^sub>b]\<^sub>v = \<tau>[bv::=b]\<^sub>\<tau>\<^sub>b" using infer_e_appI (6) forget_subst subst_b_\<tau>_def subst_tv_subst_vb_switch subst_defs by metis
+    then  show  "\<tau>'[x::=v[bv::=b]\<^sub>v\<^sub>b]\<^sub>v = \<tau>[bv::=b]\<^sub>\<tau>\<^sub>b" using infer_e_appI 
+         forget_subst subst_b_\<tau>_def subst_tv_subst_vb_switch subst_defs by metis
   qed
 next
   case (infer_e_appPI \<Theta>' \<B> \<Gamma>' \<Delta> \<Phi>' b' f' bv' x' b1 c \<tau>' s' v' \<tau>1)

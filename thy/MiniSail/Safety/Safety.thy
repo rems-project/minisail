@@ -288,7 +288,7 @@ using assms proof(nominal_induct \<tau> and \<tau> and \<tau>   avoiding: v rule
 
   then obtain x3 b3 c3 \<tau>3 s3 where
     **:"\<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f \<Delta>  \<and>  \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<and>  Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x3 b3 c3 \<tau>3 s3))) = lookup_fun \<Phi> f \<and> 
-     \<Theta> ; {||} ; GNil  \<turnstile> v \<Leftarrow> \<lbrace> x3 : b3  | c3 \<rbrace> \<and>  atom x3 \<sharp> GNil \<and>  \<tau>3[x3::=v]\<^sub>\<tau>\<^sub>v = \<lbrace> z : b  | c \<rbrace>"
+     \<Theta> ; {||} ; GNil  \<turnstile> v \<Leftarrow> \<lbrace> x3 : b3  | c3 \<rbrace> \<and>  atom x3 \<sharp> (\<Theta>, \<Phi>, ({||}::bv fset), GNil, \<Delta>, v, \<lbrace> z : b  | c \<rbrace>) \<and>  \<tau>3[x3::=v]\<^sub>\<tau>\<^sub>v = \<lbrace> z : b  | c \<rbrace>"
     using infer_e_elims(6)[OF *] subst_defs by metis
 
   obtain z3 where z3:"\<lbrace> x3 : b3  | c3 \<rbrace> =  \<lbrace> z3 : b3  | c3[x3::=V_var z3]\<^sub>c\<^sub>v \<rbrace> \<and>  atom z3 \<sharp> (x3, v,c3,x1,c1)" using obtain_fresh_z3 by metis
@@ -610,7 +610,7 @@ qed
 inductive_cases check_branch_s_elims2[elim!]:
    "\<Theta> ; \<Phi> ;  \<B> ; \<Gamma> ; \<Delta>; tid ; cons ; const ; v \<turnstile> cs \<Leftarrow> \<tau>"
 
-lemmas freshers = freshers atom_dom.simps setG.simps fresh_def x_not_in_b_set
+lemmas freshers = freshers atom_dom.simps toSet.simps fresh_def x_not_in_b_set
 declare freshers [simp]
 
 
@@ -722,7 +722,7 @@ proof -
   have beq: "b_of t = b" using subtype_eq_base2 b_of.simps assms by metis
   obtain x::x where x:\<open>atom x \<sharp> (\<Theta>, \<B>, GNil, z, c_of t z, z, c1  AND  c2 )\<close> using obtain_fresh by metis
   thus ?thesis proof
-    have "atom z \<sharp> t" using subtype_wf wfT_supp fresh_def x_not_in_b_set atom_dom.simps setG.simps assms by blast
+    have "atom z \<sharp> t" using subtype_wf wfT_supp fresh_def x_not_in_b_set atom_dom.simps toSet.simps assms dom.simps by fastforce
     hence t:"t = \<lbrace> z : b_of t  | c_of t z \<rbrace>" using b_of_c_of_eq by auto
     thus  \<open> \<Theta> ; \<B> ; GNil   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b  | c_of t z \<rbrace> \<close> using subtype_wf beq assms by auto
   
@@ -821,7 +821,7 @@ next
 
   text \<open>Supporting facts here to make the main body of the proof concise\<close>
   have xf:"atom x \<sharp> \<tau>" proof -
-    have "supp \<tau> \<subseteq> supp  \<B>" using wf_supp(4) check_branch_s_branchI  atom_dom.simps setG.simps by blast
+    have "supp \<tau> \<subseteq> supp  \<B>" using wf_supp(4) check_branch_s_branchI  atom_dom.simps toSet.simps dom.simps by fastforce
     thus ?thesis using fresh_def x_not_in_b_set by blast
   qed
 
@@ -913,7 +913,7 @@ proof -
     using subtype_top subtype_trans * infer_v_wf 
     by (meson assms(1))
   ultimately show ?thesis (*apply(rule check_valI, auto simp add: assms,rule * )*)
-    using subtype_top subtype_trans fresh_GNil assms check_valI assms check_s_g_weakening assms setG.simps 
+    using subtype_top subtype_trans fresh_GNil assms check_valI assms check_s_g_weakening assms toSet.simps 
     by (metis bot.extremum infer_v_g_weakening subtype_weakening wfD_wf)
 qed
 
@@ -984,13 +984,13 @@ proof(nominal_induct  "{||}::bv fset" GNil \<Delta> "AS_while s1 s2" \<tau> and 
       show \<open> \<Theta> ; \<Phi> ; {||} ; ?G ; \<Delta>  \<turnstile> AS_seq s2 (AS_while s1 s2) \<Leftarrow> \<lbrace> zz : b_of \<tau>'  | [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   IMP  c_of \<tau>' zz  \<rbrace>\<close> 
       proof 
          have "\<lbrace> zz : B_unit  | TRUE \<rbrace> = \<lbrace> z : B_unit  | TRUE \<rbrace>" using \<tau>.eq_iff by auto 
-         thus \<open> \<Theta> ; \<Phi> ; {||} ; ?G ; \<Delta>  \<turnstile> s2 \<Leftarrow> \<lbrace> zz : B_unit  | TRUE \<rbrace>\<close> using check_s_g_weakening(1) [OF check_whileI(3) _ wfg] setG.simps 
+         thus \<open> \<Theta> ; \<Phi> ; {||} ; ?G ; \<Delta>  \<turnstile> s2 \<Leftarrow> \<lbrace> zz : B_unit  | TRUE \<rbrace>\<close> using check_s_g_weakening(1) [OF check_whileI(3) _ wfg] toSet.simps 
            by (simp add: \<open>\<lbrace> zz : B_unit | TRUE \<rbrace> = \<lbrace> z : B_unit | TRUE \<rbrace>\<close>)
         
          show \<open> \<Theta> ; \<Phi> ; {||} ; ?G ; \<Delta>  \<turnstile> AS_while s1 s2 \<Leftarrow> \<lbrace> zz : b_of \<tau>'  | [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   IMP  c_of \<tau>' zz  \<rbrace>\<close>
          proof(rule check_s_supertype(1))
            have \<open> \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_while s1 s2 \<Leftarrow> \<tau>'\<close> using  check_whileI by auto
-           thus *:\<open> \<Theta> ; \<Phi> ; {||} ; ?G ; \<Delta>  \<turnstile> AS_while s1 s2 \<Leftarrow> \<tau>' \<close> using  check_s_g_weakening(1)[OF _ _ wfg] setG.simps by auto
+           thus *:\<open> \<Theta> ; \<Phi> ; {||} ; ?G ; \<Delta>  \<turnstile> AS_while s1 s2 \<Leftarrow> \<tau>' \<close> using  check_s_g_weakening(1)[OF _ _ wfg] toSet.simps by auto
 
            (*obtain zz where teq:"\<tau>' = \<lbrace> zz : b_of \<tau>' | c_of \<tau>' zz\<rbrace>" sory*)
            show \<open>\<Theta> ; {||} ; ?G  \<turnstile> \<tau>'  \<lesssim> \<lbrace> zz : b_of \<tau>'  | [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   IMP  c_of \<tau>' zz  \<rbrace>\<close> 
@@ -1061,7 +1061,7 @@ proof -
       have wfg: "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f(x, B_bool, ([ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e )[z::=[ x ]\<^sup>v]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>" 
         using wfT_wfG vt infer_v_wf fresh_prodN assms by simp
       show  \<open>\<Theta> ; \<B> ; (x, B_bool, ([ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e )[z::=[ x ]\<^sup>v]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c[x::=[ z ]\<^sup>v]\<^sub>v[z::=[ x ]\<^sup>v]\<^sub>v \<close> 
-        using c valid_weakening[OF assms(3) _ wfg ] setG.simps 
+        using c valid_weakening[OF assms(3) _ wfg ] toSet.simps 
         using subst_v_c_def by auto
     qed
     show \<open>atom z \<sharp> (x, [ L_true ]\<^sup>v)\<close> using z fresh_prodN by metis
@@ -1474,7 +1474,7 @@ next
     have "\<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f c" using * check_s_wf by auto
     hence wfg:"\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f (x, B_bool, c) #\<^sub>\<Gamma> GNil" using wfC_wfG wfB_boolI check_s_wf *  fresh_GNil by auto
     moreover have cs: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>' \<turnstile> s' \<Leftarrow> \<tau>" using ** by auto
-    ultimately show  "\<Theta> ; \<Phi> ; {||} ; (x, B_bool, c) #\<^sub>\<Gamma> GNil ; \<Delta>'  \<turnstile> s' \<Leftarrow> \<tau>" using check_s_g_weakening(1)[OF cs _ wfg]   setG.simps  by simp
+    ultimately show  "\<Theta> ; \<Phi> ; {||} ; (x, B_bool, c) #\<^sub>\<Gamma> GNil ; \<Delta>'  \<turnstile> s' \<Leftarrow> \<tau>" using check_s_g_weakening(1)[OF cs _ wfg]   toSet.simps  by simp
     show "\<Theta> ; {||} ; GNil  \<Turnstile> c " using cv by auto
     show "\<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f \<Delta>' " using check_s_wf ** by auto
   qed

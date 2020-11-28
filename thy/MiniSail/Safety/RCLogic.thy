@@ -129,11 +129,11 @@ nominal_inductive eval_b .
 subsection \<open>Wellformed Evaluation\<close>
 
 definition wfI ::  "\<Theta> \<Rightarrow> \<Gamma> \<Rightarrow> valuation \<Rightarrow> bool" ( " _ ; _ \<turnstile> _" )  where
-  "\<Theta> ; \<Gamma> \<turnstile> i = (\<forall> (x,b,c) \<in> setG \<Gamma>. \<exists>s. Some s = i x \<and> \<Theta> \<turnstile> s : b)"
+  "\<Theta> ; \<Gamma> \<turnstile> i = (\<forall> (x,b,c) \<in> toSet \<Gamma>. \<exists>s. Some s = i x \<and> \<Theta> \<turnstile> s : b)"
 
 (*
 definition wfI2 ::  "\<Theta> \<Rightarrow>  \<B>  \<Rightarrow> \<Gamma> \<Rightarrow> valuation \<Rightarrow> type_valuation \<Rightarrow> bool" ( " _ ; _ ; _ \<turnstile> _ ; _" )  where
-  "\<Theta> ; \<B> ; \<Gamma> \<turnstile> i ; tv = ((\<forall> (x,b,c) \<in> setG \<Gamma>. \<exists>s d. Some s = i x \<and> \<Theta> \<turnstile> s ~ d \<and> tv \<lbrakk> b \<rbrakk> ~ d ) \<and> (\<forall>bv. bv |\<in>| \<B> \<longrightarrow> (\<exists>d. Some d = tv bv)))"
+  "\<Theta> ; \<B> ; \<Gamma> \<turnstile> i ; tv = ((\<forall> (x,b,c) \<in> toSet \<Gamma>. \<exists>s d. Some s = i x \<and> \<Theta> \<turnstile> s ~ d \<and> tv \<lbrakk> b \<rbrakk> ~ d ) \<and> (\<forall>bv. bv |\<in>| \<B> \<longrightarrow> (\<exists>d. Some d = tv bv)))"
 *)
 
 subsection \<open>Evaluating Terms\<close>

@@ -22,6 +22,8 @@ method fresh_subst_mth_aux uses add = (
      | (match conclusion in  "atom z \<sharp> (ce::ce)[x::=v]\<^sub>c\<^sub>e\<^sub>v" for z x v ce \<Rightarrow> \<open>auto simp add: fresh_subst_v_if subst_v_ce_def  add\<close> )
      | (match conclusion in  "atom z \<sharp> (\<Delta>::\<Delta>)[x::=v]\<^sub>\<Delta>\<^sub>v" for z x v \<Delta> \<Rightarrow> \<open>auto simp add: fresh_subst_v_if fresh_subst_dv_if  add\<close> )
      | (match conclusion in  "atom z \<sharp> \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>" for z x v \<Gamma>' \<Gamma> \<Rightarrow> \<open>subst subst_g_inside[symmetric] \<close> )
+     | (match conclusion in  "atom z \<sharp> (\<tau>::\<tau>)[x::=v]\<^sub>\<tau>\<^sub>v" for z x v \<tau> \<Rightarrow> \<open>auto simp add: v.fresh fresh_subst_v_if pure_fresh subst_v_\<tau>_def  add\<close> )
+     | (match conclusion in  "atom z \<sharp> ({||} :: bv fset)" for z  \<Rightarrow> \<open>auto simp add: fresh_empty_fset\<close>)
 (* tbc delta and types *)
      | (auto simp add: add x_fresh_b pure_fresh) (* Cases where there is no subst and so can most likely get what we want from induction premises *)
 )

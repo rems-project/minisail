@@ -8,6 +8,7 @@ chapter \<open>Immutable Variable Substitution\<close>
 
 section \<open>Class\<close>
 
+
 class has_subst_v = fs +
   fixes subst_v :: "'a::fs \<Rightarrow> x \<Rightarrow> v \<Rightarrow> 'a::fs"   ("_[_::=_]\<^sub>v" [1000,50,50] 1000)
   assumes fresh_subst_v_if:  "y \<sharp> (subst_v a x v)  \<longleftrightarrow> (atom x \<sharp> a \<and> y \<sharp> a) \<or> (y \<sharp> v \<and> (y \<sharp> a \<or> y = atom x))" 
@@ -15,7 +16,7 @@ class has_subst_v = fs +
    and    subst_v_id[simp]:      "subst_v a x (V_var x) = a"
    and    eqvt[simp,eqvt]:          "(p::perm) \<bullet> (subst_v a x v) = (subst_v  (p \<bullet> a) (p \<bullet>x) (p \<bullet>v))"
    and    flip_subst_v[simp]:    "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c) = c[z::=[x]\<^sup>v]\<^sub>v"
-   and    flip_subst_subst_v[simp]: "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c)[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
+   and    subst_v_simple_commute[simp]: "atom x \<sharp> c \<Longrightarrow>(c[z::=[x]\<^sup>v]\<^sub>v)[x::=b]\<^sub>v = c[z::=b]\<^sub>v" 
 begin
 
 
@@ -30,16 +31,6 @@ proof -
   ultimately show ?thesis using Abs1_eq_iff_all(3)[of z1 c1 z2 c2 z1]  assms 
     by (metis Abs1_eq_iff_fresh(3) flip_commute)
 qed
-
-lemma subst_v_simple_commute[simp]:
-  fixes x::x
-  assumes "atom x \<sharp> c" 
-  shows "(c[z::=[x]\<^sup>v]\<^sub>v)[x::=b]\<^sub>v = c[z::=b]\<^sub>v" 
-proof - 
-  have "(c[z::=[x]\<^sup>v]\<^sub>v)[x::=b]\<^sub>v = (( x \<leftrightarrow> z) \<bullet> c)[x::=b]\<^sub>v" using flip_subst_v assms by simp
-  thus ?thesis using flip_subst_subst_v assms by simp
-qed
-
 
 lemma subst_v_flip_eq_two:
   fixes z1::x and z2::x and x1::x and x2::x 
@@ -101,14 +92,12 @@ lemma subst_vv_id [simp]: "tm[a::=V_var a]\<^sub>v\<^sub>v  = tm"
   by (induct tm rule: v.induct) simp_all
 
 lemma subst_vv_commute [simp]:
-  "atom j \<sharp> tm \<Longrightarrow> subst_vv (subst_vv tm i t) j u = subst_vv tm i (subst_vv t j u ) "
+  "atom j \<sharp> tm \<Longrightarrow> tm[i::=t]\<^sub>v\<^sub>v[j::=u]\<^sub>v\<^sub>v = tm[i::=t[j::=u]\<^sub>v\<^sub>v]\<^sub>v\<^sub>v "
   by (induct tm rule: v.induct) (auto simp: fresh_Pair)
 
-lemma subst_vv_commute2 [simp]:
-  "atom j \<sharp> t \<Longrightarrow> atom i \<sharp> u \<Longrightarrow> i \<noteq> j \<Longrightarrow> subst_vv (subst_vv tm i t) j u = subst_vv (subst_vv tm j u ) i t"
-  by (induct tm rule: v.induct) auto
 
-lemma repeat_subst_tvm [simp]: "subst_vv (subst_vv tm i t ) i u  = subst_vv tm i (subst_vv t i u )"
+lemma subst_vv_commute_full [simp]:
+  "atom j \<sharp> t \<Longrightarrow> atom i \<sharp> u \<Longrightarrow> i \<noteq> j \<Longrightarrow> tm[i::=t]\<^sub>v\<^sub>v[j::=u]\<^sub>v\<^sub>v = tm[j::=u]\<^sub>v\<^sub>v[i::=t]\<^sub>v\<^sub>v"
   by (induct tm rule: v.induct) auto
 
 lemma subst_vv_var_flip[simp]:
@@ -131,6 +120,7 @@ instance proof
   fix j::atom and i::x and  x::v and t::v
   show  "(j \<sharp> subst_v t i x) = ((atom i \<sharp> t \<and> j \<sharp> t) \<or> (j \<sharp> x \<and> (j \<sharp> t \<or> j = atom i)))"
     using fresh_subst_vv_if[of j t i x] subst_v_v_def by metis
+
   fix a::x and tm::v and x::v
   show "atom a \<sharp> tm \<Longrightarrow> subst_v tm a x  = tm"
     using forget_subst_vv subst_v_v_def by simp
@@ -140,18 +130,19 @@ instance proof
 
   fix p::perm and x1::x and v::v and t1::v
   show "p \<bullet> subst_v t1 x1 v  = subst_v  (p \<bullet> t1) (p \<bullet> x1) (p \<bullet> v)" 
-    using subst_vv_commute  subst_v_v_def by simp
+    using   subst_v_v_def by simp
 
   fix x::x and c::v and z::x
   show "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c) = c[z::=[x]\<^sup>v]\<^sub>v"
-    using subst_vv_var_flip subst_v_v_def by simp
+    using  subst_v_v_def by simp
 
   fix x::x and c::v and z::x
-  show  "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c)[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
-    using subst_vv_var_flip subst_v_v_def by simp
+  show  "atom x \<sharp> c \<Longrightarrow> c[z::=[x]\<^sup>v]\<^sub>v[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
+    using  subst_v_v_def by simp
 qed
 
 end
+
 
 section \<open>Expressions\<close>
 
@@ -253,15 +244,15 @@ instance proof
 
   fix x::x and c::e and z::x
   show "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c) = c[z::=[x]\<^sup>v]\<^sub>v"
-   using subst_ev_var subst_v_e_def by simp
+   using  subst_v_e_def by simp
 
   fix x::x and c::e and z::x
-  show  "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c)[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
-    using subst_ev_var_flip subst_v_e_def by simp
+  show  "atom x \<sharp> c \<Longrightarrow> c[z::=[x]\<^sup>v]\<^sub>v[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
+    using  subst_v_e_def by simp
 qed
 end
 
-lemma subst_ev_commute_subst:
+lemma subst_ev_commute_full:
   fixes e::e and w::v and v::v
   assumes "atom z \<sharp> v" and "atom x \<sharp> w" and "x \<noteq> z"
   shows "subst_ev  (e[z::=w]\<^sub>e\<^sub>v) x v = subst_ev  (e[x::=v]\<^sub>e\<^sub>v) z w" 
@@ -358,7 +349,6 @@ by auto
 instantiation ce :: has_subst_v
 begin
 
-
 definition 
   "subst_v = subst_cev"
 
@@ -380,17 +370,17 @@ instance proof
 
   fix x::x and c::ce and z::x 
   show "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c) = c [z::=V_var x]\<^sub>v"
-   using subst_cev_var subst_v_ce_def by simp
+   using  subst_v_ce_def by simp
 
   fix x::x and c::ce and z::x
-  show  "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c)[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
-    using subst_cev_var_flip subst_v_ce_def by simp
+  show  "atom x \<sharp> c \<Longrightarrow> c [z::=V_var x]\<^sub>v[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
+    using  subst_v_ce_def by simp
 qed
 
 end
 
 
-lemma subst_cev_commute_subst:
+lemma subst_cev_commute_full:
   fixes e::ce and w::v and v::v
   assumes "atom z \<sharp> v" and "atom x \<sharp> w" and "x \<noteq> z"
   shows "subst_cev (e[z::=w]\<^sub>c\<^sub>e\<^sub>v) x v  = subst_cev (e[x::=v]\<^sub>c\<^sub>e\<^sub>v) z w " 
@@ -488,20 +478,21 @@ instance proof
    using subst_cv_var_flip subst_v_c_def by simp
 
   fix x::x and c::c and z::x
-  show  "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c)[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
+  show  "atom x \<sharp> c \<Longrightarrow> c[z::=[x]\<^sup>v]\<^sub>v[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
     using subst_cv_var_flip subst_v_c_def by simp
 qed
 
 end
 
 (* TODO These are not needed to prove instances and might be provable from similar class lemmas *)
+
 lemma subst_cv_var_flip1[simp]:
   fixes c::c
   assumes "atom y \<sharp> c"
   shows "(x \<leftrightarrow> y) \<bullet> c = c[x::=V_var y]\<^sub>c\<^sub>v"
   using subst_cv_var_flip flip_commute 
   by (metis assms)
-
+(*
 lemma subst_cv_v_flip1[simp]:
   fixes c::c
   assumes "atom z1 \<sharp> (z,c)" and "atom z1' \<sharp> (z,c)"
@@ -524,13 +515,14 @@ next
   then show ?case using subst_ev_v_flip1 flip_def fresh_Pair swap_fresh_fresh
     by (simp add: fresh_Pair)
 qed(force+)
-
+*)
+(*
 lemma subst_cv_v_flip2[simp]:
   fixes c::c
   assumes "atom z1 \<sharp> (z,c)" and "atom z1' \<sharp> (z,c)"
   shows"(z1 \<leftrightarrow> z1') \<bullet> c[z::=[z1]\<^sup>v]\<^sub>c\<^sub>v =  c[z::=[z1']\<^sup>v]\<^sub>c\<^sub>v"
   using subst_cv_v_flip1 assms by simp
-
+*)
 lemma subst_cv_v_flip3[simp]:
   fixes c::c
   assumes "atom z1 \<sharp> c" and "atom z1' \<sharp> c"
@@ -545,7 +537,7 @@ proof -
      then show ?thesis using 2 assms by auto
   next
     case 3
-    then show ?thesis using subst_cv_v_flip2 assms by auto
+    then show ?thesis using assms by auto
   qed
 qed
 
@@ -557,13 +549,13 @@ lemma subst_cv_v_flip[simp]:
 
 
 
-lemma subst_cv_commute_subst:
+lemma subst_cv_commute_full:
   fixes c::c
   assumes "atom z \<sharp> v" and "atom x \<sharp> w" and "x\<noteq>z"
   shows "(c[z::=w]\<^sub>c\<^sub>v)[x::=v]\<^sub>c\<^sub>v = (c[x::=v]\<^sub>c\<^sub>v)[z::=w]\<^sub>c\<^sub>v" 
  using assms proof(nominal_induct c rule: c.strong_induct)
   case (C_eq e1 e2)
-  then show ?case using subst_cev_commute_subst by simp
+  then show ?case using subst_cev_commute_full by simp
 qed(force+)
 
 lemma subst_cv_eq[simp]:
@@ -629,7 +621,7 @@ proof -
   have  "(x \<leftrightarrow> xa) \<bullet>  ((x, b, c[z::=[x]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) =  (( (x \<leftrightarrow> xa) \<bullet>  x, b, (x \<leftrightarrow> xa) \<bullet>  c[z::=[x]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> ((x \<leftrightarrow> xa) \<bullet>  \<Gamma>))" 
     using subst Cons_eqvt flip_fresh_fresh using G_cons_flip by simp
   also have "... = ((xa, b, (x \<leftrightarrow> xa) \<bullet> c[z::=[x]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> ((x \<leftrightarrow> xa) \<bullet>  \<Gamma>))" using assms by fastforce
-  also have "... =  ((xa, b,  c[z::=V_var xa]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> ((x \<leftrightarrow> xa) \<bullet>  \<Gamma>))" using assms subst_cv_v_flip1[of x z c xa "V_var x" ] by fastforce
+  also have "... =  ((xa, b,  c[z::=V_var xa]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> ((x \<leftrightarrow> xa) \<bullet>  \<Gamma>))" using assms subst_cv_var_flip by fastforce
   also have "... =  ((xa, b,  c[z::=V_var xa]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)"  using assms flip_fresh_fresh by blast 
   finally show ?thesis by simp
 qed
@@ -646,6 +638,7 @@ nominal_function subst_tv :: "\<tau> \<Rightarrow> x \<Rightarrow> v \<Rightarro
   apply(rule_tac y=a and c="(aa,b)" in \<tau>.strong_exhaust)
   apply (auto simp: eqvt_at_def fresh_star_def fresh_Pair fresh_at_base)
   apply blast
+
 proof -
   fix z :: x and c :: c and za :: x and xa :: x and va :: v and ca :: c and cb :: x
   assume a1: "atom za \<sharp> va"  and  a2: "atom z \<sharp> va" and a3: "\<forall>cb. atom cb \<sharp> c \<and> atom cb \<sharp> ca \<longrightarrow> cb \<noteq> z \<and> cb \<noteq> za \<longrightarrow> c[z::=V_var cb]\<^sub>c\<^sub>v = ca[za::=V_var cb]\<^sub>c\<^sub>v"
@@ -655,11 +648,13 @@ proof -
 
   have "c[z::=V_var cb]\<^sub>c\<^sub>v = ca[za::=V_var cb]\<^sub>c\<^sub>v" using assms  by auto
   hence "c[z::=V_var cb]\<^sub>c\<^sub>v[xa::=va]\<^sub>c\<^sub>v = ca[za::=V_var cb]\<^sub>c\<^sub>v[xa::=va]\<^sub>c\<^sub>v" by simp
-  moreover have "c[z::=V_var cb]\<^sub>c\<^sub>v[xa::=va]\<^sub>c\<^sub>v = c[xa::=va]\<^sub>c\<^sub>v[z::=V_var cb]\<^sub>c\<^sub>v" using   subst_cv_commute_subst[of z va xa "V_var cb" ]  assms fresh_def v.supp by fastforce
-  moreover  have "ca[za::=V_var cb]\<^sub>c\<^sub>v[xa::=va]\<^sub>c\<^sub>v = ca[xa::=va]\<^sub>c\<^sub>v[za::=V_var cb]\<^sub>c\<^sub>v" using   subst_cv_commute_subst[of za va xa "V_var cb" ]  assms fresh_def v.supp by fastforce
+  moreover have "c[z::=V_var cb]\<^sub>c\<^sub>v[xa::=va]\<^sub>c\<^sub>v = c[xa::=va]\<^sub>c\<^sub>v[z::=V_var cb]\<^sub>c\<^sub>v" using   subst_cv_commute_full[of z va xa "V_var cb" ]  assms fresh_def v.supp by fastforce
+  moreover  have "ca[za::=V_var cb]\<^sub>c\<^sub>v[xa::=va]\<^sub>c\<^sub>v = ca[xa::=va]\<^sub>c\<^sub>v[za::=V_var cb]\<^sub>c\<^sub>v" 
+       using   subst_cv_commute_full[of za va xa "V_var cb" ]  assms fresh_def v.supp by fastforce
  
   ultimately show "c[xa::=va]\<^sub>c\<^sub>v[z::=V_var cb]\<^sub>c\<^sub>v = ca[xa::=va]\<^sub>c\<^sub>v[za::=V_var cb]\<^sub>c\<^sub>v" by simp
 qed
+
 nominal_termination (eqvt) by lexicographic_order
 
 abbreviation 
@@ -703,7 +698,8 @@ proof -
   ultimately have xaf: "atom xa \<sharp> c" using fresh_def by auto
   have "(x \<leftrightarrow> xa) \<bullet> \<tau> = \<lbrace> z : b | (x \<leftrightarrow> xa) \<bullet> c \<rbrace>" 
     by (metis \<tau>.perm_simps empty_iff flip_at_base_simps(3) flip_fresh_fresh fresh_PairD(1) fresh_PairD(2) fresh_def not_self_fresh supp_b_empty v.fresh(2) zbc)
-  also have "... =  \<lbrace> z : b | c[x::=V_var xa]\<^sub>c\<^sub>v \<rbrace>"  using subst_cv_var_flip1 xaf by presburger
+  also have "... =  \<lbrace> z : b | c[x::=V_var xa]\<^sub>c\<^sub>v \<rbrace>"  using subst_cv_v_flip xaf  
+    by (metis permute_flip_cancel permute_flip_cancel2 subst_cv_var_flip)
   finally show ?thesis using subst_tv.simps zbc 
     using fresh_PairD(1) not_self_fresh by force
 qed
@@ -748,7 +744,7 @@ instance proof
     using subst_v_c_def flip_subst_v subst_tv.simps subst_v_\<tau>_def fresh_Pair by auto
 
   fix x::x and c::\<tau> and z::x
-  show  "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c)[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
+  show  "atom x \<sharp> c \<Longrightarrow> c[z::=[x]\<^sup>v]\<^sub>v[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
     apply(nominal_induct c avoiding:  x v z rule:\<tau>.strong_induct)
     using subst_v_c_def  subst_tv.simps subst_v_\<tau>_def fresh_Pair 
     by (metis flip_commute subst_tv_commute subst_tv_var_flip subst_v_\<tau>_def subst_vv.simps(2))
@@ -756,13 +752,13 @@ qed
 
 end
 
-lemma subst_tv_commute_subst:
+lemma subst_tv_commute_full:
   fixes c::\<tau>
   assumes "atom z \<sharp> v" and "atom x \<sharp> w" and "x\<noteq>z"
   shows "(c[z::=w]\<^sub>\<tau>\<^sub>v)[x::=v]\<^sub>\<tau>\<^sub>v = (c[x::=v]\<^sub>\<tau>\<^sub>v)[z::=w]\<^sub>\<tau>\<^sub>v" 
  using assms proof(nominal_induct c avoiding: x v z w rule: \<tau>.strong_induct)
   case (T_refined_type x1a x2a x3a)
-  then show ?case using subst_cv_commute_subst by simp
+  then show ?case using subst_cv_commute_full by simp
 qed
 
 lemma type_eq_subst_eq:
@@ -844,6 +840,7 @@ proof -
   finally show ?thesis using c_of.simps[of z' x "b_of t" c']  fresh_Pair z by metis
 qed
 
+thm type_eq_subst_eq
 
 lemma type_eq_subst_eq1:
   fixes v::v and c1::c
@@ -895,11 +892,11 @@ proof(nominal_induct "\<lbrace> z' : B_bool  | TRUE \<rbrace>" avoiding: x rule:
 qed
 
 
-
 lemma type_eq_subst:
   assumes "atom x \<sharp> c"
   shows "\<lbrace> z : b  | c \<rbrace> = \<lbrace> x : b | c[z::=[x]\<^sup>v]\<^sub>c\<^sub>v \<rbrace>"
-  using \<tau>.eq_iff Abs1_eq_iff assms by auto
+  using \<tau>.eq_iff Abs1_eq_iff assms 
+  using subst_cv_var_flip type_eq_flip by auto
 
 lemma type_e_subst_fresh:
   fixes x::x and z::x
@@ -926,7 +923,7 @@ lemma subst_tv_if:
   assumes "atom z1 \<sharp> (x,v)" and "atom z' \<sharp> (x,v)" 
   shows "\<lbrace> z1 : b  | CE_val (v'[x::=v]\<^sub>v\<^sub>v)  ==  CE_val (V_lit l)   IMP  (c'[x::=v]\<^sub>c\<^sub>v)[z'::=[z1]\<^sup>v]\<^sub>c\<^sub>v  \<rbrace> = 
          \<lbrace> z1 : b  | CE_val v'           ==  CE_val (V_lit l)   IMP  c'[z'::=[z1]\<^sup>v]\<^sub>c\<^sub>v  \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v" 
-using subst_cv_commute_subst[of z' v x "V_var z1" c']  subst_tv.simps subst_vv.simps(1) subst_ev.simps  subst_cv.simps assms 
+using subst_cv_commute_full[of z' v x "V_var z1" c']  subst_tv.simps subst_vv.simps(1) subst_ev.simps  subst_cv.simps assms 
 by simp
 
 lemma subst_tv_tid:
@@ -1275,7 +1272,7 @@ proof -
         using \<open>atom z1 \<sharp> v\<close> assms 
         by (metis (mono_tags) \<open>atom z1' \<sharp> (CE_val v == CE_val (V_lit ll) IMP ca[za::=[z1]\<^sup>v]\<^sub>c\<^sub>v )\<close> c.fresh(6) c.fresh(7) ce.fresh(1) flip_at_simps(2) flip_fresh_fresh fresh_at_base_permute_iff fresh_def supp_l_empty v.fresh(1))
       also have "... =  ((CE_val v  ==  CE_val (V_lit ll))   IMP  (ca[za::=[z1']\<^sup>v]\<^sub>c\<^sub>v ))"
-        using assms  subst_cv_v_flip2 by fastforce
+        using assms   by fastforce
       finally show ?thesis by auto
     qed
     ultimately show ?thesis    
@@ -1334,7 +1331,7 @@ instance proof
    using subst_sv_var_flip subst_v_s_def by simp
 
   fix x::x and c::s and z::x
-  show  "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c)[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
+  show  "atom x \<sharp> c \<Longrightarrow> c[z::=[x]\<^sup>v]\<^sub>v[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
     using subst_sv_var_flip subst_v_s_def by simp
 qed
 end
@@ -1352,18 +1349,20 @@ nominal_function subst_ft_v :: "fun_typ \<Rightarrow> x \<Rightarrow> v \<Righta
    apply blast
 proof(goal_cases)
   case (1 z c t s za xa va ca ta sa cb)
-  hence  "c[z::=[ cb ]\<^sup>v]\<^sub>c\<^sub>v = ca[za::=[ cb ]\<^sup>v]\<^sub>c\<^sub>v" by metis
+  hence  "c[z::=[ cb ]\<^sup>v]\<^sub>c\<^sub>v = ca[za::=[ cb ]\<^sup>v]\<^sub>c\<^sub>v" 
+    by (metis flip_commute subst_cv_var_flip)
   hence  "c[z::=[ cb ]\<^sup>v]\<^sub>c\<^sub>v[xa::=va]\<^sub>c\<^sub>v = ca[za::=[ cb ]\<^sup>v]\<^sub>c\<^sub>v[xa::=va]\<^sub>c\<^sub>v" by auto
-  then show ?case using subst_cv_commute atom_eq_iff fresh_atom fresh_atom_at_base subst_cv_commute_subst v.fresh 
-    using "1"(14) "1"(2) "1"(3) "1"(4) "1"(5) by auto
+  then show ?case using subst_cv_commute atom_eq_iff fresh_atom fresh_atom_at_base subst_cv_commute_full v.fresh 
+    using 1 subst_cv_var_flip  flip_commute by metis
+
 next
   case (2 z c t s za xa va ca ta sa cb)
   hence  "t[z::=[ cb ]\<^sup>v]\<^sub>\<tau>\<^sub>v = ta[za::=[ cb ]\<^sup>v]\<^sub>\<tau>\<^sub>v" by metis
   hence  "t[z::=[ cb ]\<^sup>v]\<^sub>\<tau>\<^sub>v[xa::=va]\<^sub>\<tau>\<^sub>v = ta[za::=[ cb ]\<^sup>v]\<^sub>\<tau>\<^sub>v[xa::=va]\<^sub>\<tau>\<^sub>v" by auto
-  then show ?case using subst_tv_commute_subst 2 
+  then show ?case using subst_tv_commute_full 2 
     by (metis atom_eq_iff fresh_atom fresh_atom_at_base v.fresh(2))
+  qed
 
-qed
 
 nominal_termination (eqvt) by lexicographic_order
 
@@ -1435,7 +1434,7 @@ instance proof
     by (auto simp add: subst_v_c_def subst_v_s_def subst_v_\<tau>_def subst_v_fun_typ_def)
     
   fix x::x and c::fun_typ and z::x
-  show  "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c)[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
+  show  "atom x \<sharp> c \<Longrightarrow> c[z::=[x]\<^sup>v]\<^sub>v[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
     apply(nominal_induct c avoiding: z x v rule:fun_typ.strong_induct)
     apply auto
     by (auto simp add: subst_v_c_def subst_v_s_def subst_v_\<tau>_def subst_v_fun_typ_def )
@@ -1476,7 +1475,7 @@ instance proof
     by(auto simp add: subst_v_fun_typ_def subst_v_s_def subst_v_\<tau>_def subst_v_fun_typ_q_def fresh_subst_v_if )  
 
   fix x::x and c::fun_typ_q and z::x
-  show  "atom x \<sharp> c \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> c)[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
+  show  "atom x \<sharp> c \<Longrightarrow> c[z::=[x]\<^sup>v]\<^sub>v[x::=v]\<^sub>v = c[z::=v]\<^sub>v"
     apply(nominal_induct c avoiding: z x v rule:fun_typ_q.strong_induct,auto)
      apply(auto simp add: subst_v_fun_typ_def subst_v_s_def subst_v_\<tau>_def subst_v_fun_typ_q_def fresh_subst_v_if )  
      by (metis subst_v_fun_typ_def flip_bv_x_cancel subst_ft_v.eqvt subst_v_simple_commute v.perm_simps )+
@@ -1492,10 +1491,10 @@ by(induct \<Delta> rule: \<Delta>_induct,simp,force)
 
 lemma subst_gv_member_iff:
   fixes x'::x and x::x and v::v and c'::c
-  assumes "(x',b',c') \<in> setG \<Gamma>" and "atom x \<notin> atom_dom \<Gamma>" 
-  shows "(x',b',c'[x::=v]\<^sub>c\<^sub>v) \<in> setG \<Gamma>[x::=v]\<^sub>\<Gamma>\<^sub>v"
+  assumes "(x',b',c') \<in> toSet \<Gamma>" and "atom x \<notin> atom_dom \<Gamma>" 
+  shows "(x',b',c'[x::=v]\<^sub>c\<^sub>v) \<in> toSet \<Gamma>[x::=v]\<^sub>\<Gamma>\<^sub>v"
 proof -
-  have "x' \<noteq> x" using assms fresh_dom_free2 by auto
+  have "x' \<noteq> x" using assms fresh_dom_free2 by metis
   then show ?thesis  using assms proof(induct \<Gamma> rule: \<Gamma>_induct)
   case GNil
     then show ?case by auto
@@ -1508,10 +1507,10 @@ proof -
     next
       case False
       have "x1\<noteq>x" using fresh_def fresh_GCons fresh_Pair supp_at_base GCons fresh_dom_free2 by auto
-      hence "(x', b', c') \<in> setG \<Gamma>'" using GCons False setG.simps by auto
-      moreover have "atom x \<notin> atom_dom \<Gamma>'" using fresh_GCons GCons dom.simps setG.simps by simp
-      ultimately have  "(x', b', c'[x::=v]\<^sub>c\<^sub>v) \<in> setG \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v" using GCons by auto
-      hence "(x', b', c'[x::=v]\<^sub>c\<^sub>v) \<in> setG ((x1, b1, c1[x::=v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v))" by auto
+      hence "(x', b', c') \<in> toSet \<Gamma>'" using GCons False toSet.simps by auto
+      moreover have "atom x \<notin> atom_dom \<Gamma>'" using fresh_GCons GCons dom.simps toSet.simps by simp
+      ultimately have  "(x', b', c'[x::=v]\<^sub>c\<^sub>v) \<in> toSet \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v" using GCons by auto
+      hence "(x', b', c'[x::=v]\<^sub>c\<^sub>v) \<in> toSet ((x1, b1, c1[x::=v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v))" by auto
       then show ?thesis using subst_gv.simps \<open>x1\<noteq>x\<close> by auto
     qed
   qed
@@ -1531,7 +1530,7 @@ qed
 
 section \<open>Lookup\<close>
 
-lemma set_GConsD: "y \<in> setG (x #\<^sub>\<Gamma> xs) \<Longrightarrow> y=x \<or> y \<in> setG xs"
+lemma set_GConsD: "y \<in> toSet (x #\<^sub>\<Gamma> xs) \<Longrightarrow> y=x \<or> y \<in> toSet xs"
 by auto
 
 lemma  subst_g_assoc_cons:

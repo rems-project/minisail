@@ -48,7 +48,7 @@ using assms proof(nominal_induct t avoiding: x v xa rule:\<tau>.strong_induct)
     using subst_tv.simps fresh_Pair by metis
   also have "... =  c'[x::=v]\<^sub>c\<^sub>v [z'::=V_var xa]\<^sub>c\<^sub>v" using c_of.simps T_refined_type by metis
   also have "... = c' [z'::=V_var xa]\<^sub>c\<^sub>v[x::=v]\<^sub>c\<^sub>v" 
-    using subst_cv_commute_subst[of z' v x "V_var xa" c'] subst_v_c_def T_refined_type fresh_Pair fresh_at_base v.fresh fresh_x_neq by metis
+    using subst_cv_commute_full[of z' v x "V_var xa" c'] subst_v_c_def T_refined_type fresh_Pair fresh_at_base v.fresh fresh_x_neq by metis
   finally show ?case using c_of.simps T_refined_type by metis  
 qed
 
@@ -185,7 +185,7 @@ lemma wfI_subst1:
 proof - 
   {
     fix xa::x and ba::b  and ca::c
-    assume as: "(xa,ba,ca) \<in> setG ((G' @ ((x, b, c[z::=[x]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> G)))"
+    assume as: "(xa,ba,ca) \<in> toSet ((G' @ ((x, b, c[z::=[x]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> G)))"
     then have " \<exists>s. Some s = (i(x \<mapsto> sv)) xa \<and> wfRCV \<Theta> s ba"
     proof(cases "x=xa") 
       case True
@@ -195,7 +195,7 @@ proof -
     next
       case False
      
-      then obtain ca' where "(xa, ba, ca') \<in> setG (G'[x::=v]\<^sub>\<Gamma>\<^sub>v @ G)" using wfG_member_subst2 assms as by metis
+      then obtain ca' where "(xa, ba, ca') \<in> toSet (G'[x::=v]\<^sub>\<Gamma>\<^sub>v @ G)" using wfG_member_subst2 assms as by metis
       then obtain s where " Some s = i xa \<and> wfRCV \<Theta> s ba" using wfI_def assms False by blast
       thus  ?thesis using False by auto
     qed   
@@ -347,8 +347,8 @@ proof -
     have "xx \<noteq> x" using  xxf fresh_Pair fresh_at_base by fast
     hence "((xx, b1, subst_cv c1 z1 (V_var xx) ) #\<^sub>\<Gamma> \<Gamma>')[x::=v]\<^sub>\<Gamma>\<^sub>v = (xx, b1, (subst_cv c1 z1 (V_var xx) )[x::=v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v)"
       using subst_gv.simps by auto
-    moreover have "(c1[z1::=V_var xx]\<^sub>c\<^sub>v )[x::=v]\<^sub>c\<^sub>v = (c1[x::=v]\<^sub>c\<^sub>v) [z1::=V_var xx]\<^sub>c\<^sub>v" using subst_cv_commute_subst xfw1 by metis
-    moreover have "c2[z2::=[ xx ]\<^sup>v]\<^sub>c\<^sub>v[x::=v]\<^sub>c\<^sub>v  =  (c2[x::=v]\<^sub>c\<^sub>v)[z2::=V_var xx]\<^sub>c\<^sub>v" using subst_cv_commute_subst xfw2 by metis
+    moreover have "(c1[z1::=V_var xx]\<^sub>c\<^sub>v )[x::=v]\<^sub>c\<^sub>v = (c1[x::=v]\<^sub>c\<^sub>v) [z1::=V_var xx]\<^sub>c\<^sub>v" using subst_cv_commute_full xfw1 by metis
+    moreover have "c2[z2::=[ xx ]\<^sup>v]\<^sub>c\<^sub>v[x::=v]\<^sub>c\<^sub>v  =  (c2[x::=v]\<^sub>c\<^sub>v)[z2::=V_var xx]\<^sub>c\<^sub>v" using subst_cv_commute_full xfw2 by metis
     ultimately show ?thesis using  vd1  append_g.simps by metis
   qed
   moreover have "atom xx \<sharp> (\<Theta> , \<B>  , \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v@\<Gamma>,  z1 , c1[x::=v]\<^sub>c\<^sub>v ,  z2  ,c2[x::=v]\<^sub>c\<^sub>v  )" 
@@ -552,7 +552,7 @@ next
 
     ultimately have "\<Theta> ; \<B> ; \<Gamma>  \<turnstile> (V_var y)[x::=v]\<^sub>v\<^sub>v \<Rightarrow> \<tau>\<^sub>1 \<and> \<Theta> ; \<B> ; \<Gamma>  \<turnstile> \<tau>\<^sub>1 \<lesssim> \<tau>\<^sub>2[x::=v]\<^sub>\<tau>\<^sub>v" 
       using V_var True by argo
-    moreover have "setG \<Gamma> \<subseteq> setG  (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>)" by simp
+    moreover have "toSet \<Gamma> \<subseteq> toSet  (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>)" by simp
     moreover have "\<Theta> ; \<B>\<turnstile>\<^sub>w\<^sub>f (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>)" proof - 
       have "\<Theta> ; \<B>\<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b\<^sub>1, c0[z0::=[x]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>" using infer_v_wf V_var by auto
       moreover have  "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b_of \<tau>\<^sub>1" using infer_v_v_wf V_var by auto
@@ -854,15 +854,21 @@ next
       show "\<Theta> ; \<B> ; \<Gamma>  \<turnstile> \<tau>\<^sub>1 \<lesssim> \<lbrace> z0 : b\<^sub>1  | c0 \<rbrace>" using infer_e_appI by metis
       show "atom z0 \<sharp> (x, v)" using infer_e_appI by metis
     qed
-    moreover have "atom x \<sharp> c" using wfPhi_f_supp_c[OF infer_e_appI(3)] fresh_def \<open>x\<noteq>x'\<close> 
-      by (metis atom_eq_iff empty_iff infer_e_appI.hyps(2) insert_iff subset_singletonD)
+    moreover have "atom x \<sharp> c" using wfPhi_f_supp_c  infer_e_appI fresh_def \<open>x\<noteq>x'\<close> 
+       atom_eq_iff empty_iff infer_e_appI.hyps insert_iff subset_singletonD by metis
 
     moreover hence "atom x \<sharp> \<lbrace> x' : b  | c \<rbrace>" using \<tau>.fresh supp_b_empty fresh_def by blast
     ultimately show  \<open>\<Theta> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>  \<turnstile> v'[x::=v]\<^sub>v\<^sub>v \<Leftarrow> \<lbrace> x' : b  | c \<rbrace>\<close> using forget_subst_tv by metis
 
-    have "atom x' \<sharp> (x,v)" using infer_v_fresh_g_fresh_xv infer_e_appI check_v_wf by blast
+    have *: "atom x' \<sharp> (x,v)" using infer_v_fresh_g_fresh_xv infer_e_appI check_v_wf by blast
 
-    thus  \<open>atom x' \<sharp> \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>\<close>  using infer_e_appI fresh_subst_gv  wfD_wf subst_g_inside fresh_Pair by metis
+    show  \<open>atom x' \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>, \<Delta>[x::=v]\<^sub>\<Delta>\<^sub>v, v'[x::=v]\<^sub>v\<^sub>v, \<tau>[x::=v]\<^sub>\<tau>\<^sub>v)\<close>   
+      apply(unfold fresh_prodN, intro conjI)
+      apply (fresh_subst_mth_aux add: infer_e_appI fresh_subst_gv  wfD_wf subst_g_inside)
+      using infer_e_appI fresh_subst_gv  wfD_wf subst_g_inside apply metis
+      using infer_e_appI      fresh_subst_dv_if apply metis
+    done
+
     have "supp \<tau>' \<subseteq> { atom x' } \<union> supp \<B>" using infer_e_appI wfT_supp wfPhi_f_simple_wfT 
       by (meson infer_e_appI.hyps(2) le_supI1 wfPhi_f_simple_supp_t)
     hence "atom x \<sharp> \<tau>'" using  \<open>x\<noteq>x'\<close> fresh_def supp_at_base x_not_in_b_set  by fastforce
@@ -1275,7 +1281,7 @@ next
       moreover have "(xa, ba, ca[x::=v]\<^sub>c\<^sub>v[za::=V_var xa]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>[x::=v]\<^sub>\<Gamma>\<^sub>v = 
                      ((xa, ba, ca[za::=V_var xa]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)[x::=v]\<^sub>\<Gamma>\<^sub>v" 
         using subst_cv_commute subst_gv.simps check_letI 
-        by (metis ms_fresh_all(39) ms_fresh_all(49) subst_cv_commute_subst)
+        by (metis ms_fresh_all(39) ms_fresh_all(49) subst_cv_commute_full)
       ultimately show ?thesis 
         using subst_defs by  auto      
     qed
@@ -1537,7 +1543,7 @@ next
     show "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> e \<Rightarrow> \<lbrace> z : b  | c \<rbrace>" using check_letI by meson
 
     have "wfG \<Theta> \<B> ((x, b, c[z::=[x]\<^sup>v]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)" using check_letI check_s_wf subst_defs by metis
-    moreover have "setG \<Gamma> \<subseteq> setG ((x, b, c[z::=[x]\<^sup>v]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)" by auto
+    moreover have "toSet \<Gamma> \<subseteq> toSet ((x, b, c[z::=[x]\<^sup>v]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)" by auto
     ultimately have "  \<Theta> ; \<B> ; (x, b, c[z::=[x]\<^sup>v]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> \<tau> \<lesssim> t2" using subtype_weakening[OF check_letI(6)] by auto
     thus  "\<Theta> ; \<Phi> ; \<B> ; (x, b, c[z::=[x]\<^sup>v]\<^sub>v) #\<^sub>\<Gamma> \<Gamma> ; \<Delta>  \<turnstile> s \<Leftarrow> t2" using check_letI subst_defs by metis
   qed
@@ -1557,7 +1563,7 @@ next
       show  "wfT \<Theta> \<B> \<Gamma> t2" using subtype_wf check_branch_s_branchI by meson
       show  "\<Theta> ; \<Phi> ; \<B> ; (x, b_of const, CE_val v  ==  CE_val(V_cons tid cons (V_var x)) AND c_of const x) #\<^sub>\<Gamma> \<Gamma> ; \<Delta>  \<turnstile> s \<Leftarrow> t2" proof -
         have "wfG \<Theta> \<B> ((x, b_of const, CE_val v  ==  CE_val(V_cons tid cons (V_var x))   AND c_of const x) #\<^sub>\<Gamma> \<Gamma>)" using check_s_wf check_branch_s_branchI by metis
-        moreover have "setG \<Gamma> \<subseteq> setG ((x, b_of const, CE_val v  ==  CE_val (V_cons tid cons (V_var x)) AND c_of const x) #\<^sub>\<Gamma> \<Gamma>)" by auto
+        moreover have "toSet \<Gamma> \<subseteq> toSet ((x, b_of const, CE_val v  ==  CE_val (V_cons tid cons (V_var x)) AND c_of const x) #\<^sub>\<Gamma> \<Gamma>)" by auto
         hence "\<Theta> ; \<B> ; ((x, b_of const, CE_val v  ==  CE_val(V_cons tid cons (V_var x)) AND c_of const x) #\<^sub>\<Gamma> \<Gamma>) \<turnstile> \<tau> \<lesssim> t2" 
           using check_branch_s_branchI subtype_weakening 
           using calculation by presburger
@@ -1586,7 +1592,7 @@ next
     thus  "atom x \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>, \<Delta>, c, t2, s)"   using subtype_fresh_tau check_assertI   fresh_prodN by simp
     have "\<Theta> ; \<B> ; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> \<tau> \<lesssim> t2" apply(rule subtype_weakening) 
       using check_assertI apply simp
-      using setG.simps apply blast
+      using toSet.simps apply blast
       using check_assertI check_s_wf by simp
     thus  "\<Theta> ; \<Phi> ; \<B> ; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> ; \<Delta>  \<turnstile> s \<Leftarrow> t2" using check_assertI by simp
     show "\<Theta> ; \<B> ; \<Gamma>  \<Turnstile> c " using check_assertI by auto
@@ -1596,7 +1602,7 @@ next
    case (check_let2I x P \<Phi> \<B> G \<Delta> t s1 \<tau> s2 )
   have "wfG P \<B> ((x, b_of t, c_of t x) #\<^sub>\<Gamma> G)" 
     using check_let2I check_s_wf by metis
-  moreover have "setG G \<subseteq> setG ((x, b_of t, c_of t x) #\<^sub>\<Gamma> G)" by auto
+  moreover have "toSet G \<subseteq> toSet ((x, b_of t, c_of t x) #\<^sub>\<Gamma> G)" by auto
   ultimately have  *:"P ; \<B> ; (x, b_of t, c_of t x) #\<^sub>\<Gamma> G  \<turnstile> \<tau> \<lesssim> t2" using check_let2I subtype_weakening by metis
   show  ?case proof(rule Typing.check_let2I)
     have "atom x \<sharp> t2" using subtype_fresh_tau[of x \<tau> ] check_let2I   fresh_prodN by metis  

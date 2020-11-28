@@ -373,7 +373,7 @@ proof(nominal_induct avoiding: c0 rule: subtype.strong_induct)
           using * valid_wf_all wfC_wf 1 append_g.simps by metis
          show "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using wfG_suffix wb1 by auto
        qed
-      moreover have "setG (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> setG (((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)" using setG.simps append_g.simps by auto
+      moreover have "toSet (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> toSet (((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)" using toSet.simps append_g.simps by auto
       ultimately show  \<open>\<Theta> ; \<B> ; ((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c0' \<close> using   valid_weakening subtype_baseI * by blast
     qed
     thus  \<open>\<Theta> ; \<B> ;  (x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>'  @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c'[z'::=V_var x']\<^sub>v \<close> using append_g.simps subst_defs by simp     
@@ -772,7 +772,8 @@ next
     show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using  infer_e_appI by auto
     show \<open>Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x' b c \<tau>' s'))) = lookup_fun \<Phi> f\<close>  using infer_e_appI by auto
     show \<open>\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Leftarrow> \<lbrace> x' : b  | c \<rbrace>\<close> using infer_e_appI ctx_subtype_check_v_eq by auto
-    thus \<open>atom x' \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>\<close> using infer_e_appI fresh_replace_inside[of \<Theta> \<B> \<Gamma>' x b0 c0' \<Gamma> c0 x']  infer_v_wf by auto
+    thus \<open>atom x' \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>, \<Delta>, v, \<tau>)\<close> 
+      using infer_e_appI fresh_replace_inside[of \<Theta> \<B> \<Gamma>' x b0 c0' \<Gamma> c0 x']  infer_v_wf by auto
     show \<open>\<tau>'[x'::=v]\<^sub>v = \<tau>\<close> using infer_e_appI by auto
   qed
 next
@@ -1103,7 +1104,7 @@ proof -
     then show ?case using replace_in_g.simps by auto
   next
     case (GCons x1 b1 c1 \<Gamma>1)
-    have "x \<notin> fst ` setG ((x1,b1,c1)#\<^sub>\<Gamma>\<Gamma>1)"  using GCons wfG_inside_fresh atom_dom.simps setG.simps append_g.simps by fast
+    have "x \<notin> fst ` toSet ((x1,b1,c1)#\<^sub>\<Gamma>\<Gamma>1)"  using GCons wfG_inside_fresh atom_dom.simps dom.simps toSet.simps append_g.simps by fast
     hence "x1 \<noteq> x" using assms wfG_inside_fresh GCons by force
     hence "((x1,b1,c1) #\<^sub>\<Gamma> (\<Gamma>1 @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>))[x\<longmapsto>c'[z'::=V_var x]\<^sub>c\<^sub>v] = (x1,b1,c1) #\<^sub>\<Gamma> (\<Gamma>1 @ (x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)"
       using replace_in_g.simps GCons wfG_elims append_g.simps by metis
@@ -1121,7 +1122,7 @@ lemma ctx_subtype_s:
 proof - 
  
   have wf: "wfG \<Theta> \<B> (\<Gamma>'@((x,b,c[z::=V_var x]\<^sub>c\<^sub>v)#\<^sub>\<Gamma>\<Gamma>))" using check_s_wf assms by meson
-  hence *:"x \<notin> fst ` setG \<Gamma>'" using wfG_inside_fresh by force
+  hence *:"x \<notin> fst ` toSet \<Gamma>'" using wfG_inside_fresh by force
   have "wfG \<Theta> \<B> ((x,b,c[z::=V_var x]\<^sub>c\<^sub>v)#\<^sub>\<Gamma>\<Gamma>)" using wf wfG_suffix by metis
   hence xfg: "atom x \<sharp> \<Gamma>" using wfG_elims by metis
   have "x \<noteq> z'"  using assms fresh_at_base fresh_prod4 by metis
@@ -1137,7 +1138,7 @@ proof -
 
   have vld: "\<Theta>;\<B> ; (\<Gamma>'@(x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c[z::=V_var x]\<^sub>c\<^sub>v" proof - 
 
-      have "setG ((x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> setG (\<Gamma>'@(x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)" by auto
+      have "toSet ((x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> toSet (\<Gamma>'@(x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)" by auto
       moreover have "wfG \<Theta> \<B> (\<Gamma>'@(x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)" proof -
         have *:"wfT \<Theta> \<B> \<Gamma> (\<lbrace> z' : b | c' \<rbrace>)" using subtype_wf assms by meson
         moreover have "atom x \<sharp> (c',\<Gamma>)" using xfg a2 by simp
@@ -1161,9 +1162,9 @@ proof -
     show "x \<notin> fst ` set []" by auto
     show "\<Theta> ; \<B> ; \<Gamma>' @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c'[z'::=V_var x]\<^sub>c\<^sub>v" 
     proof(rule wf_weakening)
-     show \<open> \<Theta> ; \<B> ; (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c'[z'::=[ x ]\<^sup>v]\<^sub>c\<^sub>v \<close>   using wfC_cons_switch[OF wbc1] wf_weakening(6) check_s_wf assms setG.simps  by metis 
-     show \<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b, c[z::=[ x ]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma> \<close>   using wfC_cons_switch[OF wbc1] wf_weakening(6) check_s_wf assms setG.simps  by metis
-     show \<open>setG ((x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> setG (\<Gamma>' @ (x, b, c[z::=[ x ]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)\<close> using append_g.simps setG.simps by auto
+     show \<open> \<Theta> ; \<B> ; (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c'[z'::=[ x ]\<^sup>v]\<^sub>c\<^sub>v \<close>   using wfC_cons_switch[OF wbc1] wf_weakening(6) check_s_wf assms toSet.simps  by metis 
+     show \<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b, c[z::=[ x ]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma> \<close>   using wfC_cons_switch[OF wbc1] wf_weakening(6) check_s_wf assms toSet.simps  by metis
+     show \<open>toSet ((x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> toSet (\<Gamma>' @ (x, b, c[z::=[ x ]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)\<close> using append_g.simps toSet.simps by auto
    qed    
   qed
   ultimately show ?thesis using ctx_subtype_s_rigs(1)[OF assms(1)] by presburger 

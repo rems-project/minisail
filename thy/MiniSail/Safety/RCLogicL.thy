@@ -13,15 +13,15 @@ section \<open>Lemmas\<close>
 
 lemma wfI_domi:
   assumes "\<Theta> ; \<Gamma> \<turnstile> i"
-  shows "fst ` setG \<Gamma> \<subseteq> dom i"
-  using wfI_def setG.simps assms by fastforce
+  shows "fst ` toSet \<Gamma> \<subseteq> dom i"
+  using wfI_def toSet.simps assms by fastforce
 
 lemma wfI_lookup:
   fixes G::\<Gamma> and b::b
   assumes "Some (b,c) = lookup G x" and "P ; G \<turnstile> i" and "Some s = i x" and "P ; B \<turnstile>\<^sub>w\<^sub>f G"
   shows "P \<turnstile> s : b"
 proof -
-  have "(x,b,c) \<in> setG G" using lookup.simps assms
+  have "(x,b,c) \<in> toSet G" using lookup.simps assms
     using lookup_in_g by blast
   then obtain s' where *:"Some s' = i x \<and> wfRCV P s' b" using wfI_def assms by auto
   hence "s' = s" using assms  by (metis option.inject)
@@ -29,17 +29,17 @@ proof -
 qed
 
 lemma wfI_restrict_weakening:
-  assumes "wfI \<Theta> \<Gamma>' i'" and "i =  restrict_map i' (fst `setG \<Gamma>)" and "setG \<Gamma> \<subseteq> setG \<Gamma>'"
+  assumes "wfI \<Theta> \<Gamma>' i'" and "i =  restrict_map i' (fst `toSet \<Gamma>)" and "toSet \<Gamma> \<subseteq> toSet \<Gamma>'"
   shows  "\<Theta> ; \<Gamma> \<turnstile> i"
 proof -
   { fix x
-  assume "x \<in> setG \<Gamma>"
+  assume "x \<in> toSet \<Gamma>"
   have "case x of (x, b, c) \<Rightarrow> \<exists>s. Some s = i x \<and> \<Theta> \<turnstile> s : b" using assms wfI_def
   proof -
     have "case x of (x, b, c) \<Rightarrow> \<exists>s. Some s = i' x \<and> \<Theta> \<turnstile> s : b"
-      using \<open>x \<in> setG \<Gamma>\<close>  assms wfI_def by auto
+      using \<open>x \<in> toSet \<Gamma>\<close>  assms wfI_def by auto
     then have "\<exists>s. Some s = i (fst x) \<and> wfRCV \<Theta> s (fst (snd x))"
-      by (simp add: \<open>x \<in> setG \<Gamma>\<close> assms(2) case_prod_unfold)
+      by (simp add: \<open>x \<in> toSet \<Gamma>\<close> assms(2) case_prod_unfold)
     then show ?thesis
       by (simp add: case_prod_unfold)
   qed
@@ -51,12 +51,12 @@ lemma wfI_suffix:
   fixes G::\<Gamma>
   assumes "wfI P (G'@G) i" and "P ; B \<turnstile>\<^sub>w\<^sub>f G"
   shows "P ; G \<turnstile> i"
-using wfI_def append_g.simps assms setG.simps by simp
+using wfI_def append_g.simps assms toSet.simps by simp
 
 lemma wfI_replace_inside:
   assumes "wfI \<Theta> (\<Gamma>' @ (x, b, c) #\<^sub>\<Gamma> \<Gamma>) i"
   shows  "wfI \<Theta> (\<Gamma>' @ (x, b, c') #\<^sub>\<Gamma> \<Gamma>) i"
-  using wfI_def setG_splitP assms by simp
+  using wfI_def toSet_splitP assms by simp
 
 
 section \<open>Existence of evaluation\<close>
@@ -107,7 +107,7 @@ using assms proof(nominal_induct v  arbitrary: b rule:v.strong_induct)
 next
   case (V_var x)
   then obtain c where  *:"Some (b,c) = lookup \<Gamma> x" using wfV_elims by metis
-  hence "x \<in> fst ` setG \<Gamma>"  using lookup_x by blast
+  hence "x \<in> fst ` toSet \<Gamma>"  using lookup_x by blast
   hence "x \<in> dom i" using wfI_domi using assms by blast
   then obtain s where "i x = Some s" by auto
   moreover hence "P \<turnstile> s : b" using wfRCV.intros wfI_lookup * V_var
@@ -496,7 +496,7 @@ next
 qed
 
 lemma is_satis_iff:
-  "i \<Turnstile> G  = (\<forall>x b c. (x,b,c) \<in> setG G \<longrightarrow> i \<Turnstile> c)"
+  "i \<Turnstile> G  = (\<forall>x b c. (x,b,c) \<in> toSet G \<longrightarrow> i \<Turnstile> c)"
   by(induct G,auto)
 
 lemma is_satis_g_append:
@@ -714,9 +714,9 @@ lemma wfI_upd:
   shows "wfI \<Theta> ((x, b, c) #\<^sub>\<Gamma> \<Gamma>) (i(x \<mapsto> s))"
 proof(subst wfI_def,rule)
   fix xa
-  assume as:"xa \<in> setG ((x, b, c) #\<^sub>\<Gamma> \<Gamma>)"
+  assume as:"xa \<in> toSet ((x, b, c) #\<^sub>\<Gamma> \<Gamma>)"
 
-  then obtain x1::x and b1::b and c1::c where xa: "xa = (x1,b1,c1)" using setG.simps
+  then obtain x1::x and b1::b and c1::c where xa: "xa = (x1,b1,c1)" using toSet.simps
     using prod_cases3 by blast
 
   have "\<exists>sa. Some sa = (i(x \<mapsto> s)) x1 \<and> wfRCV \<Theta> sa b1" proof(cases "x=x1")
@@ -726,7 +726,7 @@ proof(subst wfI_def,rule)
     then show ?thesis by auto
   next
     case False
-    hence "(x1,b1,c1) \<in> setG \<Gamma>" using xa as by auto
+    hence "(x1,b1,c1) \<in> toSet \<Gamma>" using xa as by auto
     then obtain sa where "Some sa = i x1 \<and> wfRCV \<Theta> sa b1" using assms wfI_def as xa by auto
     hence "Some sa = (i(x \<mapsto> s)) x1 \<and> wfRCV \<Theta> sa b1" using False by auto
     then show ?thesis by auto
@@ -741,9 +741,9 @@ lemma wfI_upd_full:
   shows "wfI \<Theta>  (\<Gamma>'@((x,b,c)#\<^sub>\<Gamma>\<Gamma>)) (i(x \<mapsto> s))"
 proof(subst wfI_def,rule)
   fix xa
-  assume as:"xa \<in> setG (\<Gamma>'@((x,b,c)#\<^sub>\<Gamma>\<Gamma>))"
+  assume as:"xa \<in> toSet (\<Gamma>'@((x,b,c)#\<^sub>\<Gamma>\<Gamma>))"
 
-  then obtain x1::x and b1::b and c1::c where xa: "xa = (x1,b1,c1)" using setG.simps
+  then obtain x1::x and b1::b and c1::c where xa: "xa = (x1,b1,c1)" using toSet.simps
     using prod_cases3 by blast
 
   have "\<exists>sa. Some sa = (i(x \<mapsto> s)) x1 \<and> wfRCV \<Theta> sa b1"
@@ -754,8 +754,8 @@ proof(subst wfI_def,rule)
     then show ?thesis by auto
   next
     case False
-    hence "(x1,b1,c1) \<in> setG (\<Gamma>'@\<Gamma>)" using as xa by auto
-    then obtain c1' where  "(x1,b1,c1') \<in> setG (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v@\<Gamma>)" using xa as wfG_member_subst assms  False by metis
+    hence "(x1,b1,c1) \<in> toSet (\<Gamma>'@\<Gamma>)" using as xa by auto
+    then obtain c1' where  "(x1,b1,c1') \<in> toSet (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v@\<Gamma>)" using xa as wfG_member_subst assms  False by metis
     then obtain sa where "Some sa = i x1 \<and> wfRCV \<Theta> sa b1" using assms wfI_def as xa by blast
     hence "Some sa = (i(x \<mapsto> s)) x1 \<and> wfRCV \<Theta> sa b1" using False by auto
     then show ?thesis by auto
@@ -1005,7 +1005,7 @@ lemma is_satis_i_restrict:
 
 lemma is_satis_g_restrict1:
   fixes \<Gamma>'::\<Gamma> and  \<Gamma>::\<Gamma>
-  assumes "setG \<Gamma> \<subseteq> setG \<Gamma>'" and "i \<Turnstile> \<Gamma>'"
+  assumes "toSet \<Gamma> \<subseteq> toSet \<Gamma>'" and "i \<Turnstile> \<Gamma>'"
   shows "i \<Turnstile> \<Gamma>"
 using assms proof(induct \<Gamma> rule: \<Gamma>.induct)
   case GNil
@@ -1016,7 +1016,7 @@ next
       using prod_cases3 by blast
   hence "i \<Turnstile> G" using GCons by auto
   moreover have "i \<Turnstile> c" using GCons
-    is_satis_iff setG.simps  subset_iff
+    is_satis_iff toSet.simps  subset_iff
     using xbc by blast
   ultimately show ?case using is_satis_g.simps GCons
     by (simp add: xbc)
@@ -1050,7 +1050,7 @@ qed
 
 lemma is_satis_g_restrict:
   fixes \<Gamma>'::\<Gamma> and \<Gamma>::\<Gamma>
-  assumes "setG \<Gamma> \<subseteq> setG \<Gamma>'" and "i' \<Turnstile> \<Gamma>'" and  "i =   i' |` (fst ` setG \<Gamma>)"  and "\<Theta> ; B \<turnstile>\<^sub>w\<^sub>f \<Gamma>"
+  assumes "toSet \<Gamma> \<subseteq> toSet \<Gamma>'" and "i' \<Turnstile> \<Gamma>'" and  "i =   i' |` (fst ` toSet \<Gamma>)"  and "\<Theta> ; B \<turnstile>\<^sub>w\<^sub>f \<Gamma>"
   shows "i \<Turnstile> \<Gamma>"
   using assms is_satis_g_restrict1[OF assms(1) assms(2)] is_satis_g_restrict2[OF _ assms(3)] by simp
 
@@ -1082,20 +1082,20 @@ next
 qed
 
 lemma valid_weakening:
-  assumes "\<Theta> ; B ; \<Gamma> \<Turnstile> c" and "setG \<Gamma> \<subseteq> setG \<Gamma>'" and "wfG \<Theta> B  \<Gamma>'"
+  assumes "\<Theta> ; B ; \<Gamma> \<Turnstile> c" and "toSet \<Gamma> \<subseteq> toSet \<Gamma>'" and "wfG \<Theta> B  \<Gamma>'"
   shows  "\<Theta> ; B ; \<Gamma>' \<Turnstile> c"
 proof -
   have "wfC \<Theta> B  \<Gamma> c" using assms valid.simps by auto
-  hence sp: "supp c \<subseteq> atom `(fst `setG \<Gamma>) \<union> supp B" using wfX_wfY wfG_elims
-    using atom_dom.simps wf_supp(2) by metis
+  hence sp: "supp c \<subseteq> atom `(fst `toSet \<Gamma>) \<union> supp B" using wfX_wfY wfG_elims
+    using atom_dom.simps dom.simps wf_supp(2) by metis
   have wfg: "wfG \<Theta> B  \<Gamma>" using assms valid.simps wfC_wf by auto
 
   moreover have a1: "(\<forall>i. wfI \<Theta> \<Gamma>' i \<and> i \<Turnstile> \<Gamma>' \<longrightarrow> i \<Turnstile> c)" proof(rule allI, rule impI)
     fix i
     assume as: "wfI \<Theta> \<Gamma>' i \<and> i \<Turnstile> \<Gamma>'"
-    hence as1: "fst ` setG \<Gamma> \<subseteq> dom i" using assms wfI_domi by blast
-    obtain i' where idash: "i' =  restrict_map i (fst `setG \<Gamma>)" by blast
-    hence as2: "dom i' = (fst `setG \<Gamma>)"  using dom_restrict as1 by auto
+    hence as1: "fst ` toSet \<Gamma> \<subseteq> dom i" using assms wfI_domi by blast
+    obtain i' where idash: "i' =  restrict_map i (fst `toSet \<Gamma>)" by blast
+    hence as2: "dom i' = (fst `toSet \<Gamma>)"  using dom_restrict as1 by auto
 
     have id2: "\<Theta> ; \<Gamma> \<turnstile> i' \<and> i' \<Turnstile> \<Gamma>" proof -
       have "wfI \<Theta>  \<Gamma> i'" using as2 wfI_restrict_weakening[of \<Theta> \<Gamma>' i i' \<Gamma>] as  assms
@@ -1923,13 +1923,13 @@ next
   case (boxed_i_GConsI s i x1 T b1 bv b s' G i' c1)
     {
     fix x2 b2 c2
-    assume as : "(x2,b2,c2) \<in> setG ((x1, b1, c1) #\<^sub>\<Gamma> G)"
+    assume as : "(x2,b2,c2) \<in> toSet ((x1, b1, c1) #\<^sub>\<Gamma> G)"
 
-    then consider (hd) "(x2,b2,c2) = (x1, b1, c1)" | (tail) "(x2,b2,c2) \<in> setG G" using setG.simps by auto
+    then consider (hd) "(x2,b2,c2) = (x1, b1, c1)" | (tail) "(x2,b2,c2) \<in> toSet G" using toSet.simps by auto
     hence "\<exists>s. Some s = (i'(x1 \<mapsto> s')) x2 \<and> wfRCV T s b2" proof(cases)
       case hd
       hence "b1=b2" by auto
-      moreover have "(x2,b2[bv::=b]\<^sub>b\<^sub>b,c2[bv::=b]\<^sub>c\<^sub>b) \<in> setG ((x1, b1, c1) #\<^sub>\<Gamma> G)[bv::=b]\<^sub>\<Gamma>\<^sub>b"  using hd subst_gb.simps by simp
+      moreover have "(x2,b2[bv::=b]\<^sub>b\<^sub>b,c2[bv::=b]\<^sub>c\<^sub>b) \<in> toSet ((x1, b1, c1) #\<^sub>\<Gamma> G)[bv::=b]\<^sub>\<Gamma>\<^sub>b"  using hd subst_gb.simps by simp
       moreover hence "wfRCV T s b2[bv::=b]\<^sub>b\<^sub>b" using wfI_def boxed_i_GConsI hd
       proof -
         obtain ss :: "b \<Rightarrow> x \<Rightarrow> (x \<Rightarrow> rcl_val option) \<Rightarrow> type_def list \<Rightarrow> rcl_val" where
@@ -1948,7 +1948,7 @@ next
     next
       case tail
       hence "wfI T G i'" using boxed_i_GConsI wfI_suffix wfG_suffix subst_gb.simps
-        by (metis (no_types, lifting) Un_iff setG.simps(2) wfG_cons2 wfI_def)
+        by (metis (no_types, lifting) Un_iff toSet.simps(2) wfG_cons2 wfI_def)
       then show ?thesis using wfI_def[of T G i'] tail
         using boxed_i_GConsI.prems(3) split_G wfG_cons_fresh2 by fastforce
     qed
@@ -2444,8 +2444,8 @@ lemma wfI_cons:
 unfolding wfI_def proof - 
   {  
     fix x' b' c' 
-    assume "(x',b',c') \<in> setG ((x, b, c) #\<^sub>\<Gamma> \<Gamma>)"
-    then consider "(x',b',c') = (x,b,c)" | "(x',b',c') \<in> setG \<Gamma>" using setG.simps by auto
+    assume "(x',b',c') \<in> toSet ((x, b, c) #\<^sub>\<Gamma> \<Gamma>)"
+    then consider "(x',b',c') = (x,b,c)" | "(x',b',c') \<in> toSet \<Gamma>" using toSet.simps by auto
     then have "\<exists>s. Some s = i x' \<and>  \<Theta>  \<turnstile> s : b'" proof(cases)
       case 1
       then show ?thesis using assms by auto
@@ -2457,7 +2457,7 @@ unfolding wfI_def proof -
       then show ?thesis using s  wfI_def by auto
     qed
   }
-  thus "\<forall>(x, b, c)\<in>setG ((x, b, c) #\<^sub>\<Gamma> \<Gamma>). \<exists>s. Some s = i x \<and>  \<Theta>  \<turnstile> s : b" by auto
+  thus "\<forall>(x, b, c)\<in>toSet ((x, b, c) #\<^sub>\<Gamma> \<Gamma>). \<exists>s. Some s = i x \<and>  \<Theta>  \<turnstile> s : b" by auto
 qed
 
 

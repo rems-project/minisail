@@ -144,7 +144,8 @@ proof -
     moreover have "atom z0 \<sharp> \<Gamma>" using assms by auto
     ultimately show ?thesis using flip_fresh_fresh by auto
   qed
-  moreover have "(xx2 \<leftrightarrow> z0 ) \<bullet> (c[z::=V_var xx2]\<^sub>v) =c[z::=V_var z0]\<^sub>v" using subst_cv_v_flip2[of xx2 z c z0] assms by force
+  moreover have "(xx2 \<leftrightarrow> z0 ) \<bullet> (c[z::=V_var xx2]\<^sub>v) =c[z::=V_var z0]\<^sub>v" 
+    using subst_cv_v_flip3 assms by simp
   ultimately show ?thesis by auto
 qed
 
@@ -232,7 +233,7 @@ proof -
   moreover have vld: "P ; \<B> ; (x, b, (CE_val (V_var z1)  ==  e1 )[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> (CE_val (V_var z2)  ==  e2 )[z2::=V_var x]\<^sub>v "  (is "P ; \<B> ; ?G \<Turnstile> ?c")
   proof -
 
-    have wbg: "P ;  \<B> \<turnstile>\<^sub>w\<^sub>f ?G  \<and> P ;  \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma> \<and>  setG \<Gamma> \<subseteq> setG ?G"  proof -        
+    have wbg: "P ;  \<B> \<turnstile>\<^sub>w\<^sub>f ?G  \<and> P ;  \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma> \<and>  toSet \<Gamma> \<subseteq> toSet ?G"  proof -        
       have "P ;  \<B> \<turnstile>\<^sub>w\<^sub>f ?G"  proof(rule wfG_consI) 
         show "P ;  \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>" using assms wfX_wfY by metis
         show "atom x \<sharp> \<Gamma>" using xf by auto
@@ -242,7 +243,7 @@ proof -
           by (simp add: \<open>atom x \<sharp> \<Gamma>\<close> assms(2) subst_v_c_def)
       qed
       moreover hence  "P ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>" using wfG_elims by metis
-      ultimately show ?thesis using setG.simps by auto 
+      ultimately show ?thesis using toSet.simps by auto 
     qed
 
     have wsc: "wfC P \<B> ?G ?c" proof -
@@ -297,7 +298,7 @@ proof -
     fix i s1 s2 G
     assume as: "wfG P \<B> G \<and> wfI P G i \<and> eval_e i (CE_val v\<^sub>1) s1 \<and> eval_e i (CE_fst [V_pair v\<^sub>1 v\<^sub>2]\<^sup>c\<^sup>e) s2"
     hence "wfCE  P \<B> G  (CE_val v\<^sub>2) b2" using assms wf_weakening 
-      by (metis empty_subsetI setG.simps(1))
+      by (metis empty_subsetI toSet.simps(1))
     then obtain s3 where "eval_e i (CE_val v\<^sub>2) s3" using wfI_wfCE_eval_e as by metis
     hence "eval_v i ((V_pair  v\<^sub>1 v\<^sub>2)) (SPair s1 s3)"
       by (meson as eval_e_elims(1) eval_v_pairI)
@@ -318,7 +319,7 @@ proof -
     fix i s1 s2 G
     assume as: " wfG P \<B> G \<and> wfI P G i \<and> eval_e i (CE_val v\<^sub>2) s1 \<and> eval_e i (CE_snd [(V_pair v\<^sub>1 v\<^sub>2)]\<^sup>c\<^sup>e) s2"
     hence "wfCE  P \<B> G  (CE_val v\<^sub>1) b2" using assms wf_weakening 
-      by (metis empty_subsetI setG.simps(1))
+      by (metis empty_subsetI toSet.simps(1))
     then obtain s3 where "eval_e i (CE_val v\<^sub>1) s3" using wfI_wfCE_eval_e as by metis
     hence "eval_v i ((V_pair  v\<^sub>1 v\<^sub>2)) (SPair s3 s1)"
       by (meson as eval_e_elims eval_v_pairI)
@@ -514,7 +515,7 @@ proof(rule validI)
     thus "\<Theta> ; \<B> ; (x, b, CE_val (V_var x)  ==  e1 ) #\<^sub>\<Gamma> GNil  \<turnstile>\<^sub>w\<^sub>f CE_val (V_var x) : b " using  wfCE_valI wfV_varI wfX_wfY 
         lookup.simps  assms wfX_wfY by simp
     show "\<Theta> ; \<B> ; (x, b, CE_val (V_var x)  ==  e1 ) #\<^sub>\<Gamma> GNil  \<turnstile>\<^sub>w\<^sub>f e2 : b " using assms wf_weakening wfX_wfY 
-      by (metis (full_types) \<open>\<Theta> ; \<B> ; (x, b, CE_val (V_var x) == e1 ) #\<^sub>\<Gamma> GNil  \<turnstile>\<^sub>w\<^sub>f CE_val (V_var x) : b\<close> empty_iff subsetI setG.simps(1))
+      by (metis (full_types) \<open>\<Theta> ; \<B> ; (x, b, CE_val (V_var x) == e1 ) #\<^sub>\<Gamma> GNil  \<turnstile>\<^sub>w\<^sub>f CE_val (V_var x) : b\<close> empty_iff subsetI toSet.simps(1))
   qed
   show " \<forall>i. wfI \<Theta> ((x, b, CE_val (V_var x)  ==  e1 ) #\<^sub>\<Gamma> GNil) i \<and> is_satis_g i ((x, b, CE_val (V_var x)  ==  e1 ) #\<^sub>\<Gamma> GNil) \<longrightarrow> is_satis i (CE_val (V_var x)  ==  e2 )"
   proof(rule,rule)
@@ -1373,8 +1374,9 @@ next
        moreover have *:"\<Theta> ; \<B> ; (x, b, c) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<tau>" proof(rule  wf_weakening1(4))
          show \<open> \<Theta> ; \<B> ; (x,b,c)#\<^sub>\<Gamma>GNil  \<turnstile>\<^sub>w\<^sub>f \<tau> \<close> using  wfPhi_f_simple_wfT wfD_wf infer_e_appI wb_b_weakening by fastforce
          have "\<Theta> ;  \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<lbrace> x : b | c \<rbrace>" using infer_e_appI check_v_wf(3) by auto
-         thus  \<open> \<Theta> ;  \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> \<Gamma> \<close> using infer_e_appI wfT_wfC[THEN wfG_consI[rotated 3] ]  * wfX_wfY wfT_wf_cons by metis
-         show \<open>setG ((x,b,c)#\<^sub>\<Gamma>GNil) \<subseteq> setG ((x, b, c) #\<^sub>\<Gamma> \<Gamma>)\<close> using setG.simps by auto
+         thus  \<open> \<Theta> ;  \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> \<Gamma> \<close> using infer_e_appI 
+                wfT_wfC[THEN wfG_consI[rotated 3] ]  *  wfT_wf_cons fresh_prodN by simp
+         show \<open>toSet ((x,b,c)#\<^sub>\<Gamma>GNil) \<subseteq> toSet ((x, b, c) #\<^sub>\<Gamma> \<Gamma>)\<close> using toSet.simps by auto
        qed
        moreover have "((x, b, c) #\<^sub>\<Gamma> \<Gamma>)[x::=v]\<^sub>\<Gamma>\<^sub>v = \<Gamma>" using subst_gv.simps by auto
  
@@ -1395,7 +1397,7 @@ next
         using infer_e_appPI check_v_wf(3) subst_b_b_def subst_b_c_def by metis
       thus  \<open> \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b[bv::=b']\<^sub>b\<^sub>b, c[bv::=b']\<^sub>c\<^sub>b) #\<^sub>\<Gamma> \<Gamma> \<close> 
         using infer_e_appPI wfT_wfC[THEN wfG_consI[rotated 3] ]  * wfX_wfY wfT_wf_cons wb_b_weakening by metis
-      show \<open>setG ((x,b[bv::=b']\<^sub>b\<^sub>b,c[bv::=b']\<^sub>c\<^sub>b)#\<^sub>\<Gamma>GNil) \<subseteq> setG ((x, b[bv::=b']\<^sub>b\<^sub>b, c[bv::=b']\<^sub>c\<^sub>b) #\<^sub>\<Gamma> \<Gamma>)\<close> using setG.simps by auto
+      show \<open>toSet ((x,b[bv::=b']\<^sub>b\<^sub>b,c[bv::=b']\<^sub>c\<^sub>b)#\<^sub>\<Gamma>GNil) \<subseteq> toSet ((x, b[bv::=b']\<^sub>b\<^sub>b, c[bv::=b']\<^sub>c\<^sub>b) #\<^sub>\<Gamma> \<Gamma>)\<close> using toSet.simps by auto
     qed
     show \<open>(x, b[bv::=b']\<^sub>b\<^sub>b, c[bv::=b']\<^sub>c\<^sub>b) #\<^sub>\<Gamma> \<Gamma> = GNil @ (x, b[bv::=b']\<^sub>b\<^sub>b, c[bv::=b']\<^sub>c\<^sub>b) #\<^sub>\<Gamma> \<Gamma>\<close> using append_g.simps by auto
     show \<open> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v :b[bv::=b']\<^sub>b\<^sub>b  \<close> using infer_e_appPI check_v_wf(2) b_of.simps subst_b_b_def by metis
@@ -1435,9 +1437,9 @@ next
       using wfg  apply simp
       using lookup.simps(2)[of z3 "[ B_bitvec , B_bitvec ]\<^sup>b" TRUE \<Gamma> z3] by simp
   have 1: "\<Theta> ; \<B> ; (z3, [ B_bitvec , B_bitvec ]\<^sup>b, TRUE) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f [ v2 ]\<^sup>c\<^sup>e : B_int " 
-    using check_v_wf[OF infer_e_splitI(4)]  wf_weakening(1)[OF _ wfg] b_of.simps   setG.simps wfCE_valI by fastforce
+    using check_v_wf[OF infer_e_splitI(4)]  wf_weakening(1)[OF _ wfg] b_of.simps   toSet.simps wfCE_valI by fastforce
   have 2: "\<Theta> ; \<B> ; (z3, [ B_bitvec , B_bitvec ]\<^sup>b, TRUE) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f [ v1 ]\<^sup>c\<^sup>e : B_bitvec" 
-    using infer_v_wf[OF infer_e_splitI(3)]  wf_weakening(1)[OF _ wfg] b_of.simps   setG.simps wfCE_valI by fastforce
+    using infer_v_wf[OF infer_e_splitI(3)]  wf_weakening(1)[OF _ wfg] b_of.simps   toSet.simps wfCE_valI by fastforce
 
   have "\<Theta> ; \<B> ; \<Gamma>   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z3 : [ B_bitvec , B_bitvec ]\<^sup>b  | [ v1 ]\<^sup>c\<^sup>e  ==  [ [#1[ [ z3 ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e @@ [#2[ [ z3 ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e   AND  [| [#1[ [ z3 ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e  ==  [ v2 ]\<^sup>c\<^sup>e   \<rbrace>"
   proof
@@ -1493,7 +1495,7 @@ proof -
      *: "\<Theta> ; {||} ; GNil  \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : b1a  | c1 \<rbrace> \<and>   \<Theta> ; {||} ; GNil  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : b2a  | c2 \<rbrace> \<and>  B_pair b1 b2 = B_pair b1a b2a"
     using infer_v_elims(5)[OF *] by metis
 
-  hence  suppv: "supp v1 = {}  \<and> supp v2 = {} \<and> supp (V_pair v1 v2) = {}" using ** infer_v_v_wf wfV_supp atom_dom.simps setG.simps supp_GNil  
+  hence  suppv: "supp v1 = {}  \<and> supp v2 = {} \<and> supp (V_pair v1 v2) = {}" using ** infer_v_v_wf wfV_supp atom_dom.simps toSet.simps supp_GNil  
     by (meson wfV_supp_nil)
     
 
@@ -2167,7 +2169,7 @@ lemma infer_e_app2E:
   fixes \<Phi>::\<Phi> and \<Theta>::\<Theta>
   assumes "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> AE_app f v \<Rightarrow> \<tau>"
   shows "\<exists>x b c s' \<tau>'.  wfD  \<Theta> \<B> \<Gamma> \<Delta> \<and> Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x b c \<tau>' s'))) = lookup_fun \<Phi> f \<and>  \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> \<and>
-       \<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Leftarrow> \<lbrace> x : b  | c \<rbrace> \<and> \<tau> = \<tau>'[x::=v]\<^sub>\<tau>\<^sub>v \<and> atom x \<sharp> \<Gamma>"
+       \<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Leftarrow> \<lbrace> x : b  | c \<rbrace> \<and> \<tau> = \<tau>'[x::=v]\<^sub>\<tau>\<^sub>v \<and> atom x \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>, \<Delta>, v, \<tau>)"
   using infer_e_elims(6)[OF assms] b_of.simps subst_defs by metis
 
 
@@ -2191,7 +2193,7 @@ text {* Lemmas showing that typing judgements hold when a context is extended *}
 
 lemma subtype_weakening:
   fixes \<Gamma>'::\<Gamma>
-  assumes "\<Theta> ; \<B> ; \<Gamma> \<turnstile> \<tau>1 \<lesssim> \<tau>2" and  "setG \<Gamma> \<subseteq> setG \<Gamma>'" and "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'" 
+  assumes "\<Theta> ; \<B> ; \<Gamma> \<turnstile> \<tau>1 \<lesssim> \<tau>2" and  "toSet \<Gamma> \<subseteq> toSet \<Gamma>'" and "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'" 
   shows  "\<Theta> ; \<B> ; \<Gamma>' \<turnstile> \<tau>1 \<lesssim> \<tau>2"
 using assms proof(nominal_induct \<tau>2 avoiding: \<Gamma>' rule: subtype.strong_induct)
 
@@ -2200,7 +2202,7 @@ using assms proof(nominal_induct \<tau>2 avoiding: \<Gamma>' rule: subtype.stron
     show *:"\<Theta> ; \<B> ; \<Gamma>'   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b  | c \<rbrace>" using wfT_weakening subtype_baseI by metis
     show "\<Theta> ; \<B> ; \<Gamma>'   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z' : b  | c' \<rbrace>" using wfT_weakening subtype_baseI by metis
     show "atom x \<sharp> (\<Theta>, \<B>, \<Gamma>',  z ,  c ,  z' ,  c' )" using subtype_baseI fresh_Pair by metis
-    have "setG ((x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<subseteq>  setG ((x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>')" using subtype_baseI setG.simps by blast
+    have "toSet ((x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<subseteq>  toSet ((x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>')" using subtype_baseI toSet.simps by blast
     moreover have "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>'" using wfT_wf_cons3[OF *, of x] subtype_baseI fresh_Pair subst_defs by metis
     ultimately show "\<Theta> ; \<B> ; (x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>'  \<Turnstile> c'[z'::=V_var x]\<^sub>v" using valid_weakening subtype_baseI by metis
   qed
@@ -2211,7 +2213,7 @@ method many_rules uses add = ( (rule+),((simp add: add)+)?)
 
 lemma infer_v_g_weakening:
   fixes e::e and \<Gamma>'::\<Gamma> and v::v
-  assumes "\<Theta>;  \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> \<tau>" and "setG \<Gamma> \<subseteq> setG \<Gamma>'" and "\<Theta>  ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'"
+  assumes "\<Theta>;  \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> \<tau>" and "toSet \<Gamma> \<subseteq> toSet \<Gamma>'" and "\<Theta>  ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'"
   shows   "\<Theta>;  \<B> ; \<Gamma>' \<turnstile> v \<Rightarrow> \<tau>"
 using assms proof(nominal_induct v arbitrary: \<tau> rule: v.strong_induct)
   case (V_lit l)
@@ -2293,13 +2295,13 @@ qed
 
 lemma check_v_g_weakening:
   fixes e::e and \<Gamma>'::\<Gamma>
-  assumes "\<Theta>;  \<B> ; \<Gamma> \<turnstile> v \<Leftarrow> \<tau>" and "setG \<Gamma> \<subseteq> setG \<Gamma>'" and "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'" 
+  assumes "\<Theta>;  \<B> ; \<Gamma> \<turnstile> v \<Leftarrow> \<tau>" and "toSet \<Gamma> \<subseteq> toSet \<Gamma>'" and "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'" 
   shows   "\<Theta>;  \<B> ; \<Gamma>' \<turnstile> v \<Leftarrow> \<tau>"
  using subtype_weakening infer_v_g_weakening check_v_elims  check_v_subtypeI assms by metis
 
 lemma infer_e_g_weakening:
   fixes e::e and \<Gamma>'::\<Gamma>
-  assumes "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> e \<Rightarrow> \<tau>" and "setG \<Gamma> \<subseteq> setG \<Gamma>'" and "\<Theta> ;  \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma>'"
+  assumes "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> e \<Rightarrow> \<tau>" and "toSet \<Gamma> \<subseteq> toSet \<Gamma>'" and "\<Theta> ;  \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma>'"
   shows   "\<Theta> ; \<Phi> ;  \<B> ; \<Gamma>'; \<Delta> \<turnstile> e \<Rightarrow> \<tau>"
 using assms proof(nominal_induct \<tau> avoiding: \<Gamma>'  rule: infer_e.strong_induct)
   case (infer_e_valI \<Theta> \<B> \<Gamma> \<Delta>' \<Phi> v \<tau>)
@@ -2339,7 +2341,15 @@ next
   thus ?case using * by metis
 next
   case (infer_e_appI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> f x b c \<tau>' s' v \<tau>)
-
+  show ?case proof 
+    show "\<Theta> ; \<B> ; \<Gamma>' \<turnstile>\<^sub>w\<^sub>f \<Delta> "  using wf_weakening infer_e_appI by auto
+    show "\<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi>"   using wf_weakening infer_e_appI by auto
+    show "Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x b c \<tau>' s'))) = lookup_fun \<Phi> f"  using wf_weakening infer_e_appI by auto
+    show "\<Theta> ; \<B> ; \<Gamma>'  \<turnstile> v \<Leftarrow> \<lbrace> x : b  | c \<rbrace>"  using wf_weakening infer_e_appI check_v_g_weakening by auto
+    show "atom x \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>', \<Delta>, v, \<tau>)"  using wf_weakening infer_e_appI by auto
+    show "\<tau>'[x::=v]\<^sub>v = \<tau>"  using wf_weakening infer_e_appI by auto
+  qed
+(*
   hence *:"\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> AE_app f v \<Rightarrow> \<tau>" using Typing.infer_e_appI by auto
 
   obtain x'::x where x':"atom x' \<sharp> (s', c, \<tau>', \<Gamma>') \<and> (AF_fundef f (AF_fun_typ_none (AF_fun_typ x b c \<tau>' s'))) =  (AF_fundef f (AF_fun_typ_none (AF_fun_typ x' b ((x' \<leftrightarrow> x) \<bullet> c) ((x' \<leftrightarrow> x) \<bullet> \<tau>') ((x' \<leftrightarrow> x) \<bullet> s'))))" 
@@ -2354,10 +2364,11 @@ next
     have  \<open>Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x b c \<tau>' s'))) = lookup_fun \<Phi> f\<close> using wf_weakening infer_e_appI by auto
     thus \<open>Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x' b ((x' \<leftrightarrow> x) \<bullet> c) ((x' \<leftrightarrow> x) \<bullet> \<tau>') ((x' \<leftrightarrow> x) \<bullet> s')))) = lookup_fun \<Phi> f\<close> using x' by metis
     show "\<Theta> ;  \<B> ; \<Gamma>'  \<turnstile> v \<Leftarrow> \<lbrace> x' : b  | (x' \<leftrightarrow> x) \<bullet> c \<rbrace>" using check_v_g_weakening ** infer_e_appI by metis
-    show "atom x' \<sharp> \<Gamma>'" using x' fresh_Pair by metis
+    show "atom x' \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>', \<Delta>, v, \<tau>)" using x' infer_e_appI fresh_prodN 
     have "atom x \<sharp> (v, \<tau>) \<and> atom x' \<sharp> (v, \<tau>)" using x'  infer_e_fresh[OF *] e.fresh(2) fresh_Pair infer_e_appI \<open>atom x' \<sharp> \<Gamma>\<close> by metis
     thus  "((x' \<leftrightarrow> x) \<bullet> \<tau>')[x'::=v]\<^sub>v = \<tau>" using infer_e_appI(7) infer_e_appI subst_tv_flip subst_defs by auto
   qed
+*)
 next
   case (infer_e_appPI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> b' f bv x b c \<tau>' s' v \<tau>)
 
@@ -2489,9 +2500,9 @@ lemma  wfG_x_fresh_in_v_simple:
 
 lemma check_s_g_weakening:
   fixes v::v and s::s and cs::branch_s and x::x and c::c and b::b and \<Gamma>'::\<Gamma> and \<Theta>::\<Theta> and css::branch_list
-  shows  "check_s \<Theta> \<Phi> \<B> \<Gamma> \<Delta> s  t \<Longrightarrow> setG \<Gamma> \<subseteq> setG \<Gamma>' \<Longrightarrow>  \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>' \<Longrightarrow> check_s \<Theta> \<Phi> \<B> \<Gamma>' \<Delta>  s   t"  and 
-         "check_branch_s \<Theta> \<Phi> \<B> \<Gamma> \<Delta>  tid cons const v cs t \<Longrightarrow>  setG \<Gamma> \<subseteq> setG \<Gamma>' \<Longrightarrow>  \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'  \<Longrightarrow> check_branch_s \<Theta> \<Phi> \<B> \<Gamma>' \<Delta> tid cons const v cs t" and
-         "check_branch_list \<Theta> \<Phi> \<B> \<Gamma> \<Delta>  tid dclist v css t \<Longrightarrow>  setG \<Gamma> \<subseteq> setG \<Gamma>' \<Longrightarrow>  \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'  \<Longrightarrow> check_branch_list \<Theta> \<Phi> \<B> \<Gamma>' \<Delta> tid dclist v css t"
+  shows  "check_s \<Theta> \<Phi> \<B> \<Gamma> \<Delta> s  t \<Longrightarrow> toSet \<Gamma> \<subseteq> toSet \<Gamma>' \<Longrightarrow>  \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>' \<Longrightarrow> check_s \<Theta> \<Phi> \<B> \<Gamma>' \<Delta>  s   t"  and 
+         "check_branch_s \<Theta> \<Phi> \<B> \<Gamma> \<Delta>  tid cons const v cs t \<Longrightarrow>  toSet \<Gamma> \<subseteq> toSet \<Gamma>' \<Longrightarrow>  \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'  \<Longrightarrow> check_branch_s \<Theta> \<Phi> \<B> \<Gamma>' \<Delta> tid cons const v cs t" and
+         "check_branch_list \<Theta> \<Phi> \<B> \<Gamma> \<Delta>  tid dclist v css t \<Longrightarrow>  toSet \<Gamma> \<subseteq> toSet \<Gamma>' \<Longrightarrow>  \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'  \<Longrightarrow> check_branch_list \<Theta> \<Phi> \<B> \<Gamma>' \<Delta> tid dclist v css t"
 proof(nominal_induct t and t and t avoiding: \<Gamma>'   rule: check_s_check_branch_s_check_branch_list.strong_induct)
   case (check_valI \<Theta> \<B> \<Gamma> \<Delta>' \<Phi> v \<tau>' \<tau>)
   then show ?case using Typing.check_valI infer_v_g_weakening wf_weakening subtype_weakening  by metis
@@ -2503,7 +2514,7 @@ next
     show "\<Theta> ; \<Phi> ; \<B> ; \<Gamma>' ; \<Delta>  \<turnstile> e \<Rightarrow> \<lbrace> z : b  | c \<rbrace>" using infer_e_g_weakening check_letI by metis
     show "atom z \<sharp> (x, \<Theta>, \<Phi>, \<B>, \<Gamma>', \<Delta>, e, \<tau>, s)" 
       by(unfold fresh_prodN,auto simp add: check_letI fresh_prodN) 
-    have "setG ((x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> setG ((x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>')" using check_letI setG.simps 
+    have "toSet ((x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> toSet ((x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>')" using check_letI toSet.simps 
       by (metis Un_commute Un_empty_right Un_insert_right insert_mono)
     moreover hence "\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f ((x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>')" using check_letI wfG_cons_weakening check_s_wf by metis
     ultimately show "\<Theta> ; \<Phi> ; \<B> ; (x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>' ; \<Delta>  \<turnstile> s \<Leftarrow> \<tau>" using check_letI by metis
@@ -2513,7 +2524,7 @@ next
   show ?case proof
     show "atom x \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>', \<Delta>, t, s1, \<tau>)" using check_let2I using fresh_prod4 by auto
     show "\<Theta> ; \<Phi> ; \<B> ; \<Gamma>' ; \<Delta>  \<turnstile> s1 \<Leftarrow> t" using check_let2I by metis
-    have "setG ((x, b_of t, c_of t x) #\<^sub>\<Gamma> G) \<subseteq> setG ((x, b_of t, c_of t x ) #\<^sub>\<Gamma> \<Gamma>')" using check_let2I by auto
+    have "toSet ((x, b_of t, c_of t x) #\<^sub>\<Gamma> G) \<subseteq> toSet ((x, b_of t, c_of t x ) #\<^sub>\<Gamma> \<Gamma>')" using check_let2I by auto
     moreover hence "\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f ((x, b_of t, c_of t x) #\<^sub>\<Gamma> \<Gamma>')" using check_let2I wfG_cons_weakening check_s_wf by metis
     ultimately show "\<Theta> ; \<Phi> ; \<B> ; (x, b_of t, c_of t x) #\<^sub>\<Gamma> \<Gamma>' ; \<Delta>  \<turnstile> s2 \<Leftarrow> \<tau>" using check_let2I by metis
   qed
@@ -2532,7 +2543,7 @@ next
   
     show "\<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f const " using check_branch_s_branchI by auto
     show "atom x \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>', \<Delta>, tid, cons, const, v, \<tau>)" using check_branch_s_branchI by auto
-    have "setG ((x, b_of const, CE_val v  ==  CE_val(V_cons tid cons (V_var x))   AND  c_of const x) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> setG ((x, b_of const, CE_val v  ==  CE_val (V_cons tid cons (V_var x)) AND  c_of const x) #\<^sub>\<Gamma> \<Gamma>')" 
+    have "toSet ((x, b_of const, CE_val v  ==  CE_val(V_cons tid cons (V_var x))   AND  c_of const x) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> toSet ((x, b_of const, CE_val v  ==  CE_val (V_cons tid cons (V_var x)) AND  c_of const x) #\<^sub>\<Gamma> \<Gamma>')" 
       using check_branch_s_branchI by auto
     moreover hence "\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f ((x, b_of const, CE_val v  ==  CE_val (V_cons tid cons (V_var x))   AND  c_of const x ) #\<^sub>\<Gamma> \<Gamma>')" 
       using check_branch_s_branchI wfG_cons_weakening check_s_wf by metis
@@ -2579,7 +2590,7 @@ next
 
     have " \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f  (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>" using check_assertI check_s_wf by metis
     hence *:" \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f  (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>'"   using wfG_cons_weakening check_assertI by metis
-    moreover have "setG ((x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> setG ((x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>')" using check_assertI by auto
+    moreover have "toSet ((x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> toSet ((x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>')" using check_assertI by auto
     thus  \<open> \<Theta> ; \<Phi> ; \<B> ; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>' ; \<Delta>  \<turnstile> s \<Leftarrow> \<tau>\<close> using check_assertI(11) [OF _ *] by auto
 
     show \<open>\<Theta> ; \<B> ; \<Gamma>'  \<Turnstile> c \<close> using check_assertI valid_weakening by metis
@@ -2643,7 +2654,7 @@ next
     show "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta>'  \<turnstile> e \<Rightarrow> \<lbrace> z : b  | c \<rbrace>"  using check_letI infer_e_d_weakening by auto
     have "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>" using check_letI check_s_wf by metis
     moreover have "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>'" using check_letI check_s_wf by metis
-    ultimately have "\<Theta> ; \<B> ; (x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>'"  using wf_weakening2(6)  setG.simps by fast
+    ultimately have "\<Theta> ; \<B> ; (x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>'"  using wf_weakening2(6)  toSet.simps by fast
     thus  "\<Theta> ; \<Phi> ; \<B> ; (x, b, c[z::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma> ; \<Delta>'  \<turnstile> s \<Leftarrow> \<tau>"   using check_letI by simp
   qed
 next
@@ -2673,7 +2684,7 @@ next
   show ?case proof
     show "atom x \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>, \<Delta>', c, \<tau>,s)" using fresh_prodN check_assertI by auto
     show *:" \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>' " using check_assertI by auto
-    hence  "\<Theta> ; \<B> ; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>' " using wf_weakening2(6)[OF *, of " (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>"] check_assertI check_s_wf setG.simps by auto
+    hence  "\<Theta> ; \<B> ; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>' " using wf_weakening2(6)[OF *, of " (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>"] check_assertI check_s_wf toSet.simps by auto
     thus  "\<Theta> ; \<Phi> ; \<B> ; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> ; \<Delta>'  \<turnstile> s \<Leftarrow> \<tau>" 
       using check_assertI(11)[OF \<open>setD \<Delta> \<subseteq> setD \<Delta>'\<close>] by simp
 (* wf_weakening2(6) check_s_wf check_assertI *)
@@ -2728,7 +2739,7 @@ lemma valid_ce_eq:
 
   show wf: \<open>\<Theta> ; \<B> ; (x, b, [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ v ]\<^sup>c\<^sup>e ) #\<^sub>\<Gamma> GNil   \<turnstile>\<^sub>w\<^sub>f ce1  ==  ce2  \<close> 
     apply(rule wfC_eqI[where b=b'])
-    using wfg setG.simps assms wfCE_weakening apply simp
+    using wfg toSet.simps assms wfCE_weakening apply simp
 
     using wfg assms wf_replace_inside1(8) assms 
     using wfC_trueI wf_trans(8)  by auto
@@ -2738,7 +2749,7 @@ lemma valid_ce_eq:
     fix i
     assume as:"\<Theta> ; (x, b, [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ v ]\<^sup>c\<^sup>e ) #\<^sub>\<Gamma> GNil \<turnstile> i \<and>  i \<Turnstile> (x, b, [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ v ]\<^sup>c\<^sup>e ) #\<^sub>\<Gamma> GNil"
     have 1:"wfV \<Theta>  \<B> ((x, b, [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ v ]\<^sup>c\<^sup>e ) #\<^sub>\<Gamma> GNil) v b" 
-      using wf_weakening assms append_g.simps setG.simps wf wfX_wfY 
+      using wf_weakening assms append_g.simps toSet.simps wf wfX_wfY 
       by (metis empty_subsetI)
     hence "\<exists>s. i \<lbrakk> v \<rbrakk> ~ s"  using eval_v_exist[OF _ 1] as by auto
     then obtain s where iv:"i\<lbrakk> v \<rbrakk> ~ s" ..
@@ -2753,7 +2764,7 @@ lemma valid_ce_eq:
     qed
 
    have 1:"wfCE \<Theta>  \<B> ((x, b, [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ v ]\<^sup>c\<^sup>e ) #\<^sub>\<Gamma> GNil) ce1 b'" 
-      using wfCE_weakening assms append_g.simps setG.simps wf wfX_wfY 
+      using wfCE_weakening assms append_g.simps toSet.simps wf wfX_wfY 
       by (metis empty_subsetI)
     hence "\<exists>s1. i \<lbrakk> ce1 \<rbrakk> ~ s1"  using eval_e_exist assms as by auto
     then obtain s1 where s1: "i\<lbrakk>ce1\<rbrakk> ~ s1" ..

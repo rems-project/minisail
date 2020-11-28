@@ -823,10 +823,10 @@ using neq_GNil_conv surj_pair by metis
 nominal_termination (eqvt)
 by lexicographic_order
 
-nominal_function setG :: "\<Gamma> \<Rightarrow> (x*b*c) set" where
-  "setG GNil = {}"
-| "setG (GCons xbc G) = {xbc} \<union> (setG G)"
-apply (auto,simp add: eqvt_def setG_graph_aux_def )
+nominal_function toSet :: "\<Gamma> \<Rightarrow> (x*b*c) set" where
+  "toSet GNil = {}"
+| "toSet (GCons xbc G) = {xbc} \<union> (toSet G)"
+apply (auto,simp add: eqvt_def toSet_graph_aux_def )
 using neq_GNil_conv surj_pair by metis
 nominal_termination (eqvt)
 by lexicographic_order
@@ -836,35 +836,32 @@ nominal_function append_g :: "\<Gamma> \<Rightarrow> \<Gamma> \<Rightarrow> \<Ga
 | "append_g (xbc #\<^sub>\<Gamma> g1) g2 = (xbc #\<^sub>\<Gamma> (g1@g2))"
 apply (auto,simp add: eqvt_def append_g_graph_aux_def )
 using neq_GNil_conv surj_pair by metis
-nominal_termination (eqvt)
-by lexicographic_order
+nominal_termination (eqvt) by lexicographic_order
 
 
 nominal_function dom  ::  "\<Gamma> \<Rightarrow> x set"  where
-"dom \<Gamma> = (fst` (setG \<Gamma>))"
+"dom \<Gamma> = (fst` (toSet \<Gamma>))"
   apply auto
-  unfolding  eqvt_def dom_graph_aux_def lfp_eqvt setG.eqvt by simp
-nominal_termination (eqvt)
-  by lexicographic_order
+  unfolding  eqvt_def dom_graph_aux_def lfp_eqvt toSet.eqvt by simp
+nominal_termination (eqvt) by lexicographic_order
 
-(* Use of this is sometimes mixed in with use of freshness and support for the context however it makes it clear
-that for immutable variables, the context is `self-supporting'
-*)
+text \<open> Use of this is sometimes mixed in with use of freshness and support for the context however it makes it clear
+that for immutable variables, the context is `self-supporting'\<close>
+
 nominal_function atom_dom  ::  "\<Gamma> \<Rightarrow> atom set"  where
-"atom_dom \<Gamma> = atom`(fst` (setG \<Gamma>))"
+"atom_dom \<Gamma>  = atom`(dom  \<Gamma>)"
   apply auto
-  unfolding  eqvt_def atom_dom_graph_aux_def lfp_eqvt setG.eqvt by simp
-nominal_termination (eqvt)
-  by lexicographic_order
+  unfolding  eqvt_def atom_dom_graph_aux_def lfp_eqvt toSet.eqvt by simp
+nominal_termination (eqvt) by lexicographic_order
 
 subsection \<open>Immutable Variable Context Lemmas\<close>
 
-
 lemma append_GNil[simp]:
   "GNil @ G = G"
-using append_g.simps by auto
+  by simp
 
-lemma append_g_setGU [simp]: "setG (G1@G2) = setG G1 \<union> setG G2"
+
+lemma append_g_toSetU [simp]: "toSet (G1@G2) = toSet G1 \<union> toSet G2"
   by(induct G1, auto+)
 
 lemma supp_GNil: 
@@ -879,15 +876,15 @@ by (simp add: supp_def Collect_imp_eq Collect_neg_eq)
 lemma atom_dom_eq[simp]: 
   fixes G::\<Gamma>
   shows  "atom_dom ((x, b, c) #\<^sub>\<Gamma> G) = atom_dom ((x, b, c') #\<^sub>\<Gamma> G)" 
-using atom_dom.simps setG.simps by simp
+using atom_dom.simps toSet.simps by simp
 
 lemma dom_append[simp]:
   "atom_dom (\<Gamma>@\<Gamma>') = atom_dom \<Gamma> \<union> atom_dom \<Gamma>'"
-  using image_Un append_g_setGU atom_dom.simps by metis
+  using image_Un append_g_toSetU atom_dom.simps dom.simps by metis
 
 lemma dom_cons[simp]:
   "atom_dom ((x,b,c) #\<^sub>\<Gamma> G) = { atom x } \<union> atom_dom G"
- using image_Un append_g_setGU atom_dom.simps by auto
+ using image_Un append_g_toSetU atom_dom.simps by auto
 
 lemma fresh_GNil[ms_fresh]: 
   shows "a \<sharp> GNil"
@@ -919,18 +916,18 @@ lemma append_g_inside:
 by(induct xs,auto+)
 
 lemma finite_\<Gamma>:
-  "finite (setG \<Gamma>)" 
+  "finite (toSet \<Gamma>)" 
 by(induct \<Gamma> rule: \<Gamma>_induct,auto)
 
 lemma supp_\<Gamma>:
-  "supp \<Gamma> = supp (setG \<Gamma>)"
+  "supp \<Gamma> = supp (toSet \<Gamma>)"
 proof(induct \<Gamma> rule: \<Gamma>_induct)
   case GNil
-  then show ?case using supp_GNil setG.simps
+  then show ?case using supp_GNil toSet.simps
     by (simp add: supp_set_empty)
 next
   case (GCons x b c \<Gamma>')
-  then show ?case using  supp_GCons setG.simps finite_\<Gamma> supp_of_finite_union 
+  then show ?case using  supp_GCons toSet.simps finite_\<Gamma> supp_of_finite_union 
     using supp_of_finite_insert by fastforce
 qed
 
@@ -941,12 +938,12 @@ lemma supp_of_subset:
   using supp_of_finite_sets assms  by (metis subset_Un_eq supp_of_finite_union)
 
 lemma supp_weakening:
-  assumes "setG G \<subseteq> setG G'"
+  assumes "toSet G \<subseteq> toSet G'"
   shows "supp G \<subseteq> supp G'"
   using supp_\<Gamma> finite_\<Gamma> by (simp add: supp_of_subset assms)
 
 lemma fresh_weakening[ms_fresh]:
-  assumes "setG G \<subseteq> setG G'" and "x \<sharp> G'" 
+  assumes "toSet G \<subseteq> toSet G'" and "x \<sharp> G'" 
   shows "x \<sharp> G"
 proof(rule ccontr)
   assume "\<not> x \<sharp> G"
@@ -961,7 +958,7 @@ instance \<Gamma> :: fs
 lemma fresh_gamma_elem:
   fixes \<Gamma>::\<Gamma>
   assumes "a \<sharp> \<Gamma>"
-  and "e \<in> setG \<Gamma>"
+  and "e \<in> toSet \<Gamma>"
   shows "a \<sharp> e"
 using assms by(induct \<Gamma>,auto simp add: fresh_GCons)
 
@@ -1000,16 +997,7 @@ lemma fresh_suffix[ms_fresh]:
  fixes \<Gamma>::\<Gamma>
   assumes "atom x \<sharp> \<Gamma>'@\<Gamma>"
   shows "atom x \<sharp> \<Gamma>"
-using assms proof(induct  \<Gamma>' rule: \<Gamma>_induct )
-  case GNil
-  then show ?thesis by auto
-next
-  case (GCons x' b' c' \<Gamma>')
-  hence "atom x \<sharp> ((x', b', c') #\<^sub>\<Gamma> (\<Gamma>' @ \<Gamma>))" using append_g.simps by auto
-  hence "atom x \<sharp>  (\<Gamma>' @ \<Gamma>)" using fresh_GCons by auto
-  then show ?thesis using GCons by auto
-qed
-
+  using assms by(induct  \<Gamma>' rule: \<Gamma>_induct, auto simp add: append_g.simps fresh_GCons)
 
 lemma not_GCons_self [simp]:
   fixes xs::\<Gamma>
@@ -1026,17 +1014,12 @@ lemma fresh_restrict:
   fixes y::x and \<Gamma>::\<Gamma>
   assumes  "atom y \<sharp>  (\<Gamma>' @ (x, b, c) #\<^sub>\<Gamma> \<Gamma>)"
   shows "atom y \<sharp> (\<Gamma>'@\<Gamma>)"
-using assms proof(induct \<Gamma>' rule: \<Gamma>_induct)
-  case GNil
-  then show ?case using fresh_GCons fresh_GNil by auto
-next
-  case (GCons x' b' c' \<Gamma>'')
-  then show ?case using fresh_GCons fresh_GNil by auto
-qed
+  using assms by(induct \<Gamma>' rule: \<Gamma>_induct, auto simp add:fresh_GCons fresh_GNil  )
+
 
 lemma fresh_dom_free:
   assumes "atom x \<sharp> \<Gamma>" 
-  shows "(x,b,c) \<notin> setG \<Gamma>"
+  shows "(x,b,c) \<notin> toSet \<Gamma>"
 using assms proof(induct \<Gamma> rule: \<Gamma>_induct)
   case GNil
   then show ?case by auto
@@ -1044,15 +1027,15 @@ next
   case (GCons x' b' c' \<Gamma>')
   hence "x\<noteq>x'" using fresh_def fresh_GCons fresh_Pair supp_at_base by blast
   moreover have "atom x \<sharp> \<Gamma>'" using fresh_GCons GCons by auto
-  ultimately show ?case using setG.simps GCons by auto
+  ultimately show ?case using toSet.simps GCons by auto
 qed
 
-lemma \<Gamma>_set_intros: "x \<in> setG ( x #\<^sub>\<Gamma> xs)" and "y \<in> setG xs \<Longrightarrow> y \<in> setG (x #\<^sub>\<Gamma> xs)"
+lemma \<Gamma>_set_intros: "x \<in> toSet ( x #\<^sub>\<Gamma> xs)" and "y \<in> toSet xs \<Longrightarrow> y \<in> toSet (x #\<^sub>\<Gamma> xs)"
   by simp+
 
 lemma fresh_dom_free2:
   assumes "atom x \<notin> atom_dom \<Gamma>" 
-  shows "(x,b,c) \<notin> setG \<Gamma>"
+  shows "(x,b,c) \<notin> toSet \<Gamma>"
 using assms proof(induct \<Gamma> rule: \<Gamma>_induct)
   case GNil
   then show ?case by auto
@@ -1060,7 +1043,7 @@ next
   case (GCons x' b' c' \<Gamma>')
   hence "x\<noteq>x'" using fresh_def fresh_GCons fresh_Pair supp_at_base by auto
   moreover have "atom x \<notin> atom_dom \<Gamma>'" using fresh_GCons GCons by auto
-  ultimately show ?case using setG.simps GCons by auto
+  ultimately show ?case using toSet.simps GCons by auto
 qed
 
 
@@ -1097,8 +1080,7 @@ nominal_function lookup :: "\<Gamma> \<Rightarrow> x \<Rightarrow> (b*c) option"
    apply(auto)
    apply (simp add: eqvt_def lookup_graph_aux_def )
 by (metis neq_GNil_conv surj_pair)
-nominal_termination (eqvt)
-by lexicographic_order
+nominal_termination (eqvt) by lexicographic_order
 
 nominal_function replace_in_g :: "\<Gamma> \<Rightarrow> x \<Rightarrow> c \<Rightarrow> \<Gamma>"  ("_[_\<longmapsto>_]" [1000,0,0] 200) where
   "replace_in_g GNil _ _ = GNil"
