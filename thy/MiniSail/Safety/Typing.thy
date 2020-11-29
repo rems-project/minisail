@@ -88,7 +88,7 @@ inductive infer_v :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Right
 infer_v_varI: "\<lbrakk>
       \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma> ; 
       Some (b,c) = lookup \<Gamma> x; 
-      atom z \<sharp> x ; atom z \<sharp> \<Gamma> 
+      atom z \<sharp> x ; atom z \<sharp>  (\<Theta>, \<B>, \<Gamma>) 
 \<rbrakk> \<Longrightarrow> 
       \<Theta> ; \<B> ; \<Gamma>    \<turnstile> [x]\<^sup>v \<Rightarrow> \<lbrace> z : b | [[z]\<^sup>v]\<^sup>c\<^sup>e == [[x]\<^sup>v]\<^sup>c\<^sup>e \<rbrace>"
 
@@ -99,18 +99,18 @@ infer_v_varI: "\<lbrakk>
       \<Theta> ; \<B> ; \<Gamma> \<turnstile> [l]\<^sup>v \<Rightarrow> \<tau>"
 
 | infer_v_pairI: "\<lbrakk> 
-      atom z \<sharp> (v1, v2); atom z \<sharp> \<Gamma>;
-      \<Theta> ; \<B> ; \<Gamma> \<turnstile> (v1::v) \<Rightarrow> (\<lbrace> z1 : b1 | c1 \<rbrace>) ; 
-      \<Theta> ; \<B> ;  \<Gamma> \<turnstile> (v2::v) \<Rightarrow> (\<lbrace> z2 : b2 | c2 \<rbrace>)
+      atom z \<sharp> (v1, v2); atom z \<sharp>  (\<Theta>, \<B>, \<Gamma>) ;
+      \<Theta> ; \<B> ; \<Gamma> \<turnstile> (v1::v) \<Rightarrow> t1 ; 
+      \<Theta> ; \<B> ;  \<Gamma> \<turnstile> (v2::v) \<Rightarrow> t2
 \<rbrakk> \<Longrightarrow> 
-      \<Theta> ; \<B> ; \<Gamma> \<turnstile> V_pair v1 v2 \<Rightarrow> (\<lbrace> z : B_pair b1 b2  | [[z]\<^sup>v]\<^sup>c\<^sup>e == [[v1,v2]\<^sup>v]\<^sup>c\<^sup>e \<rbrace>) "
+      \<Theta> ; \<B> ; \<Gamma> \<turnstile> V_pair v1 v2 \<Rightarrow> (\<lbrace> z : B_pair (b_of t1) (b_of t2)  | [[z]\<^sup>v]\<^sup>c\<^sup>e == [[v1,v2]\<^sup>v]\<^sup>c\<^sup>e \<rbrace>) "
 
 | infer_v_consI: "\<lbrakk> 
       AF_typedef s dclist \<in> set \<Theta>;
-      (dc, \<lbrace> x : b  | c \<rbrace>) \<in> set dclist ; 
-      \<Theta> ;  \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> (\<lbrace>  z' : b | c' \<rbrace>) ; 
-      \<Theta> ; \<B> ; \<Gamma> \<turnstile> \<lbrace> z' : b | c' \<rbrace> \<lesssim> \<lbrace> x : b | c \<rbrace> ;
-      atom z \<sharp> v ;  atom z \<sharp> \<Gamma> 
+      (dc, tc) \<in> set dclist ; 
+      \<Theta> ;  \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> tv ; 
+      \<Theta> ; \<B> ; \<Gamma> \<turnstile> tv \<lesssim> tc ;
+      atom z \<sharp> v ;  atom z \<sharp> (\<Theta>, \<B>, \<Gamma>) 
 \<rbrakk> \<Longrightarrow> 
       \<Theta> ;  \<B> ; \<Gamma>  \<turnstile> V_cons s dc v \<Rightarrow> (\<lbrace> z : B_id s |  [[z]\<^sup>v]\<^sup>c\<^sup>e == [ V_cons s dc v ]\<^sup>c\<^sup>e \<rbrace>)"
 
@@ -127,18 +127,40 @@ infer_v_varI: "\<lbrakk>
 
 equivariance infer_v
 nominal_inductive infer_v
-avoids infer_v_conspI: bv and z
+avoids infer_v_conspI: bv and z | infer_v_varI: z | infer_v_pairI: z | infer_v_consI:  z 
 proof(goal_cases)
-  case (1 s bv dclist \<Theta> dc tc \<B> \<Gamma> v tv b z)
+  case (1 \<Theta> \<B> \<Gamma> b c x z)
+  hence "atom z \<sharp> \<lbrace> z : b  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  \<rbrace>" using \<tau>.fresh by simp
+  then show ?case unfolding fresh_star_def using 1 by simp
+next
+  case (2 \<Theta> \<B> \<Gamma> b c x z)
+  then show ?case by auto
+next
+  case (3 z v1 v2 \<Theta> \<B> \<Gamma> t1 t2)
+  hence "atom z \<sharp> \<lbrace> z : [ b_of t1 , b_of t2 ]\<^sup>b  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ v1 , v2 ]\<^sup>v ]\<^sup>c\<^sup>e  \<rbrace>" using \<tau>.fresh by simp
+ then show ?case unfolding fresh_star_def using 3 by simp
+next
+  case (4 z v1 v2 \<Theta> \<B> \<Gamma> t1 t2)
+  then show ?case by auto
+next
+  case (5 s dclist \<Theta> dc tc \<B> \<Gamma> v tv z)
+  hence "atom z \<sharp> \<lbrace> z : B_id s  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ V_cons s dc v ]\<^sup>c\<^sup>e  \<rbrace>" using \<tau>.fresh b.fresh pure_fresh by auto
+  moreover have "atom z \<sharp> V_cons s dc v" using v.fresh 5 using v.fresh fresh_prodN pure_fresh  by metis
+  then show ?case unfolding fresh_star_def using 5 by simp
+next
+  case (6 s dclist \<Theta> dc tc \<B> \<Gamma> v tv z)
+  then show ?case by auto
+next
+  case (7 s bv dclist \<Theta> dc tc \<B> \<Gamma> v tv b z)
   hence "atom bv \<sharp> V_consp s dc b v" using v.fresh fresh_prodN pure_fresh by metis
   moreover then have "atom bv \<sharp> \<lbrace> z : B_id s  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ V_consp s dc b v ]\<^sup>c\<^sup>e  \<rbrace>" 
     using \<tau>.fresh ce.fresh v.fresh by auto
-  moreover have "atom z \<sharp> V_consp s dc b v" using v.fresh fresh_prodN pure_fresh 1 by metis
+  moreover have "atom z \<sharp> V_consp s dc b v" using v.fresh fresh_prodN pure_fresh 7 by metis
   moreover then have "atom z \<sharp> \<lbrace> z : B_id s  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ V_consp s dc b v ]\<^sup>c\<^sup>e  \<rbrace>" 
     using \<tau>.fresh ce.fresh v.fresh by auto
-  ultimately show ?case using fresh_star_def 1 by force
+  ultimately show ?case using fresh_star_def 7 by force
 next
-  case (2 s bv dclist \<Theta> dc tc \<B> \<Gamma> v tv b z)
+  case (8 s bv dclist \<Theta> dc tc \<B> \<Gamma> v tv b z)
   then show ?case by auto
 qed
 
@@ -198,7 +220,8 @@ infer_e_valI:  "\<lbrakk>
         \<Theta> ; \<B> ;\<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;
         \<Theta>  \<turnstile>\<^sub>w\<^sub>f (\<Phi>::\<Phi>) ; 
         Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x b c \<tau>' s'))) = lookup_fun \<Phi> f;        
-        \<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Leftarrow> \<lbrace>  x : b | c \<rbrace>; atom x \<sharp> \<Gamma>;
+        \<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Leftarrow> \<lbrace>  x : b | c \<rbrace>; 
+        atom x \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>, \<Delta>,v , \<tau>);
         \<tau>'[x::=v]\<^sub>v = \<tau> 
 \<rbrakk> \<Longrightarrow>
         \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> AE_app f v \<Rightarrow> \<tau>"
@@ -276,21 +299,28 @@ infer_e_valI:  "\<lbrakk>
 
 equivariance infer_e
 nominal_inductive infer_e 
-avoids infer_e_appPI: bv |  infer_e_splitI: z3 and z1 and z2
+avoids  infer_e_appI: x |infer_e_appPI: bv |  infer_e_splitI: z3 and z1 and z2 
 proof(goal_cases)
-  case (1 \<Theta> \<B> \<Gamma> \<Delta> \<Phi> b' f bv x b c \<tau>' s' v \<tau>)
+  case (1 \<Theta> \<B> \<Gamma> \<Delta> \<Phi> f x b c \<tau>' s' v \<tau>)
+  moreover hence "atom x \<sharp> [ f  v  ]\<^sup>e" using fresh_prodN pure_fresh e.fresh by force
+  ultimately show ?case unfolding fresh_star_def using fresh_prodN e.fresh pure_fresh by simp
+next
+  case (2 \<Theta> \<B> \<Gamma> \<Delta> \<Phi> f x b c \<tau>' s' v \<tau>)
+  then show ?case by auto
+next
+  case (3 \<Theta> \<B> \<Gamma> \<Delta> \<Phi> b' f bv x b c \<tau>' s' v \<tau>)
   moreover hence "atom bv \<sharp> AE_appP f b' v"  using fresh_prodN pure_fresh e.fresh by force
   ultimately show ?case unfolding fresh_star_def using fresh_prodN  e.fresh pure_fresh fresh_Pair by auto
 next
-  case (2 \<Theta> \<B> \<Gamma> \<Delta> \<Phi> b' f bv x b c \<tau>' s' v \<tau>)
+  case (4 \<Theta> \<B> \<Gamma> \<Delta> \<Phi> b' f bv x b c \<tau>' s' v \<tau>)
   then show ?case by auto
 next
-  case (3 \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 c1 v2 z2 z3)
+  case (5 \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 c1 v2 z2 z3)
   have "atom z3 \<sharp> \<lbrace> z3 : [ B_bitvec , B_bitvec ]\<^sup>b  | [ v1 ]\<^sup>c\<^sup>e  ==  [ [#1[ [ z3 ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e @@ [#2[ [ z3 ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e   AND  [| [#1[ [ z3 ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e  ==  [ v2 ]\<^sup>c\<^sup>e   \<rbrace>"
     using \<tau>.fresh by simp
-  then show ?case unfolding fresh_star_def fresh_prod7 using wfG_fresh_x2 3 by auto
+  then show ?case unfolding fresh_star_def fresh_prod7 using wfG_fresh_x2 5 by auto
 next
-  case (4 \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 c1 v2 z2 z3)
+  case (6 \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 c1 v2 z2 z3)
   then show ?case by auto
 qed
 

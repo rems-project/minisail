@@ -1163,20 +1163,20 @@ proof -
   ultimately show ?thesis using valid.simps by auto
 qed
 
-lemma valid_trans_2:
-  assumes  "\<Theta> ; \<B> ; ((x, b, c1[y::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c2[y::=V_var x]\<^sub>v" and
-           "\<Theta> ; \<B> ; ((x, b, c2[y::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c3[y::=V_var x]\<^sub>v" 
-         shows  "\<Theta> ; \<B> ; ((x, b, c1[y::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c3[y::=V_var x]\<^sub>v"
+lemma valid_trans_full:
+  assumes  "\<Theta> ; \<B> ; ((x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c2[z2::=V_var x]\<^sub>v" and
+           "\<Theta> ; \<B> ; ((x, b, c2[z2::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c3[z3::=V_var x]\<^sub>v" 
+         shows  "\<Theta> ; \<B> ; ((x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c3[z3::=V_var x]\<^sub>v"
 unfolding valid.simps proof
-  show "\<Theta> ; \<B> ; (x, b, c1[y::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>   \<turnstile>\<^sub>w\<^sub>f c3[y::=V_var x]\<^sub>v" using wf_trans valid.simps assms by metis
+ show "\<Theta> ; \<B> ; (x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>   \<turnstile>\<^sub>w\<^sub>f c3[z3::=V_var x]\<^sub>v" using wf_trans valid.simps assms by metis
 
-  show "\<forall>i.  ( wfI  \<Theta> ((x, b, c1[y::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) i \<and>  (is_satis_g i ((x, b, c1[y::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>))  \<longrightarrow>  (is_satis i (c3[y::=V_var x]\<^sub>v)) ) "
+  show "\<forall>i.  ( wfI  \<Theta> ((x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) i \<and>  (is_satis_g i ((x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>))  \<longrightarrow>  (is_satis i (c3[z3::=V_var x]\<^sub>v)) ) "
   proof(rule,rule)
     fix i
-    assume as: "\<Theta> ; (x, b, c1[y::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma> \<turnstile> i \<and>  i \<Turnstile> (x, b, c1[y::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>" 
-    have "i \<Turnstile> c2[y::=V_var x]\<^sub>v" using is_satis_g.simps as assms by simp
+    assume as: "\<Theta> ; (x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma> \<turnstile> i \<and>  i \<Turnstile> (x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>" 
+    have "i \<Turnstile> c2[z2::=V_var x]\<^sub>v" using is_satis_g.simps as assms by simp
     moreover have  "i \<Turnstile> \<Gamma>"  using is_satis_g.simps as by simp
-    ultimately show "i \<Turnstile> c3[y::=V_var x]\<^sub>v " using assms is_satis_g.simps valid.simps 
+    ultimately show "i \<Turnstile> c3[z3::=V_var x]\<^sub>v " using assms is_satis_g.simps valid.simps 
       by (metis append_g.simps(1) as wfI_replace_inside)
   qed
 qed

@@ -491,7 +491,7 @@ next
   hence wfg1: "wfG \<Theta> \<B> (\<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma>)" using V_var wfG_inside_valid2 by metis
  
   obtain z and b and c where zb: "t1 =  (\<lbrace> z : b | C_eq (CE_val (V_var z)) (CE_val (V_var y)) \<rbrace>) \<and> 
-                   atom z \<sharp> y  \<and> atom z \<sharp> (\<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>) \<and> Some (b, c) = lookup (\<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>) y"
+                   atom z \<sharp> y  \<and> atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>) \<and> Some (b, c) = lookup (\<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>) y"
     using infer_v_elims(1)[OF V_var(1)] by metis
   hence lu1: "Some (b, c) = lookup (\<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>) y" by auto
 
@@ -501,7 +501,7 @@ next
     moreover hence "b0 = b" using lu1 True  lookup_inside_unique_b 
       using \<open>wfG \<Theta> \<B> (\<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>)\<close> wfg1  by metis
     moreover have "atom z \<sharp> x" using True zb by simp
-    moreover have "atom z \<sharp>  \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>)" using zb fresh_replace_inside  wfg0 wfg1 by metis
+    moreover have "atom z \<sharp>   (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)" using zb fresh_replace_inside fresh_prodN wfg0 wfg1 by metis
     ultimately have  "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> (V_var x) \<Rightarrow> (\<lbrace> z : b | C_eq (CE_val (V_var z)) (CE_val (V_var x)) \<rbrace>)"
       using infer_v_varI  wfg1 by metis
     thus ?thesis 
@@ -515,7 +515,7 @@ next
       show "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using  wfg1  by auto      
       show "Some (b1, c1) = lookup (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) y"  using lookup_inside2 False bc by blast
       show "atom z \<sharp> y" using zb by auto
-      show "atom z \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using fresh_replace_inside wfg0 wfg1  zb by metis
+      show "atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)" using fresh_replace_inside fresh_prodN wfg0 wfg1  zb by metis
     qed
      
     thus ?thesis 
@@ -602,33 +602,34 @@ next
 next
   case (V_cons s dc v')
 
-  obtain xa and b and c and z' and c' and z and dclist where tt: "
+  obtain tc and tv and dclist and z where tt: "
     t1 = (\<lbrace> z : B_id s  | CE_val (V_var z)  ==  CE_val (V_cons s dc v')  \<rbrace>) \<and>
     AF_typedef s dclist \<in> set \<Theta> \<and>
-      (dc, \<lbrace> xa : b  | c \<rbrace>) \<in> set dclist \<and> atom z \<sharp> \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma> \<and>
-     \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> \<lbrace> z' : b  | c' \<rbrace> \<and>  \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> \<lbrace> z' : b  | c' \<rbrace> \<lesssim> \<lbrace> xa : b  | c \<rbrace> \<and> atom z \<sharp> v' "
+      (dc, tc) \<in> set dclist \<and> atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>) \<and>
+     \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow>tv \<and>  
+         \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv  \<lesssim> tc \<and> atom z \<sharp> v' "
     using infer_v_elims(4)[OF V_cons(2)] by metis
 
-  hence "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> \<lbrace> z' : b  | c' \<rbrace>" by linarith
-  then obtain t2 where *:" \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> t2 \<and>   \<Theta> ; \<B> ; \<Gamma>' @ ((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim>  \<lbrace> z' : b  | c' \<rbrace>" 
+  hence "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> tv" by linarith
+  then obtain t2 where *:" \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> t2 \<and>   \<Theta> ; \<B> ; \<Gamma>' @ ((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> tv" 
     using V_cons by presburger
   obtain z3 and b3 and c3 where t2: "t2 = (\<lbrace> z3 : b3 |c3 \<rbrace>)" using obtain_fresh_z by meson
-  hence beq: "b = b3" using subtype_eq_base * by blast
+  hence beq: "b_of tv = b3" using subtype_eq_base * sorry
 
-  have " \<Theta>; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> \<lbrace> z' : b  | c' \<rbrace> \<lesssim> \<lbrace> xa : b  | c \<rbrace>" using tt ctx_subtype_subtype V_cons by metis
+  have " \<Theta>; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc" using tt ctx_subtype_subtype V_cons by metis
 
-  hence tsub: " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> t2 \<lesssim> \<lbrace> xa : b  | c \<rbrace>" 
+  hence tsub: " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> t2 \<lesssim> tc" 
     using subtype_trans * by blast
 
   have "wfTh \<Theta>" using tt infer_v_wf by auto
-  moreover have "AF_typedef s dclist \<in> set \<Theta> \<and> (dc, \<lbrace> xa : b  | c \<rbrace>) \<in> set dclist" using tt by auto
-  moreover have "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> \<lbrace> z3 : b  | c3 \<rbrace>" using * t2 beq by blast
-  moreover have " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> \<lbrace> z3 : b  | c3 \<rbrace> \<lesssim> \<lbrace> xa : b  | c \<rbrace>" using t2 tsub beq by blast
+  moreover have "AF_typedef s dclist \<in> set \<Theta> \<and> (dc, tc) \<in> set dclist" using tt by auto
+  moreover have "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> tv" using * t2 beq sorry
+  moreover have " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc" using t2 tsub beq sorry
   moreover have "atom z \<sharp> v'" using tt by auto
-  moreover have "atom z \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using fresh_replace_inside tt infer_v_wf * by metis
+  moreover have "atom z \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using fresh_replace_inside tt infer_v_wf * sorry
   ultimately have "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_cons s dc v' \<Rightarrow> 
             \<lbrace> z : B_id s  | CE_val (V_var z)  ==  CE_val (V_cons s dc v')  \<rbrace>" 
-    using infer_v_consI by metis
+    using infer_v_consI sorry
 
   hence **: " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_cons s dc v' \<Rightarrow> t1" 
     using tt by argo

@@ -129,33 +129,35 @@ using assms proof(nominal_induct avoiding: b rule: infer_v.strong_induct)
     show "\<Theta> ; {||}  \<turnstile>\<^sub>w\<^sub>f \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b " using infer_v_varI wf_b_subst by metis
     show "Some (b'[bv::=b]\<^sub>b\<^sub>b, c[bv::=b]\<^sub>c\<^sub>b) = lookup \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b x" using subst_b_lookup infer_v_varI by metis
     show "atom z \<sharp> x" using infer_v_varI by auto
-    show "atom z \<sharp> \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b " using infer_v_varI subst_b_fresh_x subst_b_\<Gamma>_def by metis
+    show "atom z \<sharp>  (\<Theta>, {||}, \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b) " using infer_v_varI subst_b_fresh_x subst_b_\<Gamma>_def sorry
   qed
 next
   case (infer_v_litI \<Theta> \<B> \<Gamma> l \<tau>)
   then show ?case using Typing.infer_v_litI subst_b_infer_b 
     using wf_b_subst1(3) by auto
 next
-  case (infer_v_pairI z v1 v2 \<Gamma> \<Theta> \<B> z1 b1 c1 z2 b2 c2)
-  show ?case unfolding   subst_b_simps  apply(rule  Typing.infer_v_pairI)
+  case (infer_v_pairI z v1 v2 \<Theta> \<B> \<Gamma> t1 t2)
+  show ?case unfolding   subst_b_simps sorry
+   (*apply(rule  Typing.infer_v_pairI)
        apply(simp add: subst_b_fresh_x infer_v_pairI)+
   proof(goal_cases)
   show \<open> \<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile> v1[bv::=b]\<^sub>v\<^sub>b \<Rightarrow> \<lbrace> z1 : b1[bv::=b]\<^sub>b\<^sub>b  | c1[bv::=b]\<^sub>c\<^sub>b \<rbrace>\<close> using subst_tb.simps infer_v_pairI by metis
   show \<open> \<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile> v2[bv::=b]\<^sub>v\<^sub>b \<Rightarrow> \<lbrace> z2 : b2[bv::=b]\<^sub>b\<^sub>b  | c2[bv::=b]\<^sub>c\<^sub>b \<rbrace>\<close> using subst_tb.simps infer_v_pairI by metis
   qed
-
+*)
 next
-  case (infer_v_consI s dclist \<Theta> dc x b' c \<B> \<Gamma> v z' c' z) 
-  show ?case unfolding subst_b_simps proof
+  case (infer_v_consI s dclist \<Theta> dc tc \<B> \<Gamma> v tv z)
+  show ?case sorry
+  (*unfolding subst_b_simps proof
 
     show "AF_typedef s dclist \<in> set \<Theta>" using infer_v_consI by auto
-    show "(dc, \<lbrace> x : b'  | c \<rbrace>) \<in> set dclist"  using infer_v_consI by auto
+    show "(dc, tc) \<in> set dclist"  using infer_v_consI by auto
     have " \<turnstile>\<^sub>w\<^sub>f \<Theta>" using infer_v_consI wfX_wfY infer_v_wf by metis
-    hence **:"supp  \<lbrace> x : b'  | c \<rbrace> = {}" using wfTh_wfT  wfT_nil_supp infer_v_consI by metis
+    hence **:"supp  tc = {}" using wfTh_wfT  wfT_nil_supp infer_v_consI by metis
     hence "atom bv \<sharp> b'" using infer_v_consI  wfTh_wfT  \<tau>.fresh fresh_def wfT_supp \<tau>.supp by fastforce
     hence *: "b'[bv::=b]\<^sub>b\<^sub>b= b'" using forget_subst[of bv b' b] subst_b_b_def by simp
  
-    hence teq2: "\<lbrace> x : b'  | c \<rbrace>[bv::=b]\<^sub>\<tau>\<^sub>b = \<lbrace> x : b'  | c \<rbrace>" using forget_subst subst_b_\<tau>_def fresh_def **
+    hence teq2: "tc[bv::=b]\<^sub>\<tau>\<^sub>b = tc" using forget_subst subst_b_\<tau>_def fresh_def **
       by (metis empty_iff)
     thus "\<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile> v[bv::=b]\<^sub>v\<^sub>b \<Rightarrow> \<lbrace> z' : b' | c'[bv::=b]\<^sub>c\<^sub>b \<rbrace>"  using infer_v_consI  * subst_tb.simps by metis
     show "\<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b  \<turnstile> \<lbrace> z' : b'  | c'[bv::=b]\<^sub>c\<^sub>b \<rbrace> \<lesssim> \<lbrace> x : b'  | c \<rbrace>"  
@@ -166,6 +168,7 @@ next
     show "atom z \<sharp> v[bv::=b]\<^sub>v\<^sub>b"  using infer_v_consI using  subst_b_fresh_x subst_b_v_def by metis
     show "atom z \<sharp> \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b"  using infer_v_consI subst_g_b_x_fresh by auto
   qed
+*)
 next
   case (infer_v_conspI s bv2 dclist2 \<Theta> dc tc \<B> \<Gamma> v tv ba z)
   thm Typing.infer_v_conspI

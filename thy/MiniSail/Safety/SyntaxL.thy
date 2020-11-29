@@ -105,7 +105,7 @@ next
  qed
 
 lemma lookup_inside[simp]:
-  assumes "x \<notin> fst ` setG \<Gamma>'"
+  assumes "x \<notin> fst ` toSet \<Gamma>'"
   shows "Some (b1,c1) = lookup (\<Gamma>'@(x,b1,c1)#\<^sub>\<Gamma>\<Gamma>) x"
   using assms by(induct \<Gamma>',auto)
 
@@ -125,7 +125,7 @@ by (metis assms lookup.simps(2) option.inject surj_pair)
 
 lemma lookup_x:
   assumes "Some (b,c) = lookup G x"
-  shows "x \<in> fst ` setG G"
+  shows "x \<in> fst ` toSet G"
   using assms
   by(induct "G" rule: \<Gamma>.induct ,auto+)
 
@@ -134,12 +134,12 @@ lemma GCons_eq_appendI:
   shows "[| x #\<^sub>\<Gamma> xs1 = ys; xs = xs1 @ zs |] ==> x #\<^sub>\<Gamma> xs = ys @ zs"
 by (drule sym) simp
 
-lemma split_G: "x : setG xs \<Longrightarrow> \<exists>ys zs. xs = ys @ x #\<^sub>\<Gamma> zs"
+lemma split_G: "x : toSet xs \<Longrightarrow> \<exists>ys zs. xs = ys @ x #\<^sub>\<Gamma> zs"
 proof (induct xs)
   case GNil thus ?case by simp
 next
   case GCons thus ?case using  GCons_eq_appendI 
-    by (metis Un_iff append_g.simps(1) singletonD setG.simps(2))
+    by (metis Un_iff append_g.simps(1) singletonD toSet.simps(2))
 qed
 
 lemma lookup_not_empty:
@@ -149,7 +149,7 @@ lemma lookup_not_empty:
 
 lemma lookup_in_g:
  assumes "Some (b,c) = lookup \<Gamma> x"
- shows "(x,b,c) \<in> setG \<Gamma>"
+ shows "(x,b,c) \<in> toSet \<Gamma>"
 using assms apply(induct \<Gamma>, simp)
 using lookup_options by fastforce
 
@@ -159,13 +159,13 @@ lemma lookup_split:
   shows "\<exists>G G' . \<Gamma> =  G'@(x,b,c)#\<^sub>\<Gamma>G"
   by (meson assms(1) lookup_in_g split_G)
 
-lemma setG_splitU[simp]:
-  "(x',b',c') \<in> setG (\<Gamma>' @ (x, b, c) #\<^sub>\<Gamma> \<Gamma>) \<longleftrightarrow> (x',b',c') \<in> (setG \<Gamma>' \<union> {(x, b, c)} \<union> setG \<Gamma>)"
-  using append_g_setGU setG.simps by auto
+lemma toSet_splitU[simp]:
+  "(x',b',c') \<in> toSet (\<Gamma>' @ (x, b, c) #\<^sub>\<Gamma> \<Gamma>) \<longleftrightarrow> (x',b',c') \<in> (toSet \<Gamma>' \<union> {(x, b, c)} \<union> toSet \<Gamma>)"
+  using append_g_toSetU toSet.simps by auto
 
-lemma setG_splitP[simp]:
- "(\<forall>(x', b', c')\<in>setG (\<Gamma>' @ (x, b, c) #\<^sub>\<Gamma> \<Gamma>). P x' b' c') \<longleftrightarrow> (\<forall> (x', b', c')\<in>setG \<Gamma>'. P x' b' c') \<and> P x b c \<and> (\<forall> (x', b', c')\<in>setG \<Gamma>. P x' b' c')"  (is "?A \<longleftrightarrow> ?B")
-  using setG_splitU by force
+lemma toSet_splitP[simp]:
+ "(\<forall>(x', b', c')\<in>toSet (\<Gamma>' @ (x, b, c) #\<^sub>\<Gamma> \<Gamma>). P x' b' c') \<longleftrightarrow> (\<forall> (x', b', c')\<in>toSet \<Gamma>'. P x' b' c') \<and> P x b c \<and> (\<forall> (x', b', c')\<in>toSet \<Gamma>. P x' b' c')"  (is "?A \<longleftrightarrow> ?B")
+  using toSet_splitU by force
 
 lemma lookup_restrict:
   assumes "Some (b',c') = lookup (\<Gamma>'@(x,b,c)#\<^sub>\<Gamma>\<Gamma>) y" and "x \<noteq> y" 
@@ -373,9 +373,11 @@ lemma b_of_c_of_eq:
   shows "\<lbrace> z : b_of \<tau> |  c_of \<tau> z \<rbrace> = \<tau>" 
 using assms proof(nominal_induct \<tau> avoiding: z rule: \<tau>.strong_induct)
   case (T_refined_type x1a x2a x3a)
+
   hence " \<lbrace> z : b_of \<lbrace> x1a : x2a  | x3a \<rbrace>  | c_of \<lbrace> x1a : x2a  | x3a \<rbrace> z \<rbrace> = \<lbrace> z : x2a | x3a[x1a::=V_var z]\<^sub>c\<^sub>v \<rbrace>" 
     using b_of.simps c_of.simps c_of_eq by auto
-  thus ?case using T_refined_type by auto
+  moreover have "\<lbrace> z : x2a | x3a[x1a::=V_var z]\<^sub>c\<^sub>v \<rbrace> = \<lbrace> x1a : x2a  | x3a \<rbrace>" using T_refined_type \<tau>.fresh by auto
+  ultimately show  ?case by auto
 qed
 
 
