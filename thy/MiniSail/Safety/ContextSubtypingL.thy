@@ -469,7 +469,57 @@ lemma lookup_inside_unique_b[simp]:
   shows "b = b0"
   by (metis assms(2) assms(3) assms(5) lookup_inside_wf old.prod.exhaust option.inject prod.inject)
 
+thm infer_v_form2
 
+lemma ctx_subtype_v_aux:
+  fixes v::v
+  assumes  "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1" and   "\<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
+  shows "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1"
+using assms proof(nominal_induct "\<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>)" v t1 avoiding: c0    rule: infer_v.strong_induct)
+  case (infer_v_varI \<Theta> \<B> b c xa z)
+  have  wf:\<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<close> using wfG_inside_valid2 infer_v_varI by metis
+  have  xf1:\<open>atom z \<sharp> xa\<close> using  infer_v_varI by metis
+  have  xf2: \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)\<close> using  infer_v_varI sorry
+  show ?case proof (cases "x=xa")
+    case True
+    moreover hence  \<open>Some (b, c0) = lookup (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) xa\<close> using   lookup_inside_wf sorry
+    ultimately show ?thesis using  wf xf1 xf2 Typing.infer_v_varI by simp
+  next
+    case False
+    moreover hence  \<open>Some (b, c) = lookup (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) xa\<close> using   lookup_inside_wf sorry
+    ultimately show ?thesis using wf xf1 xf2 Typing.infer_v_varI by simp
+  qed   
+next
+  case (infer_v_litI \<Theta> \<B> l \<tau>)
+  thus ?case using Typing.infer_v_litI wfG_inside_valid2 by simp
+next
+  case (infer_v_pairI z v1 v2 \<Theta> \<B> t1' t2' c0)
+  show  ?case proof
+    show "atom z \<sharp> (v1, v2)" using infer_v_pairI fresh_Pair by simp
+    show "atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)" using infer_v_pairI wfG_inside_valid2 sorry
+    show "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v1 \<Rightarrow> t1'" using infer_v_pairI  by simp
+    show "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v2 \<Rightarrow> t2'" using infer_v_pairI  by simp
+  qed   
+next
+  case (infer_v_consI s dclist \<Theta> dc tc \<B> v tv z)
+  thus ?case using Typing.infer_v_litI wfG_inside_valid2 sorry
+next
+  case (infer_v_conspI s bv dclist \<Theta> dc tc \<B> v tv b z)
+  thus ?case using Typing.infer_v_litI wfG_inside_valid2 sorry
+qed
+
+lemma ctx_subtype_v:
+  fixes v::v
+  assumes  "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1" and   "\<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
+  shows "\<exists>t2.  \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t2 \<and>  \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> t1"
+proof -
+ 
+  have "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1 " sorry
+  moreover have "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t1 \<lesssim> t1" sorry
+  ultimately show ?thesis by auto
+qed
+
+(*
 text \<open> I think using rule induction for values and expressions is only going to save us 
 from doing the elimination step\<close>
 lemma ctx_subtype_v:
@@ -614,23 +664,26 @@ next
   then obtain t2 where *:" \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> t2 \<and>   \<Theta> ; \<B> ; \<Gamma>' @ ((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> tv" 
     using V_cons by presburger
   obtain z3 and b3 and c3 where t2: "t2 = (\<lbrace> z3 : b3 |c3 \<rbrace>)" using obtain_fresh_z by meson
-  hence beq: "b_of tv = b3" using subtype_eq_base * sorry
+  hence beq: "b_of tv = b3" using subtype_eq_base2 * b_of.simps by metis
 
-  have " \<Theta>; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc" using tt ctx_subtype_subtype V_cons by metis
-
+ 
+(*
   hence tsub: " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> t2 \<lesssim> tc" 
     using subtype_trans * by blast
+*)
 
   have "wfTh \<Theta>" using tt infer_v_wf by auto
-  moreover have "AF_typedef s dclist \<in> set \<Theta> \<and> (dc, tc) \<in> set dclist" using tt by auto
-  moreover have "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> tv" using * t2 beq sorry
-  moreover have " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc" using t2 tsub beq sorry
-  moreover have "atom z \<sharp> v'" using tt by auto
-  moreover have "atom z \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using fresh_replace_inside tt infer_v_wf * sorry
-  ultimately have "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_cons s dc v' \<Rightarrow> 
+  have "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_cons s dc v' \<Rightarrow> 
             \<lbrace> z : B_id s  | CE_val (V_var z)  ==  CE_val (V_cons s dc v')  \<rbrace>" 
-    using infer_v_consI sorry
-
+  proof
+    show \<open>AF_typedef s dclist \<in> set \<Theta>\<close> using tt by auto
+    show \<open>(dc, tc) \<in> set dclist\<close> using tt by auto
+    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v' \<Rightarrow> tv\<close> using tt srry
+    show \<open>\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc\<close> using tt ctx_subtype_subtype V_cons by metis
+    show \<open>atom z \<sharp> v'\<close> using tt by auto
+    show \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)\<close> using tt fresh_replace_inside infer_v_wf * srry
+  qed
+  
   hence **: " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_cons s dc v' \<Rightarrow> t1" 
     using tt by argo
 
@@ -640,6 +693,7 @@ next
   qed
   ultimately show ?case by metis
 qed
+*)
 
 lemma ctx_subtype_v_eq:
   fixes v::v

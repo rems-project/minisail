@@ -1884,16 +1884,24 @@ proof -
 qed
 
 
-lemma wfTh_dc_t_unique:
-  assumes "AF_typedef s dclist' \<in> set P" and "(dc, \<lbrace> x' : b'  | c' \<rbrace> ) \<in> set dclist'" and "AF_typedef s dclist \<in> set P" and "wfTh P" and
-        "(dc,  \<lbrace> x : b  | c \<rbrace>) \<in> set dclist"
-      shows "\<lbrace> x' : b'  | c' \<rbrace>= \<lbrace> x : b  | c \<rbrace>"
+lemma wfTh_dc_t_unique2:
+  assumes "AF_typedef s dclist' \<in> set P" and "(dc,tc' ) \<in> set dclist'" and "AF_typedef s dclist \<in> set P" and "wfTh P" and
+        "(dc,  tc) \<in> set dclist"
+      shows "tc= tc'"
 proof - 
   have "dclist = dclist'" using assms wfTh_td_unique name_of_type.simps by force
   moreover have "distinct (map fst  dclist)"  using wfTh_dclist_distinct assms by auto
   ultimately show ?thesis using assms 
     by (meson eq_key_imp_eq_value)
 qed
+
+
+lemma wfTh_dc_t_unique:
+  assumes "AF_typedef s dclist' \<in> set P" and "(dc, \<lbrace> x' : b'  | c' \<rbrace> ) \<in> set dclist'" and "AF_typedef s dclist \<in> set P" and "wfTh P" and
+        "(dc,  \<lbrace> x : b  | c \<rbrace>) \<in> set dclist"
+      shows "\<lbrace> x' : b'  | c' \<rbrace>= \<lbrace> x : b  | c \<rbrace>"
+  using assms wfTh_dc_t_unique2 by metis
+
   
 
 lemma wfTs_wfT:
@@ -3970,6 +3978,12 @@ next
     qed
   qed
 qed
+
+lemma lookup_subst2:
+  assumes "Some (b, c) = lookup (\<Gamma>'@((x',b\<^sub>1,c0[z0::=[x']\<^sup>v]\<^sub>c\<^sub>v)#\<^sub>\<Gamma>\<Gamma>)) x" and "x \<noteq> x'" and
+          "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f (\<Gamma>'@((x',b\<^sub>1,c0[z0::=[x']\<^sup>v]\<^sub>c\<^sub>v)#\<^sub>\<Gamma>\<Gamma>))" 
+  shows "\<exists>c'. Some (b,c') = lookup (\<Gamma>'[x'::=v']\<^sub>\<Gamma>\<^sub>v@\<Gamma>) x"
+  using assms lookup_subst subst_g_inside by metis
 
 lemma wf_subst1:
   fixes \<Gamma>::\<Gamma> and  \<Gamma>'::\<Gamma> and v::v and e::e and c::c and \<tau>::\<tau> and ts::"(string*\<tau>) list" and \<Delta>::\<Delta> and b::b and ftq::fun_typ_q and ft::fun_typ and ce::ce and td::type_def

@@ -853,50 +853,29 @@ lemma infer_bool_options2:
   assumes "\<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> \<lbrace> z : b | c \<rbrace>" and "supp v = {} \<and> b = B_bool"
   shows  "v = V_lit L_true \<or> (v = (V_lit L_false))"
   using assms
-proof(nominal_induct v  arbitrary: b rule: v.strong_induct)
-  case (V_lit l)
-  then show ?case proof(nominal_induct l  rule: l.strong_induct)
-    case (L_num nat)
-    hence "\<turnstile> L_num nat  \<Rightarrow> \<lbrace> z : b | c \<rbrace>" using infer_v_elims(2)   by (metis (no_types, lifting))
-    hence "b = B_int" using infer_l_elims(3) type_for_lit.simps(3)   by (metis \<tau>.eq_iff)
-    then show ?case using L_num by fastforce
+proof(nominal_induct "\<lbrace> z : b | c \<rbrace>"  rule: infer_v.strong_induct)
+  case (infer_v_varI \<Theta> \<B> \<Gamma> c x z)
+  then show ?case using v.supp supp_at_base by auto
+next
+  case (infer_v_litI \<Theta> \<B> \<Gamma> l)
+  from \<open> \<turnstile> l \<Rightarrow> \<lbrace> z : b  | c \<rbrace>\<close> show ?case proof(nominal_induct "\<lbrace> z : b  | c \<rbrace>"  rule: infer_l.strong_induct)
+    case (infer_trueI z)
+    then show ?case by auto
   next
-    case L_true
-    hence "\<turnstile> L_true  \<Rightarrow> \<lbrace> z : b | c \<rbrace>" using infer_v_elims(2)   by (metis (no_types, lifting))
-    hence "b = B_bool"  using infer_l_elims type_for_lit.simps   by (metis \<tau>.eq_iff)
-    then show ?case by blast
+    case (infer_falseI z)
+    then show ?case by auto
   next
-    case L_false
-    hence "\<turnstile> L_false  \<Rightarrow> \<lbrace> z : b | c \<rbrace>" using infer_v_elims(2)   by (metis (no_types, lifting))
-    hence "b = B_bool"  using infer_l_elims type_for_lit.simps   by (metis \<tau>.eq_iff)
-    then show ?case by blast
+    case (infer_natI n z)
+    then show ?case using infer_v_litI by simp
   next
-    case L_unit
-    hence "\<turnstile> L_unit  \<Rightarrow> \<lbrace> z : b | c \<rbrace>" using infer_v_elims(2)   by (metis (no_types, lifting))
-    hence "b = B_unit" using infer_l_elims type_for_lit.simps   by (metis \<tau>.eq_iff)
-    then show ?case using L_unit by fastforce
+    case (infer_unitI z)
+    then show ?case using infer_v_litI by simp
   next
-    case (L_bitvec x)
-    hence "\<turnstile> L_bitvec x  \<Rightarrow> \<lbrace> z : b | c \<rbrace>" using infer_v_elims   by (metis (no_types, lifting))
-    hence "b = B_bitvec" using infer_l_elims type_for_lit.simps   by (metis \<tau>.eq_iff)
-    then show ?case using L_bitvec by fastforce
+    case (infer_bitvecI bv z)
+    then show ?case using infer_v_litI by simp
   qed
-next
-  case (V_var x) 
-  then show ?case using v.supp V_var supp_at_base[of x] by auto
-next
-  case (V_pair v1 v2)
-  then show ?case using infer_v.simps 
-     \<tau>.eq_iff infer_v_elims  by (metis b.distinct)
-next
-  case (V_cons dc v)
-  then show ?case using infer_v.simps 
-     \<tau>.eq_iff infer_v_elims  by (metis b.distinct)
-next
-  case (V_consp tyid dc b' v )
-  then show ?case using infer_v.simps 
-     \<tau>.eq_iff infer_v_elims  by (metis b.distinct)
-qed
+qed(auto+)
+
 
 lemma infer_bool_options:
   fixes v::v
@@ -909,50 +888,28 @@ lemma infer_int2:
   assumes "\<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> \<lbrace> z : b | c \<rbrace>"
   shows "supp v = {}  \<and> b = B_int \<longrightarrow> (\<exists>n. v = V_lit (L_num n))"
   using assms
-proof(nominal_induct v  rule: v.strong_induct)
-  case (V_lit l)
-  then show ?case proof(nominal_induct l  rule: l.strong_induct)
-    case (L_num nat)
-    hence "\<turnstile> L_num nat  \<Rightarrow> \<lbrace> z : b | c \<rbrace>" using infer_v_elims(2)   by (metis (no_types, lifting))
-    hence "b = B_int" using infer_l_elims(3) type_for_lit.simps(3)   by (metis \<tau>.eq_iff)
-    then show ?case by fastforce
-  next
-    case L_true
-    hence "\<turnstile> L_true  \<Rightarrow> \<lbrace> z : b | c \<rbrace>" using infer_v_elims(2)   by (metis (no_types, lifting))
-    hence "b = B_bool"  using infer_l_elims type_for_lit.simps   by (metis \<tau>.eq_iff)
-    then show ?case  by simp
-  next
-    case L_false
-    hence "\<turnstile> L_false  \<Rightarrow> \<lbrace> z : b | c \<rbrace>" using infer_v_elims(2)   by (metis (no_types, lifting))
-    hence "b = B_bool"  using infer_l_elims type_for_lit.simps   by (metis \<tau>.eq_iff)
-    then show ?case by simp
-  next
-    case L_unit
-    hence "\<turnstile> L_unit  \<Rightarrow> \<lbrace> z : b | c \<rbrace>" using infer_v_elims   by (metis (no_types, lifting))
-    hence "b = B_unit"  using infer_l_elims type_for_lit.simps   by (metis \<tau>.eq_iff)
-    then show ?case by simp
-  next
-    case (L_bitvec x)
-    hence "\<turnstile> L_bitvec x  \<Rightarrow> \<lbrace> z : b | c \<rbrace>" using infer_v_elims   by (metis (no_types, lifting))
-    hence "b = B_bitvec" using infer_l_elims type_for_lit.simps   by (metis \<tau>.eq_iff)
-    then show ?case by fastforce
-  qed
-next
-  case (V_var x)  
+proof(nominal_induct "\<lbrace> z : b | c \<rbrace>"  rule: infer_v.strong_induct)
+  case (infer_v_varI \<Theta> \<B> \<Gamma> c x z)
   then show ?case using v.supp supp_at_base by auto
 next
-  case (V_pair v1 v2)
-  then show ?case using infer_v.simps 
-     \<tau>.eq_iff infer_v_elims  by (metis b.distinct)
-next
-  case (V_cons s dc v)
-  then show ?case using infer_v.simps 
-     \<tau>.eq_iff infer_v_elims  by (metis b.distinct)
-next
-  case (V_consp s dc b v)
-  then show ?case using infer_v.simps 
-     \<tau>.eq_iff infer_v_elims by (metis b.distinct)
-qed
+  case (infer_v_litI \<Theta> \<B> \<Gamma> l)
+  from \<open> \<turnstile> l \<Rightarrow> \<lbrace> z : b  | c \<rbrace>\<close> show ?case proof(nominal_induct "\<lbrace> z : b  | c \<rbrace>"  rule: infer_l.strong_induct)
+    case (infer_trueI z)
+    then show ?case by auto
+  next
+    case (infer_falseI z)
+    then show ?case by auto
+  next
+    case (infer_natI n z)
+    then show ?case using infer_v_litI by simp
+  next
+    case (infer_unitI z)
+    then show ?case using infer_v_litI by simp
+  next
+    case (infer_bitvecI bv z)
+    then show ?case using infer_v_litI by simp
+  qed
+qed(auto+)
 
 lemma infer_bitvec:
   fixes \<Theta>::\<Theta> and v::v
@@ -979,45 +936,27 @@ lemma infer_v_form[simp]:
   assumes "\<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> \<tau>" 
   shows "\<exists>z b. \<tau> = (\<lbrace> z : b | C_eq (CE_val (V_var z)) (CE_val v)\<rbrace>) \<and> atom z \<sharp> v \<and> atom z \<sharp> (\<Theta>, \<B>, \<Gamma>)"
   using assms
-proof(nominal_induct v  arbitrary: \<tau> rule: v.strong_induct)
-  case (V_lit l)
-  hence " \<turnstile> l \<Rightarrow> \<tau>" using infer_v_elims by metis
+proof(nominal_induct   rule: infer_v.strong_induct)
+case (infer_v_varI \<Theta> \<B> \<Gamma> b c x z)
+  then show ?case by force
+next
+  case (infer_v_litI \<Theta> \<B> \<Gamma> l \<tau>)
   then obtain z and b where "\<tau> = \<lbrace> z : b  | CE_val (V_var z)  ==  CE_val (V_lit l)  \<rbrace> \<and>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>) "
     using infer_l_form by metis
   moreover hence  "atom z \<sharp> (V_lit l)" using supp_l_empty v.fresh(1) fresh_prod2 fresh_def by blast
   ultimately show ?case by metis
 next
-  case (V_var x)
-  then show ?case using infer_v_elims V_var  
-    by (metis finite.emptyI fresh_atom_at_base fresh_finite_insert v.fresh(2))
+  case (infer_v_pairI z v1 v2 \<Theta> \<B> \<Gamma> t1 t2)
+  then show ?case by force
 next
-  case (V_pair v1 v2)
-
-  obtain z and  z1 and t1 and c1 and z2 and t2 and c2 where
-    zbc: "\<tau> = (\<lbrace> z :  [ b_of t1 , b_of t2 ]\<^sup>b   | CE_val (V_var z)  ==  CE_val (V_pair v1 v2)  \<rbrace>) \<and>
-    atom z \<sharp> (v1, v2) \<and>  \<Theta> ; \<B> ; \<Gamma> \<turnstile> v1 \<Rightarrow> t1 \<and>  \<Theta> ; \<B> ; \<Gamma> \<turnstile> v2 \<Rightarrow> t2 \<and> atom z \<sharp> (\<Theta>, \<B>, \<Gamma>)"
-    using infer_v_elims(3)[OF V_pair(3)] by metis
-  moreover hence "atom z \<sharp> (V_pair v1 v2)" by simp
-  moreover obtain b where "b = [ b_of t1 , b_of t2 ]\<^sup>b " using zbc by auto
-  ultimately show ?case using fresh_prodN by metis
-next
-  case (V_cons s dc v)
-  thm infer_v_elims
-  obtain x and b and c  and z and c' and dclist and tc and tv where 
-    "\<tau> = (\<lbrace> z : B_id s  | CE_val (V_var z)  ==  CE_val (V_cons s dc v)  \<rbrace>) \<and>
-     AF_typedef s dclist \<in> set \<Theta> \<and> (dc, tc) \<in> set dclist \<and>  \<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> tv \<and> 
-      \<Theta> ; \<B> ; \<Gamma> \<turnstile> tv \<lesssim> tc \<and> atom z \<sharp> v \<and>  atom z \<sharp> (\<Theta>, \<B>, \<Gamma>)"
-    using infer_v_elims(4)[OF V_cons(2)] by metis
+  case (infer_v_consI s dclist \<Theta> dc tc \<B> \<Gamma> v tv z)
   moreover hence "atom z \<sharp> (V_cons s dc v)" using
     Un_commute b.supp(3) fresh_def sup_bot.right_neutral supp_b_empty v.supp(4) pure_supp by metis
   ultimately show ?case using fresh_prodN by metis
 next
-  case (V_consp s dc bc v)
-  from V_consp(2) show ?case proof(nominal_induct "V_consp s dc bc v" \<tau> rule:infer_v.strong_induct)
-   case (infer_v_conspI bv dclist \<Theta> tc \<B> \<Gamma> tv z)
-    moreover hence "atom z \<sharp> (V_consp s dc bc v)" unfolding v.fresh using pure_fresh fresh_prodN * by metis
+  case (infer_v_conspI s bv dclist \<Theta> dc tc \<B> \<Gamma> v tv b z)
+   moreover hence "atom z \<sharp> (V_consp s dc b v)" unfolding v.fresh using pure_fresh fresh_prodN * by metis
     ultimately show ?case using fresh_prodN by metis
-  qed
 qed
 
 lemma infer_v_form2:
@@ -1157,19 +1096,20 @@ lemma lookup_in_rig_b:
   using assms lookup_in_rig[OF assms(2)] 
   by (metis option.inject prod.inject)
 
-
+(*
 lemma infer_v_uniqueness_rig:
   fixes x::x and c::c
   assumes "infer_v P B G v \<tau>" and "infer_v P B (replace_in_g G x c') v \<tau>'"
   shows "\<tau> = \<tau>'"
   using assms infer_v_form[OF assms(1)] infer_v_form[OF assms(2)]
 
-proof(nominal_induct rule: infer_v.strong_induct)
-  case (infer_v_varI \<Theta> \<B> \<Gamma> b c x' z)
-  from infer_v_varI(7) infer_v_varI show ?case proof(nominal_induct "\<Gamma>[x\<longmapsto>c']"  "[ x' ]\<^sup>v" \<tau>' rule: infer_v.strong_induct)
+proof(nominal_induct arbitrary: \<tau>'  rule: infer_v.strong_induct)
+  case (infer_v_varI \<Theta> \<B> \<Gamma> b c x' z t2 )
+
+  from infer_v_varI(7) infer_v_varI show ?case proof(nominal_induct "\<Gamma>[x\<longmapsto>c']"  "[ x' ]\<^sup>v" t2 rule: infer_v.strong_induct)
     case (infer_v_varI \<Theta> \<B>  b2 c2 z2)
     hence "b = b2" using lookup_in_rig_b by simp
-    then show ?case   using infer_v_varI by auto
+    then show ?case   using type_e_eq2 infer_v_varI v.fresh ce.fresh by auto
   qed
 next
   case (infer_v_litI \<Theta> \<B> \<Gamma> l \<tau>)
@@ -1179,20 +1119,23 @@ next
   qed
 next
   case (infer_v_pairI z v1 v2 \<Theta> \<B> \<Gamma> t1 t2)
-  from \<open>\<Theta> ; \<B> ; \<Gamma>[x\<longmapsto>c'] \<turnstile> [ v1 , v2 ]\<^sup>v \<Rightarrow> \<tau>'\<close> infer_v_pairI 
-  show ?case proof(nominal_induct "\<Gamma>[x\<longmapsto>c']"  "[ v1 , v2 ]\<^sup>v" \<tau>' rule: infer_v.strong_induct)
-    case (infer_v_pairI z' \<Theta> \<B> t1' t2')
-    hence "b_of t1 = b_of t1' \<and> b_of t2 = b_of t2'" sorry
-    then show ?case sorry
-  qed
+
+  obtain t1' and t2' and z' where *: "\<Theta> ; \<B> ; \<Gamma>[x\<longmapsto>c'] \<turnstile> v1 \<Rightarrow> t1' \<and> \<Theta> ; \<B> ; \<Gamma>[x\<longmapsto>c'] \<turnstile> v2 \<Rightarrow> t2' \<and>
+      atom z' \<sharp> (v1, v2) \<and> atom z' \<sharp> (\<Theta>, \<B>, \<Gamma>[x\<longmapsto>c']) \<Longrightarrow>  \<Theta> ; \<B> ; \<Gamma>[x\<longmapsto>c'] \<turnstile> v1 \<Rightarrow> t1' \<Longrightarrow>  \<Theta> ; \<B> ; \<Gamma>[x\<longmapsto>c'] \<turnstile> v2 \<Rightarrow> t2'" 
+    using infer_v_elims(3)[OF \<open>\<Theta> ; \<B> ; \<Gamma>[x\<longmapsto>c'] \<turnstile> [ v1 , v2 ]\<^sup>v \<Rightarrow> \<tau>'\<close>] by metis
+  moreover hence "t1 = t1' \<and> t2 = t2'" using infer_v_pairI * sory
+  moreover hence "\<lbrace> z : [ b_of t1' , b_of t2' ]\<^sup>b  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ v1 , v2 ]\<^sup>v ]\<^sup>c\<^sup>e  \<rbrace> = \<tau>'" using * infer_v_pairI sledgehammer
  
+  ultimately show ?case using type_e_eq2 infer_v_pairI by metis
+
 next
   case (infer_v_consI s dclist \<Theta> dc tc \<B> \<Gamma> v tv z)
-  then show ?case sorry
+  then show ?case sory
 next
   case (infer_v_conspI s bv dclist \<Theta> dc tc \<B> \<Gamma> v tv b z)
-  then show ?case sorry
+  then show ?case sory
 qed
+*)
 
 lemma infer_v_uniqueness_rig:
   fixes x::x and c::c
@@ -1216,7 +1159,8 @@ next
   moreover obtain z' where "\<tau>' = (\<lbrace> z' : b |  C_eq (CE_val (V_var z')) (CE_val (V_var y)) \<rbrace>)" using infer_v_elims(1)[of P B _ y \<tau>']  V_var
    option.inject prod.inject  lookup_in_rig  by (metis bc')
   ultimately show ?case using type_e_eq 
-    by (metis V_var.prems(1) V_var.prems(2) \<tau>.eq_iff ce.fresh(1) finite.emptyI fresh_atom_at_base fresh_finite_insert infer_v_elims(1) v.fresh(2))
+    by (metis V_var.prems(1) V_var.prems(2) \<tau>.eq_iff ce.fresh(1) finite.emptyI fresh_atom_at_base 
+    fresh_finite_insert infer_v_elims(1) v.fresh(2))
 next 
   case (V_pair v1 v2)
   obtain  z and z1 and z2 and t1 and t2 and c1 and c2 where
@@ -1241,7 +1185,7 @@ next
     using infer_v_elims(4)[OF V_cons(3)] by metis
   moreover have a: "AF_typedef s dclist' \<in> set P" and b:"(dc,tc') \<in> set dclist'" and c:"AF_typedef s dclist \<in> set P" and
         d:"(dc, tc) \<in> set dclist" using t1 t2 by auto
-  ultimately have "tc =  tc'" using wfTh_dc_t_unique infer_v_wf V_cons sorry
+  ultimately have "tc =  tc'" using wfTh_dc_t_unique2   infer_v_wf(3)[OF V_cons(2)] by metis
 
   moreover have "atom z \<sharp> CE_val (V_cons s dc v) \<and> atom z' \<sharp> CE_val (V_cons s dc v)" 
      using e.fresh(1)  v.fresh(4) t1 t2 pure_fresh by auto
@@ -1266,8 +1210,8 @@ next
     qed
     ultimately  show ?case using * by auto
   qed
-
 qed
+
 
 lemma infer_v_uniqueness: 
   assumes "infer_v P B G v \<tau>" and "infer_v P B G v \<tau>'"
@@ -2210,14 +2154,14 @@ lemma infer_v_pair2I:
 proof - 
   obtain z1 and b1 and c1 and z2 and b2 and c2 where zbc: "\<tau>\<^sub>1 = (\<lbrace> z1 : b1 | c1 \<rbrace>) \<and> \<tau>\<^sub>2 = (\<lbrace> z2 : b2 | c2 \<rbrace>)"
     using \<tau>.exhaust by meson
-  obtain z::x where "atom z \<sharp> ( v\<^sub>1, v\<^sub>2,\<Gamma>)" using obtain_fresh
+  obtain z::x where "atom z \<sharp> ( v\<^sub>1, v\<^sub>2,\<Theta>, \<B>,\<Gamma>)" using obtain_fresh
     by blast
-  hence "atom z \<sharp> ( v\<^sub>1, v\<^sub>2) \<and> atom z \<sharp> \<Gamma>" by auto
+  hence "atom z \<sharp> ( v\<^sub>1, v\<^sub>2) \<and> atom z \<sharp> (\<Theta>, \<B>,\<Gamma>)" using fresh_prodN by metis
   hence " \<Theta> ; \<B> ; \<Gamma> \<turnstile> V_pair v\<^sub>1 v\<^sub>2 \<Rightarrow> \<lbrace> z : [ b_of \<tau>\<^sub>1 , b_of \<tau>\<^sub>2 ]\<^sup>b  | CE_val (V_var z)  ==  CE_val (V_pair v\<^sub>1 v\<^sub>2)  \<rbrace>"  
-    using assms infer_v_pairI zbc sorry
+    using assms infer_v_pairI zbc by metis
   moreover obtain \<tau> where "\<tau> = (\<lbrace> z : B_pair b1 b2  | CE_val (V_var z)  ==  CE_val (V_pair v\<^sub>1 v\<^sub>2)  \<rbrace>)" by blast
   moreover hence "b_of \<tau> = B_pair (b_of \<tau>\<^sub>1) (b_of \<tau>\<^sub>2)" using b_of.simps zbc by presburger
-  ultimately show ?thesis sorry
+  ultimately show ?thesis using b_of.simps by metis
 qed
 
 lemma infer_v_pair2I_zbc:
@@ -2242,14 +2186,10 @@ lemma infer_v_pair2E:
   shows "\<exists>\<tau>\<^sub>1 \<tau>\<^sub>2 z . \<Theta> ; \<B> ; \<Gamma> \<turnstile> v\<^sub>1 \<Rightarrow> \<tau>\<^sub>1 \<and> \<Theta> ; \<B> ; \<Gamma> \<turnstile> v\<^sub>2 \<Rightarrow> \<tau>\<^sub>2 \<and> 
            \<tau> = (\<lbrace> z : B_pair (b_of \<tau>\<^sub>1) (b_of \<tau>\<^sub>2) | C_eq (CE_val (V_var z)) (CE_val (V_pair v\<^sub>1 v\<^sub>2)) \<rbrace>) \<and> atom z \<sharp>  (v\<^sub>1, v\<^sub>2)" 
 proof - 
-  obtain z and z1 and b1 and c1 and z2 and b2 and c2 where 
-        "\<tau> = (\<lbrace> z : B_pair b1 b2  | CE_val (V_var z)  ==  CE_val (V_pair v\<^sub>1 v\<^sub>2)  \<rbrace>) \<and>
-        atom z \<sharp> (v\<^sub>1, v\<^sub>2) \<and>  \<Theta> ; \<B> ; \<Gamma> \<turnstile> v\<^sub>1 \<Rightarrow> \<lbrace> z1 : b1  | c1 \<rbrace> \<and>  \<Theta> ; \<B> ; \<Gamma> \<turnstile> v\<^sub>2 \<Rightarrow> \<lbrace> z2 : b2  | c2 \<rbrace> " using infer_v_elims assms
-    sorry
-  moreover then obtain  \<tau>\<^sub>1  and  \<tau>\<^sub>2  where " \<tau>\<^sub>1 =  (\<lbrace> z1 : b1  | c1 \<rbrace>) \<and> \<tau>\<^sub>2  = (\<lbrace> z2 : b2  | c2 \<rbrace>)"
-    by blast
-  moreover hence  "b1 = b_of  \<tau>\<^sub>1 \<and> b2 = b_of  \<tau>\<^sub>2" using b_of.simps by auto
-  ultimately show ?thesis using b_of.simps  by metis
+  obtain z and t1 and t2 where 
+        "\<tau> = (\<lbrace> z : B_pair (b_of t1) (b_of t2)  | CE_val (V_var z)  ==  CE_val (V_pair v\<^sub>1 v\<^sub>2)  \<rbrace>) \<and>
+        atom z \<sharp> (v\<^sub>1, v\<^sub>2) \<and>  \<Theta> ; \<B> ; \<Gamma> \<turnstile> v\<^sub>1 \<Rightarrow> t1 \<and>  \<Theta> ; \<B> ; \<Gamma> \<turnstile> v\<^sub>2 \<Rightarrow> t2 " using infer_v_elims(3)[OF assms ] by metis 
+  thus ?thesis using b_of.simps  by metis
 qed
 
 
@@ -2401,7 +2341,7 @@ next
     using infer_v_elims(3)[OF V_pair(3)] by metis
   moreover obtain z'::x where z':"atom z' \<sharp> (v1, v2) \<and> atom z' \<sharp> \<Gamma>'" using obtain_fresh fresh_prod2 by metis
   moreover hence "\<tau> = \<lbrace> z' :  [ b_of t1 , b_of t2 ]\<^sup>b   | CE_val (V_var z')  ==  CE_val (V_pair v1 v2)  \<rbrace>" using * by force
-  ultimately show ?case using infer_v_pairI V_pair sorry
+  ultimately show ?case using infer_v_pairI V_pair sory
 next
   case (V_consp s dc b v)
   from V_consp(2) V_consp(1) V_consp(3)  V_consp(4) show ?case 
@@ -2437,7 +2377,7 @@ next
   moreover have "\<Theta> ;  \<B> ; \<Gamma>' \<turnstile> tv \<lesssim> tc" using * subtype_weakening V_cons  by meson
  
   ultimately have  "\<Theta> ;  \<B> ; \<Gamma>'  \<turnstile> V_cons s dc v \<Rightarrow> (\<lbrace> z'' : B_id s  | CE_val (V_var z'')  ==  CE_val (V_cons s dc v)  \<rbrace>)" 
-    using infer_v_consI sorry
+    using infer_v_consI sory
   thus ?case using t by auto
 qed
 *)
