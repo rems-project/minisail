@@ -2463,12 +2463,12 @@ qed
 
 lemma valid_range_length_inv:
   fixes \<Gamma>::\<Gamma>
-  assumes  "\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f \<Gamma> " and "atom x \<sharp> \<Gamma>" and "\<exists>i. i \<Turnstile> \<Gamma> \<and> \<Theta> ; \<Gamma> \<turnstile> i"
-  and  "\<Theta> ; {||} ; (x, B_int  , (C_eq (CE_val (V_var x)) (CE_val (V_lit (L_num n))))) #\<^sub>\<Gamma>  \<Gamma> \<Turnstile> 
+  assumes  "\<Theta> ; B \<turnstile>\<^sub>w\<^sub>f \<Gamma> " and "atom x \<sharp> \<Gamma>" and "\<exists>i. i \<Turnstile> \<Gamma> \<and> \<Theta> ; \<Gamma> \<turnstile> i"
+  and  "\<Theta> ; B ; (x, B_int  , (C_eq (CE_val (V_var x)) (CE_val (V_lit (L_num n))))) #\<^sub>\<Gamma>  \<Gamma> \<Turnstile> 
                      (C_eq (CE_op LEq (CE_val (V_lit (L_num 0))) (CE_val (V_var x)))  [[ L_true ]\<^sup>v ]\<^sup>c\<^sup>e) AND  
                      (C_eq (CE_op LEq (CE_val (V_var x)) ([| [ [ L_bitvec v ]\<^sup>v ]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e ))  [[ L_true ]\<^sup>v ]\<^sup>c\<^sup>e)
                             "
-        (is "\<Theta> ; {||} ; ?G \<Turnstile> ?c1 AND ?c2")
+        (is "\<Theta> ; ?B ; ?G \<Turnstile> ?c1 AND ?c2")
       shows "0 \<le> n \<and> n \<le> int (length v)" 
 proof -
   have *:"\<forall>i.  \<Theta> ; ?G \<turnstile> i \<and>  i \<Turnstile> ?G  \<longrightarrow> i \<Turnstile> ?c1 AND ?c2" using assms valid.simps by simp

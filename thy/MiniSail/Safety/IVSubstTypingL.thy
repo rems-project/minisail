@@ -491,8 +491,8 @@ unfolding fresh_append_g  using fresh_append_g assms fresh_subst_gv fresh_GCons 
 
 lemma subst_t:
   fixes x::x and b::b and xa::x
-  assumes "atom z \<sharp> (x,v)"
-  shows   "(\<lbrace> z : b  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ xa ]\<^sup>v[x::=v]\<^sub>v\<^sub>v ]\<^sup>c\<^sup>e  \<rbrace>) = (\<lbrace> z : b  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ xa ]\<^sup>v ]\<^sup>c\<^sup>e  \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v)"
+  assumes "atom z \<sharp> x" and "atom z \<sharp> v"
+  shows   "(\<lbrace> z : b  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ v'[x::=v]\<^sub>v\<^sub>v ]\<^sup>c\<^sup>e  \<rbrace>) = (\<lbrace> z : b  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ v']\<^sup>c\<^sup>e  \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v)"
   using assms subst_vv.simps subst_tv.simps subst_cv.simps subst_cev.simps by auto
 
 
@@ -578,10 +578,8 @@ next
     ultimately show \<open>\<Theta> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>  \<turnstile> tv[x::=v]\<^sub>\<tau>\<^sub>v \<lesssim> tc\<close> by simp 
     show \<open>atom z \<sharp> va[x::=v]\<^sub>v\<^sub>v\<close> using infer_v_consI by auto
     show \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>)\<close> by (fresh_mth add: infer_v_consI fresh_subst_gv_inside)
-  qed
-  moreover have "\<lbrace> z : B_id s  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ V_cons s dc va ]\<^sup>c\<^sup>e  \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v = \<lbrace> z : B_id s  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ V_cons s dc va[x::=v]\<^sub>v\<^sub>v ]\<^sup>c\<^sup>e  \<rbrace>" 
-    using subst_tv.simps subst_cv.simps subst_cev.simps subst_vv.simps infer_v_consI by simp
-  ultimately show ?case using subst_vv.simps infer_v_consI by metis
+  qed  
+  thus ?case using subst_vv.simps subst_t[of z x v ] infer_v_consI by metis
 
 next
   case (infer_v_conspI s bv dclist \<Theta> dc tc \<B> va tv b z)
@@ -589,16 +587,31 @@ next
   proof
     show td:\<open>AF_typedef_poly s bv dclist \<in> set \<Theta>\<close> using infer_v_conspI by auto
     show dc:\<open>(dc, tc) \<in> set dclist\<close> using infer_v_conspI by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma> \<turnstile> va[x::=v]\<^sub>v\<^sub>v \<Rightarrow> tv[x::=v]\<^sub>\<tau>\<^sub>v\<close> using infer_v_conspI sorry
-    have \<open>\<Theta> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>  \<turnstile> tv[x::=v]\<^sub>\<tau>\<^sub>v \<lesssim> tc[x::=v]\<^sub>\<tau>\<^sub>v[bv::=b]\<^sub>\<tau>\<^sub>b\<close> 
-      using    subst_subtype_tau infer_v_conspI sorry
-    moreover have "atom x \<sharp> tc" using wfTh_poly_lookup_supp[OF td dc] infer_v_wf infer_v_conspI fresh_def sorry
+    show \<open> \<Theta> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma> \<turnstile> va[x::=v]\<^sub>v\<^sub>v \<Rightarrow> tv[x::=v]\<^sub>\<tau>\<^sub>v\<close> using  infer_v_conspI by metis
+    have \<open>\<Theta> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>  \<turnstile> tv[x::=v]\<^sub>\<tau>\<^sub>v \<lesssim> tc[bv::=b]\<^sub>\<tau>\<^sub>b[x::=v]\<^sub>\<tau>\<^sub>v\<close> 
+      using    subst_subtype_tau infer_v_conspI by metis
+    moreover  have "atom x \<sharp> tc[bv::=b]\<^sub>\<tau>\<^sub>b" proof -
+          have "supp tc \<subseteq> { atom bv }" using wfTh_poly_lookup_supp infer_v_conspI wfX_wfY by metis
+          hence "atom x \<sharp> tc" using x_not_in_b_set 
+            using fresh_def by fastforce
+          moreover have "atom x \<sharp> b" using x_fresh_b by auto
+          ultimately show ?thesis using fresh_subst_if subst_b_\<tau>_def by metis
+        qed
     ultimately show \<open>\<Theta> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>  \<turnstile> tv[x::=v]\<^sub>\<tau>\<^sub>v \<lesssim> tc[bv::=b]\<^sub>\<tau>\<^sub>b\<close> by simp 
-    show \<open> atom z \<sharp> (\<Theta>, \<B>, \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>, va[x::=v]\<^sub>v\<^sub>v, b)\<close> using infer_v_conspI sorry
-    show "atom bv \<sharp> (\<Theta>, \<B>, \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>, va[x::=v]\<^sub>v\<^sub>v, b)" using infer_v_conspI sorry
+      show \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>, va[x::=v]\<^sub>v\<^sub>v, b)\<close>  proof -
+        have "atom z \<sharp> va[x::=v]\<^sub>v\<^sub>v" using fresh_subst_v_if infer_v_conspI subst_v_v_def by metis
+        moreover have "atom z \<sharp> \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>"  using fresh_subst_gv_inside infer_v_conspI by metis
+        ultimately show ?thesis using fresh_prodN infer_v_conspI by metis
+      qed
+     show \<open>atom bv \<sharp> (\<Theta>, \<B>, \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>, va[x::=v]\<^sub>v\<^sub>v, b)\<close>  proof -
+        have "atom bv \<sharp> va[x::=v]\<^sub>v\<^sub>v" using fresh_subst_v_if infer_v_conspI subst_v_v_def by metis
+        moreover have "atom bv \<sharp> \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>"  using fresh_subst_gv_inside infer_v_conspI by metis
+        ultimately show ?thesis using fresh_prodN infer_v_conspI by metis
+      qed
     show  "\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f b" using infer_v_conspI by auto
   qed
-  then show ?case sorry
+  thus ?case using subst_vv.simps  subst_t[of z x v ] infer_v_conspI by metis
+ 
 qed
 
 (*
@@ -978,7 +991,7 @@ next
 
     show  \<open>atom x' \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>, \<Delta>[x::=v]\<^sub>\<Delta>\<^sub>v, v'[x::=v]\<^sub>v\<^sub>v, \<tau>[x::=v]\<^sub>\<tau>\<^sub>v)\<close>   
       apply(unfold fresh_prodN, intro conjI)
-      apply (fresh_subst_mth_aux add: infer_e_appI fresh_subst_gv  wfD_wf subst_g_inside)
+      apply (fresh_subst_mth_aux add:  infer_e_appI fresh_subst_gv  wfD_wf subst_g_inside)
       using infer_e_appI fresh_subst_gv  wfD_wf subst_g_inside apply metis
       using infer_e_appI      fresh_subst_dv_if apply metis
     done
@@ -1021,11 +1034,7 @@ next
     thus  "atom x' \<sharp> \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>" using infer_e_appPI fresh_subst_gv  wfD_wf subst_g_inside fresh_Pair by metis
     show "\<tau>'[bv::=b']\<^sub>b[x'::=v'[x::=v]\<^sub>v\<^sub>v]\<^sub>v = \<tau>[x::=v]\<^sub>\<tau>\<^sub>v"  using  infer_e_appPI subst_tv_commute[OF * ] subst_defs by metis
     show "atom bv \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>, \<Delta>[x::=v]\<^sub>\<Delta>\<^sub>v, b', v'[x::=v]\<^sub>v\<^sub>v, \<tau>[x::=v]\<^sub>\<tau>\<^sub>v)" 
-      apply (fresh_mth add: infer_e_appPI)     
-     (* apply(insert  infer_e_appPI wfX_wfY, fast)*)
-(*      apply(use  infer_e_appPI wfX_wfY in fast)*)
-      using  fresh_subst_gv_if   fresh_append_g infer_e_appPI sorry
-(*      using fresh_prodN fresh_subst_dv_if infer_e_appPI by metis*)
+      by (fresh_mth add: infer_e_appPI fresh_subst_gv_inside)     
   qed
 next
   case (infer_e_fstI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v' z' b1 b2 c z)
@@ -1159,7 +1168,6 @@ next
 
   ultimately show ?case using subst_ev.simps ** * by metis
 next
-  thm subst_tv.simps
   case (infer_e_splitI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v1 z1 c1 v2 z2 z3)
   hence *:"atom z3 \<sharp> (x,v)" using fresh_Pair by auto
   have \<open>x \<noteq> z3 \<close> using infer_e_splitI by force

@@ -213,6 +213,16 @@ values "{ True . wfT [] {} GNil  \<lbrace> : B_int | CE_val (V_var (XBVar 0)) ==
 
 values "{ x .  wfT [] {} (GCons ( B_int, C_true)  GNil)   \<lbrace> : B_int  | [ V_var (XBVar 0) ]\<^sup>c\<^sup>e  ==  [ V_var (XBVar 1) ]\<^sup>c\<^sup>e  \<rbrace>  } "
 
+
+code_pred (modes:  
+      
+    )  [show_steps,  show_mode_inference,  show_invalid_clauses] wfV .
+
+
+thm wfV_
+
+values "{ v . wfV [] {} GNil  v B_int }"
+
 inductive
          wfE :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta> \<Rightarrow> e \<Rightarrow> b \<Rightarrow> bool" (" _ ; _ ; _ ; _ ; _ \<turnstile>\<^sub>w\<^sub>f _ : _ " [50,50,50] 50)  and
           wfS :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta> \<Rightarrow> s \<Rightarrow> b \<Rightarrow> bool" (" _ ; _ ; _ ; _ ; _ \<turnstile>\<^sub>w\<^sub>f _ : _ " [50,50,50] 50)  and

@@ -1,6 +1,6 @@
 (*<*)
 theory ContextSubtypingL
-  imports TypingL "HOL-Eisbach.Eisbach_Tools" Explorer 
+  imports TypingL "HOL-Eisbach.Eisbach_Tools" Explorer SubstMethods
 begin
 (*>*)
 
@@ -479,14 +479,16 @@ using assms proof(nominal_induct "\<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>)
   case (infer_v_varI \<Theta> \<B> b c xa z)
   have  wf:\<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<close> using wfG_inside_valid2 infer_v_varI by metis
   have  xf1:\<open>atom z \<sharp> xa\<close> using  infer_v_varI by metis
-  have  xf2: \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)\<close> using  infer_v_varI sorry
+  have  xf2: \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)\<close> apply( fresh_mth add:  infer_v_varI )
+    using fresh_def infer_v_varI wfG_supp fresh_append_g fresh_GCons fresh_prodN by metis+
   show ?case proof (cases "x=xa")
     case True
-    moreover hence  \<open>Some (b, c0) = lookup (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) xa\<close> using   lookup_inside_wf sorry
-    ultimately show ?thesis using  wf xf1 xf2 Typing.infer_v_varI by simp
+    moreover have "b = b0" using infer_v_varI True by simp
+    moreover hence  \<open>Some (b, c0) = lookup (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) xa\<close> using   lookup_inside_wf[OF wf] infer_v_varI True by auto
+    ultimately show ?thesis using  wf xf1 xf2 Typing.infer_v_varI by metis
   next
     case False
-    moreover hence  \<open>Some (b, c) = lookup (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) xa\<close> using   lookup_inside_wf sorry
+    moreover hence  \<open>Some (b, c) = lookup (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) xa\<close> using   lookup_inside2 infer_v_varI by metis
     ultimately show ?thesis using wf xf1 xf2 Typing.infer_v_varI by simp
   qed   
 next
@@ -496,16 +498,35 @@ next
   case (infer_v_pairI z v1 v2 \<Theta> \<B> t1' t2' c0)
   show  ?case proof
     show "atom z \<sharp> (v1, v2)" using infer_v_pairI fresh_Pair by simp
-    show "atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)" using infer_v_pairI wfG_inside_valid2 sorry
+    show "atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)"  apply( fresh_mth add:  infer_v_pairI )
+    using fresh_def infer_v_pairI wfG_supp fresh_append_g fresh_GCons fresh_prodN by metis+
     show "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v1 \<Rightarrow> t1'" using infer_v_pairI  by simp
     show "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v2 \<Rightarrow> t2'" using infer_v_pairI  by simp
   qed   
 next
   case (infer_v_consI s dclist \<Theta> dc tc \<B> v tv z)
-  thus ?case using Typing.infer_v_litI wfG_inside_valid2 sorry
+  show ?case proof
+    show \<open>AF_typedef s dclist \<in> set \<Theta>\<close> using infer_v_consI by auto
+    show \<open>(dc, tc) \<in> set dclist\<close> using infer_v_consI by auto
+    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v \<Rightarrow> tv\<close> using infer_v_consI by auto
+    show \<open>\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc\<close> using infer_v_consI ctx_subtype_subtype by auto
+    show \<open>atom z \<sharp> v\<close> using infer_v_consI by auto
+    show \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)\<close> apply( fresh_mth add:  infer_v_consI )
+      using fresh_def infer_v_consI wfG_supp fresh_append_g fresh_GCons fresh_prodN by metis+
+  qed
 next
   case (infer_v_conspI s bv dclist \<Theta> dc tc \<B> v tv b z)
-  thus ?case using Typing.infer_v_litI wfG_inside_valid2 sorry
+  show ?case proof
+    show \<open>AF_typedef_poly s bv dclist \<in> set \<Theta>\<close> using infer_v_conspI by auto
+    show \<open>(dc, tc) \<in> set dclist\<close>  using infer_v_conspI by auto
+    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v \<Rightarrow> tv\<close>  using infer_v_conspI by auto
+    show \<open>\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc[bv::=b]\<^sub>\<tau>\<^sub>b\<close>  using infer_v_conspI ctx_subtype_subtype by auto
+    show \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>, v, b)\<close>  apply( fresh_mth add:  infer_v_conspI )
+      using fresh_def infer_v_conspI wfG_supp fresh_append_g fresh_GCons fresh_prodN by metis+
+    show \<open>atom bv \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>, v, b)\<close> apply( fresh_mth add:  infer_v_conspI )
+      using fresh_def infer_v_conspI wfG_supp fresh_append_g fresh_GCons fresh_prodN by metis+
+    show \<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f b \<close>  using infer_v_conspI by auto
+  qed
 qed
 
 lemma ctx_subtype_v:
@@ -514,8 +535,8 @@ lemma ctx_subtype_v:
   shows "\<exists>t2.  \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t2 \<and>  \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> t1"
 proof -
  
-  have "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1 " sorry
-  moreover have "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t1 \<lesssim> t1" sorry
+  have "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1 " using ctx_subtype_v_aux assms by auto
+  moreover hence "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t1 \<lesssim> t1" using subtype_reflI2 infer_v_wf by simp
   ultimately show ?thesis by auto
 qed
 

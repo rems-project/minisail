@@ -1279,7 +1279,7 @@ definition sble :: "\<Theta> \<Rightarrow> \<Gamma> \<Rightarrow> bool" where
 "sble \<Theta> \<Gamma> = (\<exists>i. i \<Turnstile> \<Gamma> \<and> \<Theta> ; \<Gamma> \<turnstile> i)"
 
 lemma check_v_range:
-  assumes "\<Theta> ; {||} ; \<Gamma> \<turnstile> v2 \<Leftarrow> \<lbrace> z : B_int  | [ leq [ [ L_num 0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   AND  
+  assumes "\<Theta> ; B ; \<Gamma> \<turnstile> v2 \<Leftarrow> \<lbrace> z : B_int  | [ leq [ [ L_num 0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   AND  
             [ leq [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e [| [ v1 ]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   \<rbrace>  "
        (is "\<Theta> ; ?B ; \<Gamma> \<turnstile> v2 \<Leftarrow> \<lbrace> z : B_int | ?c1 \<rbrace>") 
   and "v1 = V_lit (L_bitvec bv) \<and> v2 = V_lit (L_num n) " and "atom z \<sharp> \<Gamma>" and "sble \<Theta> \<Gamma>"

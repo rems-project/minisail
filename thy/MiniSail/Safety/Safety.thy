@@ -975,7 +975,7 @@ proof(nominal_induct  "{||}::bv fset" GNil \<Delta> "AS_while s1 s2" \<tau> and 
     proof      
       show "atom zz \<sharp> (\<Theta>, \<Phi>, {||}::bv fset, ?G , \<Delta>, [ x ]\<^sup>v, AS_seq s2 (AS_while s1 s2), AS_val [ L_unit ]\<^sup>v, \<tau>')" using zf by auto
       show \<open>\<Theta> ; {||} ; ?G  \<turnstile> [ x ]\<^sup>v \<Leftarrow> \<lbrace> zz : B_bool  | TRUE \<rbrace>\<close> proof
-        have "atom zz \<sharp> x \<and> atom zz \<sharp> (\<Theta>,  {||}, ?G)" using zf fresh_prodN  fresh_prodN sorry
+        have "atom zz \<sharp> x \<and> atom zz \<sharp> (\<Theta>,  {||}::bv fset, ?G)" using zf fresh_prodN by metis
         thus \<open> \<Theta> ; {||} ; ?G  \<turnstile> [ x ]\<^sup>v \<Rightarrow>\<lbrace> zz : B_bool |  [[zz]\<^sup>v]\<^sup>c\<^sup>e == [[ x ]\<^sup>v]\<^sup>c\<^sup>e  \<rbrace>\<close> 
            using infer_v_varI lookup.simps wfg b_of.simps by metis
         thus  \<open>\<Theta> ; {||} ; ?G  \<turnstile> \<lbrace> zz : B_bool |  [[ zz ]\<^sup>v]\<^sup>c\<^sup>e == [[ x ]\<^sup>v]\<^sup>c\<^sup>e \<rbrace>  \<lesssim> \<lbrace> zz : B_bool  | TRUE \<rbrace>\<close>
@@ -1089,6 +1089,17 @@ proof -
 qed
 
 subsection \<open>Main Lemma\<close>
+
+(* MOVE - this is a common pattern, pulling the b_of ti into the premises *)
+thm infer_v_pairI
+lemma infer_v_pair2I:
+  "atom z \<sharp> (v1, v2) \<Longrightarrow>
+   atom z \<sharp> (\<Theta>, \<B>, \<Gamma>) \<Longrightarrow>
+   \<Theta> ; \<B> ; \<Gamma> \<turnstile> v1 \<Rightarrow> t1 \<Longrightarrow>
+   \<Theta> ; \<B> ; \<Gamma> \<turnstile> v2 \<Rightarrow> t2 \<Longrightarrow>
+   b1 = b_of t1 \<Longrightarrow> b2 = b_of t2 \<Longrightarrow> 
+  \<Theta> ; \<B> ; \<Gamma> \<turnstile> [ v1 , v2 ]\<^sup>v \<Rightarrow> \<lbrace> z : [ b1 , b2 ]\<^sup>b  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ v1 , v2 ]\<^sup>v ]\<^sup>c\<^sup>e  \<rbrace>"
+  using infer_v_pairI by simp
 
 lemma preservation:
   fixes s::s and s'::s
@@ -1400,7 +1411,7 @@ next
     using config_type_elims by metis
 
   obtain z::x where z: "atom z \<sharp> (AE_split (V_lit (L_bitvec v)) (V_lit (L_num n)), GNil, CE_val (V_lit (L_bitvec (v1 @ v2))), 
-([ L_bitvec v1 ]\<^sup>v, [ L_bitvec v2 ]\<^sup>v))" 
+([ L_bitvec v1 ]\<^sup>v, [ L_bitvec v2 ]\<^sup>v), \<Theta>, {||}::bv fset)" 
     using obtain_fresh by metis
 
   have *:"\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f GNil" using check_s_wf elim by auto
@@ -1433,13 +1444,13 @@ next
        (is "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> ?e2 \<Rightarrow> ?t2")
       apply(rule infer_e_valI)
       using check_s_wf elim apply metis
-      using check_s_wf elim apply metis
-      sorry
-(*      apply(rule infer_v_pairI)
+      using check_s_wf elim apply metis      
+      apply(rule infer_v_pair2I)
       using z fresh_prodN apply metis
-      using fresh_GNil apply metis
-      using  infer_v_litI infer_l.intros  \<open>\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f GNil\<close>   apply blast+
-      done*)
+      using z fresh_GNil fresh_prodN apply metis
+      using  infer_v_litI infer_l.intros  \<open>\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f GNil\<close> b_of.simps  apply blast+
+      using b_of.simps apply simp+
+      done
     show \<open>\<Theta> ; {||} ; GNil  \<turnstile> ?t2 \<lesssim> ?t1\<close> using subtype_split check_s_wf elim reduce_let_splitI by auto
   qed
 
@@ -1546,114 +1557,63 @@ qed
 lemma progress_let:
   assumes "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile> LET x = e IN s \<Leftarrow> \<tau>" and "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and "supp (LET x = e IN s) \<subseteq> atom ` fst ` setD \<Delta>" and "sble \<Theta> \<Gamma>"
   shows "\<exists>\<delta>' s'. \<Phi>  \<turnstile> \<langle> \<delta> , LET x = e IN s\<rangle> \<longrightarrow> \<langle> \<delta>' , s'\<rangle>"
-using assms
-proof(nominal_induct e  rule: e.strong_induct)
-  case (AE_val v)
-  then show ?case  using reduce_stmt_elims reduce_let_valI 
-  proof -
-    show ?thesis
-      by (metis (no_types) reduce_let_valI) (* 0.0 ms *)
-  qed
-next
-  case (AE_app f v)
-  obtain \<tau>'' where "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile>  (AE_app f v) \<Rightarrow> \<tau>''"
-     using check_s_elims(2)[OF AE_app(1)] by metis
-   
-  hence "\<exists>y b c \<tau>' s'. Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ y b c \<tau>' s'))) = lookup_fun \<Phi> f" using infer_e_app2E by metis
-  then obtain y b c \<tau>' s' where *:"Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ y b c \<tau>' s'))) = lookup_fun \<Phi> f"  by auto
-  hence "\<Phi>  \<turnstile> \<langle> \<delta> , AS_let x (AE_app f v) s \<rangle> \<longrightarrow> \<langle>  \<delta> , AS_let2 x \<tau>'[y::=v]\<^sub>\<tau>\<^sub>v s'[y::=v]\<^sub>s\<^sub>v s \<rangle>"  using reduce_let_appI by auto
-  thus ?case  by meson
-next
-  case (AE_appP f b' v)
-  obtain \<tau>'' where "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile>  (AE_appP f b' v) \<Rightarrow> \<tau>''"
-     using check_s_elims AE_appP by metis
-   
-  hence "\<exists>bv y b c \<tau>' s'. Some (AF_fundef f (AF_fun_typ_some bv (AF_fun_typ y b c \<tau>' s'))) = lookup_fun \<Phi> f" using infer_e_app2E by blast
-  then obtain bv y b c \<tau>' s' where *:"Some (AF_fundef f (AF_fun_typ_some bv (AF_fun_typ y b c \<tau>' s'))) = lookup_fun \<Phi> f"  by auto
-  hence "\<Phi>  \<turnstile> \<langle> \<delta> , AS_let x (AE_appP f b' v) s \<rangle> \<longrightarrow> \<langle>  \<delta> , AS_let2 x \<tau>'[bv::=b']\<^sub>\<tau>\<^sub>b[y::=v]\<^sub>\<tau>\<^sub>v s'[bv::=b']\<^sub>s\<^sub>b[y::=v]\<^sub>s\<^sub>v s \<rangle>"  using reduce_let_appPI by simp
-  thus ?case by metis
-next
-  case (AE_op opp v1 v2)
-  then obtain z and b and c where "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile>  (AE_op opp v1 v2) \<Rightarrow> \<lbrace>z:b|c\<rbrace>" using check_let_op_infer by meson
-  have vf: "supp v1 = {} \<and> supp v2 = {}" using AE_op s_branch_s_branch_list.supp by auto
-  consider "opp = Plus" | "opp = LEq" using opp.exhaust by meson      
-  thus ?case proof(cases)
-    case 1
-    hence "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta>  \<turnstile> (AS_let x (AE_op Plus v1 v2) s) \<Leftarrow> \<tau>"  using AE_op.prems by blast
-    then obtain z and b and c where "infer_e \<Theta> \<Phi>  {||} \<Gamma> \<Delta> (AE_op Plus v1 v2) (\<lbrace> z:b|c\<rbrace>)" using check_s_elims(2) 
-      using "1" \<open>infer_e  \<Theta> \<Phi>  {||} \<Gamma> \<Delta> (AE_op opp v1 v2) (\<lbrace> z : b | c \<rbrace>)\<close> by auto
-    hence "\<exists>z1 c1 z2 c2. infer_v   \<Theta>  {||}  \<Gamma> v1 (\<lbrace> z1 : B_int | c1 \<rbrace>) \<and>  infer_v  \<Theta>  {||} \<Gamma> v2 (\<lbrace> z2 : B_int | c2 \<rbrace>) " using infer_e_elims by blast
-    then obtain n1 and n2 where "v1 = V_lit (L_num n1) \<and> v2 = V_lit (L_num n2)" using infer_int vf by metis
-    have " \<Phi>  \<turnstile> \<langle>\<delta> , AS_let x (AE_op Plus ((V_lit (L_num n1))) ((V_lit (L_num n2))))  s \<rangle> \<longrightarrow> \<langle> \<delta> , AS_let x  (AE_val (V_lit (L_num ( (( n1)+(n2)))))) s  \<rangle>"
-        by (simp add: reduce_let_plusI)
-    thus ?thesis 
-      by (metis "1" \<open>\<And>thesis. (\<And>n1 n2. v1 = V_lit (L_num n1) \<and> v2 = V_lit (L_num n2) \<Longrightarrow> thesis) \<Longrightarrow> thesis\<close> reduce_let_plusI)
+proof -
+  obtain z b c where *: "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta>  \<turnstile> e \<Rightarrow> \<lbrace> z : b  | c \<rbrace> " using check_s_elims(2)[OF assms(1)] by metis
+  have **: "supp e \<subseteq> atom ` fst ` setD \<Delta>" using assms s_branch_s_branch_list.supp by auto
+  from * ** assms show ?thesis proof(nominal_induct "\<lbrace> z : b  | c \<rbrace>"  rule: infer_e.strong_induct)
+    case (infer_e_valI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v)
+    then show ?case using reduce_stmt_elims reduce_let_valI by metis
   next
-    case 2
-    hence "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta>  \<turnstile> (AS_let x  (AE_op LEq v1 v2) s) \<Leftarrow> \<tau>"  using AE_op.prems by blast
-    then obtain z and b and c where "infer_e \<Theta> \<Phi>  {||} \<Gamma> \<Delta> (AE_op LEq v1 v2) (\<lbrace> z:b|c\<rbrace>)" using check_s_elims(2) 
-      using "2" \<open>infer_e \<Theta> \<Phi>  {||} \<Gamma> \<Delta> (AE_op opp v1 v2) (\<lbrace> z : b | c \<rbrace>)\<close> vf by metis
-    hence "\<exists>z1 c1 z2 c2. infer_v \<Theta>  {||} \<Gamma> v1 (\<lbrace> z1 : B_int | c1 \<rbrace>) \<and>  infer_v \<Theta>  {||} \<Gamma>  v2 (\<lbrace> z2 : B_int | c2 \<rbrace>) " using infer_e_elims vf by blast
-    then obtain n1 and n2 where "v1 = V_lit (L_num n1) \<and> v2 = V_lit (L_num n2)" using infer_int vf by metis
-    obtain b where "b = (if n1 \<le> n2 then L_true else L_false)" by simp
-    hence  "\<Phi>  \<turnstile> \<langle> \<delta> , AS_let x  (AE_op LEq ((V_lit (L_num n1))) ((V_lit (L_num n2))))  s \<rangle> \<longrightarrow> \<langle> \<delta> , AS_let x  (AE_val (V_lit (b))) s  \<rangle>"
-      using reduce_let_leqI by blast
-    thus ?thesis 
-     by (metis "2" \<open>\<And>thesis. (\<And>n1 n2. v1 = V_lit (L_num n1) \<and> v2 = V_lit (L_num n2) \<Longrightarrow> thesis) \<Longrightarrow> thesis\<close> reduce_let_leqI)
- qed
-next
-  case (AE_fst v)
-  thus ?case using progress_fst by auto
-next
-  case (AE_snd v) 
-  have *:"supp v = {}" using AE_snd s_branch_s_branch_list.supp by auto
-  then obtain z and b and c where "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta>  \<turnstile>  (AE_snd v ) \<Rightarrow> \<lbrace> z : b  | c \<rbrace>" 
-    using check_s_elims(2)  using AE_snd.prems by meson
-  moreover obtain z' and b' and c' where "\<Theta> ; {||} ; \<Gamma> \<turnstile>  v  \<Rightarrow> \<lbrace> z' : B_pair b' b  | c' \<rbrace>" 
-    using infer_e_elims(8)  using calculation by auto 
-  moreover then obtain v1 and v2 where "V_pair v1 v2 = v" 
-    using * infer_pair by metis
-  
+    case (infer_e_plusI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 c1 v2 z2 c2 z3)
+    hence vf: "supp v1 = {} \<and> supp v2 = {}"  by force
+    then obtain n1 and n2 where *: "v1 = V_lit (L_num n1)  \<and> v2 = (V_lit (L_num n2))" using infer_int infer_e_plusI by metis
+    then show ?case using reduce_let_plusI * by metis
+  next
+    case (infer_e_leqI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 c1 v2 z2 c2 z3)
+    hence vf: "supp v1 = {} \<and> supp v2 = {}"  by force
+    then obtain n1 and n2 where *: "v1 = V_lit (L_num n1)  \<and> v2 = (V_lit (L_num n2))" using infer_int infer_e_leqI by metis
+    then show ?case using reduce_let_leqI * by metis
+  next
+    case (infer_e_appI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> f x b c \<tau>' s' v)
+    then show ?case using reduce_let_appI by metis
+  next
+    case (infer_e_appPI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> b' f bv x b c \<tau>' s' v)
+    then show ?case using reduce_let_appPI by metis
+  next
+    case (infer_e_fstI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v z' b2 c z)
+    hence "supp v = {}" by force
+    then obtain v1 and v2 where "v = V_pair v1 v2" using infer_e_fstI infer_pair by metis
+    then show ?case using reduce_let_fstI * by metis
+  next
+    case (infer_e_sndI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v z' b1 c z)
+    hence "supp v = {}" by force
+    then obtain v1 and v2 where "v = V_pair v1 v2" using infer_e_sndI infer_pair by metis
+    then show ?case using reduce_let_sndI * by metis
+  next
+    case (infer_e_lenI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v z' c za)
+    hence "supp v = {}" by force
+    then obtain bvec where "v = V_lit (L_bitvec bvec)" using infer_e_lenI infer_bitvec by metis
+    then show ?case using reduce_let_lenI * by metis
+  next
+    case (infer_e_mvarI \<Theta> \<B> \<Gamma> \<Phi> \<Delta> u)
+    hence "(u, \<lbrace> z : b  | c \<rbrace>) \<in> setD \<Delta>" using infer_e_elims(10) by meson
+    then obtain v where "(u,v) \<in> set \<delta>" using infer_e_mvarI delta_sim_delta_lookup by meson
+    then show ?case using reduce_let_mvar by metis
+  next
+    case (infer_e_concatI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 c1 v2 z2 c2 z3)
+    hence vf: "supp v1 = {} \<and> supp v2 = {}"  by force
+    then obtain n1 and n2 where *: "v1 = V_lit (L_bitvec n1)  \<and> v2 = (V_lit (L_bitvec n2))" using infer_bitvec infer_e_concatI by metis
+    then show ?case using reduce_let_concatI * by metis
+  next
+    case (infer_e_splitI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 c1 v2 z2 z3)
+    hence vf: "supp v1 = {} \<and> supp v2 = {}"  by force
+    then obtain n1 and n2 where *: "v1 = V_lit (L_bitvec n1)  \<and> v2 = (V_lit (L_num n2))" using infer_bitvec infer_e_splitI check_int by metis
 
-  ultimately show ?case using reduce_let_sndI AE_snd by metis
-next
-  case (AE_mvar u)
-  then obtain z and b and c where "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile>  (AE_mvar u) \<Rightarrow> \<lbrace> z : b  | c \<rbrace>" 
-    using check_s_elims(2) by meson      
-  hence "(u, \<lbrace> z : b  | c \<rbrace>) \<in> setD \<Delta>" using infer_e_elims(10) by meson
-  then obtain v where "(u,v) \<in> set \<delta>" using assms delta_sim_delta_lookup by meson
-  then show ?case using reduce_let_mvar by blast
-next
-  case (AE_len v)
-  have *:"supp v = {}" using AE_len s_branch_s_branch_list.supp by auto
-  then obtain z and b and c where "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile>  (AE_len v) \<Rightarrow> \<lbrace> z : b  | c \<rbrace>" 
-    using check_s_elims(2) AE_len by meson 
-  then obtain z' and c' where  "\<Theta> ; {||} ; \<Gamma> \<turnstile> v \<Rightarrow> \<lbrace> z' : B_bitvec | c' \<rbrace>" using infer_e_elims by auto
-  then obtain bv where "v = V_lit (L_bitvec bv)" using infer_bitvec * by metis
-  thus ?case using reduce_let_lenI AE_len by metis
-next
-  case (AE_concat v1 v2)
-  have *:"supp v1 = {} \<and> supp v2 = {}" using AE_concat s_branch_s_branch_list.supp by auto
-  then obtain z and b and c where "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile>  (AE_concat v1 v2) \<Rightarrow> \<lbrace> z : b  | c \<rbrace>" 
-    using check_s_elims(2) AE_concat by meson 
-  then obtain z1 and c1 and z2 and c2 where  "\<Theta> ; {||} ; \<Gamma> \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_bitvec | c1 \<rbrace> \<and> \<Theta> ; {||} ; \<Gamma> \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : B_bitvec | c2 \<rbrace>  " using infer_e_elims by auto
-  then obtain bv1 and bv2 where "v1 = V_lit (L_bitvec bv1) \<and> v2 = V_lit (L_bitvec bv2) " using infer_bitvec * by metis
-  thus ?case using reduce_let_concatI AE_concat by metis
-next
-  case (AE_split v1 v2)
- have vs:"supp v1 = {} \<and> supp v2 = {}" using AE_split s_branch_s_branch_list.supp by auto
-  then obtain z and b and c where *:"\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile>  (AE_split v1 v2) \<Rightarrow> \<lbrace> z : b  | c \<rbrace>" 
-    using check_s_elims(2) AE_split  by meson 
-  then obtain z1 and c1 and z2 and z3 where  **:"\<Theta> ; {||} ; \<Gamma> \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_bitvec | c1 \<rbrace> \<and> \<Theta> ; {||} ; \<Gamma> \<turnstile> v2 \<Leftarrow> \<lbrace> z2 : B_int  | [ leq [ [ L_num
-                                                             0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ z2 ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   AND  [ leq [ [ z2 ]\<^sup>v ]\<^sup>c\<^sup>e [| [ v1 ]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   \<rbrace> \<and>  atom z2 \<sharp> \<Gamma> " 
-    using infer_e_elims(22)[OF *] by metis
-  then obtain bv and n where *: "v1 = V_lit (L_bitvec bv) \<and> v2 = V_lit (L_num n) " using infer_bitvec check_int vs by metis
-  moreover have "atom z2 \<sharp> \<Gamma>" using ** by auto
-  ultimately have  "0 \<le> n \<and> n \<le> int (length bv)" using  check_v_range[OF _ *]  ** AE_split by metis
-  then obtain bv1 and bv2 where "split n bv (bv1 , bv2)" using obtain_split by metis
-
-  thus ?case using reduce_let_splitI[of n bv bv1 bv2 "\<Phi>" \<delta> x s] AE_split * by metis
-qed
+    have "0 \<le> n2 \<and> n2 \<le> int (length n1)" using  check_v_range[OF _ * ]   infer_e_splitI by simp
+    then obtain bv1 and bv2 where "split n2 n1 (bv1 , bv2)" using obtain_split by metis
+    then show ?case using reduce_let_splitI * by metis
+  qed
+qed 
 
 lemma check_css_lookup_branch_exist:
   fixes s::s and cs::branch_s and css::branch_list and v::v
