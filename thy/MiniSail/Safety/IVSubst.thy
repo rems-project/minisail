@@ -1105,9 +1105,9 @@ proof(goal_cases)
 
   {
     (* Trying to make this proof 'uniform' so that it can be 'reused' elsewhere and perhaps turned into proof method *)
-    case (1 P x') 
+    case (1 P x')    
     then show ?case proof(cases x')
-      case (Inl a) thus P
+      case (Inl a) thus P 
       proof(cases a)
         case (fields aa bb cc)
         thus P using Inl 1 s_branch_s_branch_list.strong_exhaust fresh_star_insert by metis

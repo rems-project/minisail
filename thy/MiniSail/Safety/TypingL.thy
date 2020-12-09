@@ -728,8 +728,7 @@ qed
 
 lemma check_num_range:
   assumes "0 \<le> n \<and> n \<le> int (length v)" and "\<turnstile>\<^sub>w\<^sub>f \<Theta>"
-  shows "\<Theta> ; {||} ; GNil  \<turnstile> [ L_num n ]\<^sup>v \<Leftarrow> \<lbrace> z : B_int  | [ leq [ [ L_num
-                                                                  0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   AND  
+  shows "\<Theta> ; {||} ; GNil  \<turnstile> ([ L_num n ]\<^sup>v) \<Leftarrow> \<lbrace> z : B_int  | ([ leq [ [ L_num 0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e)   AND
       [ leq [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e [| [ [ L_bitvec v ]\<^sup>v ]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   \<rbrace>"
   using assms subtype_range check_v.intros infer_v_litI wfG_nilI 
   by (meson infer_natI)
@@ -1513,7 +1512,7 @@ lemma infer_e_fst_pair:
   shows "\<exists>\<tau>'. \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> [v1]\<^sup>e \<Rightarrow> \<tau>' \<and> 
         \<Theta> ; {||} ; GNil \<turnstile> \<tau>' \<lesssim> \<tau>"
 proof -
-  obtain z' and b1 and b2 and c and z where ** : "\<tau> = (\<lbrace> z : b1  | CE_val (V_var z)  ==  CE_fst [(V_pair v1 v2)]\<^sup>c\<^sup>e  \<rbrace>) \<and> 
+  obtain z' and b1 and b2 and c and z where ** : "\<tau> = (\<lbrace> z : b1  | C_eq (CE_val (V_var z))  (CE_fst [(V_pair v1 v2)]\<^sup>c\<^sup>e)  \<rbrace>) \<and> 
           wfD \<Theta> {||} GNil \<Delta> \<and> wfPhi \<Theta> \<Phi> \<and>
               \<Theta> ; {||} ; GNil  \<turnstile> V_pair v1 v2 \<Rightarrow> \<lbrace> z' : B_pair b1 b2  | c \<rbrace> \<and> atom z \<sharp> V_pair v1 v2 "
     using infer_e_elims assms  by metis
@@ -1542,8 +1541,8 @@ lemma infer_e_snd_pair:
   assumes  "\<Theta> ; \<Phi> ;  {||} ; GNil ; \<Delta>  \<turnstile> AE_snd (V_pair v1 v2) \<Rightarrow> \<tau>"
   shows  "\<exists>\<tau>'. \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AE_val v2 \<Rightarrow> \<tau>' \<and> \<Theta> ; {||} ; GNil \<turnstile> \<tau>' \<lesssim> \<tau>"
 proof -
-  obtain z' and b1 and b2 and c and z where ** : "\<tau> = (\<lbrace> z : b2  | CE_val (V_var z)  == CE_snd [(V_pair v1 v2)]\<^sup>c\<^sup>e  \<rbrace>) \<and> 
-           wfD \<Theta> {||} GNil \<Delta> \<and> wfPhi \<Theta> \<Phi> \<and>
+  obtain z' and b1 and b2 and c and z where ** : "(\<tau> = (\<lbrace> z : b2  | C_eq (CE_val (V_var z)) (CE_snd [(V_pair v1 v2)]\<^sup>c\<^sup>e)  \<rbrace>)) \<and> 
+           (wfD \<Theta> {||} GNil \<Delta>) \<and> (wfPhi \<Theta> \<Phi>) \<and>
               \<Theta> ; {||} ; GNil  \<turnstile> V_pair v1 v2 \<Rightarrow> \<lbrace> z' : B_pair b1 b2  | c \<rbrace> \<and> atom z \<sharp> V_pair v1 v2 "
     using infer_e_elims(9)[OF assms(1)]  by metis
   hence *:" \<Theta> ; {||} ; GNil  \<turnstile> V_pair v1 v2 \<Rightarrow> \<lbrace> z' : B_pair b1 b2  | c \<rbrace>" by auto
@@ -2437,26 +2436,7 @@ next
     show "atom x \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>', \<Delta>, v, \<tau>)"  using wf_weakening infer_e_appI by auto
     show "\<tau>'[x::=v]\<^sub>v = \<tau>"  using wf_weakening infer_e_appI by auto
   qed
-(*
-  hence *:"\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> AE_app f v \<Rightarrow> \<tau>" using Typing.infer_e_appI by auto
 
-  obtain x'::x where x':"atom x' \<sharp> (s', c, \<tau>', \<Gamma>') \<and> (AF_fundef f (AF_fun_typ_none (AF_fun_typ x b c \<tau>' s'))) =  (AF_fundef f (AF_fun_typ_none (AF_fun_typ x' b ((x' \<leftrightarrow> x) \<bullet> c) ((x' \<leftrightarrow> x) \<bullet> \<tau>') ((x' \<leftrightarrow> x) \<bullet> s'))))" 
-    using obtain_fresh_fun_def[of s' c \<tau>' \<Gamma>' f x b] by metis
-
-  hence **: " \<lbrace> x : b  | c \<rbrace> = \<lbrace> x' : b  | (x' \<leftrightarrow> x) \<bullet> c \<rbrace>"     using fresh_PairD(1) fresh_PairD(2) type_eq_flip by blast
-  have "atom x' \<sharp> \<Gamma>" using x' infer_e_appI fresh_weakening fresh_Pair by metis
-  
-  show ?case proof 
-    show \<open> \<Theta> ;  \<B> ; \<Gamma>'  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_weakening infer_e_appI by auto
-    show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using wf_weakening infer_e_appI by auto
-    have  \<open>Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x b c \<tau>' s'))) = lookup_fun \<Phi> f\<close> using wf_weakening infer_e_appI by auto
-    thus \<open>Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x' b ((x' \<leftrightarrow> x) \<bullet> c) ((x' \<leftrightarrow> x) \<bullet> \<tau>') ((x' \<leftrightarrow> x) \<bullet> s')))) = lookup_fun \<Phi> f\<close> using x' by metis
-    show "\<Theta> ;  \<B> ; \<Gamma>'  \<turnstile> v \<Leftarrow> \<lbrace> x' : b  | (x' \<leftrightarrow> x) \<bullet> c \<rbrace>" using check_v_g_weakening ** infer_e_appI by metis
-    show "atom x' \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>', \<Delta>, v, \<tau>)" using x' infer_e_appI fresh_prodN 
-    have "atom x \<sharp> (v, \<tau>) \<and> atom x' \<sharp> (v, \<tau>)" using x'  infer_e_fresh[OF *] e.fresh(2) fresh_Pair infer_e_appI \<open>atom x' \<sharp> \<Gamma>\<close> by metis
-    thus  "((x' \<leftrightarrow> x) \<bullet> \<tau>')[x'::=v]\<^sub>v = \<tau>" using infer_e_appI(7) infer_e_appI subst_tv_flip subst_defs by auto
-  qed
-*)
 next
   case (infer_e_appPI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> b' f bv x b c \<tau>' s' v \<tau>)
 

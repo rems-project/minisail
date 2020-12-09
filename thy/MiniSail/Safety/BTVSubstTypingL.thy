@@ -311,7 +311,7 @@ next
     hence "b' = b'[bv::=b]\<^sub>b\<^sub>b" using subst_b_simps 
       using has_subst_b_class.forget_subst subst_b_b_def by force
     moreover have  ceq:"c = c[bv::=b]\<^sub>c\<^sub>b" using subst_b_simps proof -
-      have "supp c \<subseteq> {atom x}" using infer_e_appI wfPhi_f_supp_c[OF  _  \<open>\<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close>]  by simp
+      have "supp c \<subseteq> {atom x}" using infer_e_appI wfPhi_f_simple_supp_c[OF  _  \<open>\<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close>]  by simp
       hence "atom bv \<sharp> c" using
             fresh_def[of "atom bv" c] 
         using fresh_def fresh_finsert insert_absorb 

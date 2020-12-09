@@ -596,6 +596,24 @@ lemma lst_pure:
   using assms Abs1_eq_iff_all(3) pure_fresh flip_fresh_fresh 
   by (metis Abs1_eq(3) permute_pure)
 
+sledgehammer_params[debug=true,timeout=600]
+
+lemma lst_supp:
+ assumes "[[atom x1]]lst. t1 = [[atom x2]]lst. t2"
+ shows "supp t1 - {atom x1} = supp t2 - {atom x2}"
+proof -
+ have "supp ([[atom x1]]lst.t1) = supp ([[atom x2]]lst.t2)" using assms by auto
+ thus ?thesis using Abs_finite_supp  
+   by (metis assms empty_set list.simps(15) supp_lst.simps)
+qed
+
+lemma lst_supp_subset:
+   assumes "[[atom x1]]lst. t1 = [[atom x2]]lst. t2" and "supp t1 \<subseteq> {atom x1} \<union> B"
+   shows "supp t2 \<subseteq> {atom x2} \<union> B"
+  using assms lst_supp by fast
+
+ 
+
 
 lemma projl_inl_eqvt:
   fixes \<pi> :: perm

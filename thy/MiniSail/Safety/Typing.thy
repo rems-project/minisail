@@ -507,12 +507,14 @@ inductive_cases check_branch_s_elims[elim!]:
 
 section \<open>Programs\<close>
 
-inductive check_funtyp :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow>  \<B> \<Rightarrow> fun_typ \<Rightarrow> bool" where
+text \<open>Type check function bodies\<close>
+
+inductive check_funtyp :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow>  \<B> \<Rightarrow> fun_typ \<Rightarrow> bool" ( " _ ; _ ; _ \<turnstile> _ " ) where
 check_funtypI: "\<lbrakk>
   atom x \<sharp> (\<Theta>, \<Phi>, B , b );
   \<Theta> ; \<Phi> ;  B ; ((x,b,c) #\<^sub>\<Gamma> GNil) ; []\<^sub>\<Delta> \<turnstile> s \<Leftarrow> \<tau>
 \<rbrakk>  \<Longrightarrow> 
-  check_funtyp \<Theta> \<Phi> B (AF_fun_typ x b c \<tau> s)"
+  \<Theta> ; \<Phi> ; B \<turnstile> (AF_fun_typ x b c \<tau> s)"
 
 equivariance check_funtyp
 nominal_inductive check_funtyp
@@ -526,17 +528,17 @@ next
   then show ?case by auto
 qed
 
-inductive check_funtypq :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> fun_typ_q \<Rightarrow> bool" where
+inductive check_funtypq :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> fun_typ_q \<Rightarrow> bool"  ( " _ ; _ \<turnstile> _ " ) where 
 check_fundefq_simpleI: "\<lbrakk>
-  check_funtyp \<Theta> \<Phi> {||} (AF_fun_typ x b c t s)
+  \<Theta> ; \<Phi> ; {||} \<turnstile> (AF_fun_typ x b c t s)
 \<rbrakk>  \<Longrightarrow> 
-  check_funtypq \<Theta> \<Phi> ((AF_fun_typ_none (AF_fun_typ x b c t s)))"
+  \<Theta> ; \<Phi> \<turnstile> ((AF_fun_typ_none (AF_fun_typ x b c t s)))"
 
 |check_funtypq_polyI: "\<lbrakk>
   atom bv \<sharp> (\<Theta>, \<Phi>, (AF_fun_typ x b c t s));
-  check_funtyp \<Theta>  \<Phi>  {|bv|} (AF_fun_typ x b c t s)
+  \<Theta>  ; \<Phi>  ; {|bv|} \<turnstile> (AF_fun_typ x b c t s)
 \<rbrakk>  \<Longrightarrow> 
-  check_funtypq \<Theta> \<Phi> (AF_fun_typ_some bv (AF_fun_typ x b c t s))"
+  \<Theta> ; \<Phi> \<turnstile> (AF_fun_typ_some bv (AF_fun_typ x b c t s))"
 
 equivariance check_funtypq
 nominal_inductive check_funtypq
@@ -552,7 +554,7 @@ qed
 
 inductive check_fundef :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> fun_def \<Rightarrow> bool" ( " _ ; _ \<turnstile> _ " ) where
 check_fundefI: "\<lbrakk>
-  check_funtypq \<Theta> \<Phi> ft 
+  \<Theta> ; \<Phi> \<turnstile> ft 
 \<rbrakk>  \<Longrightarrow> 
   \<Theta> ; \<Phi> \<turnstile> (AF_fundef f ft)"
 
@@ -577,6 +579,21 @@ inductive_cases check_fundef_elims[elim!]:
 
 declare[[ simproc add: alpha_lst]]
 
+nominal_function \<Delta>_of :: "var_def list \<Rightarrow> \<Delta>" where
+  "\<Delta>_of [] = DNil"
+| "\<Delta>_of ((AV_def u t v)#vs) = (u,t) #\<^sub>\<Delta>  (\<Delta>_of vs)" 
+  apply auto
+  using  eqvt_def \<Delta>_of_graph_aux_def neq_Nil_conv old.prod.exhaust apply force
+ using  eqvt_def \<Delta>_of_graph_aux_def neq_Nil_conv old.prod.exhaust 
+  by (metis var_def.strong_exhaust)
+nominal_termination (eqvt) by lexicographic_order
 
+inductive check_prog :: "p \<Rightarrow> \<tau> \<Rightarrow> bool" ( "\<turnstile> _ \<Leftarrow> _")  where 
+"\<lbrakk>
+   \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>_of \<G> \<turnstile> s \<Leftarrow> \<tau>
+\<rbrakk> \<Longrightarrow>  \<turnstile> (AP_prog \<Theta> \<Phi> \<G> s) \<Leftarrow> \<tau>"
+
+inductive_cases check_prog_elims[elim!]:
+   "\<turnstile> (AP_prog \<Theta> \<Phi> \<G> s) \<Leftarrow> \<tau>"
 
 end

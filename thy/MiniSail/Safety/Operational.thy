@@ -170,4 +170,22 @@ nominal_inductive config_type .
 inductive_cases config_type_elims [elim!]:
   " \<Theta> ; \<Phi>  ; \<Delta> \<turnstile> \<langle> \<delta>  , s \<rangle> \<Leftarrow>  \<tau>"
 
+nominal_function \<delta>_of  :: "var_def list \<Rightarrow> \<delta>" where
+  "\<delta>_of [] = []"
+| "\<delta>_of ((AV_def u t v)#vs) = (u,v) #  (\<delta>_of vs)" 
+  apply auto
+  using  eqvt_def \<delta>_of_graph_aux_def neq_Nil_conv old.prod.exhaust apply force
+ using  eqvt_def \<delta>_of_graph_aux_def neq_Nil_conv old.prod.exhaust 
+  by (metis var_def.strong_exhaust)
+nominal_termination (eqvt) by lexicographic_order
+
+inductive config_type_prog :: "p \<Rightarrow> \<tau> \<Rightarrow> bool"  (" \<turnstile> \<langle> _ \<rangle> \<Leftarrow> _") where
+"\<lbrakk>
+  \<Theta> ; \<Phi> ; \<Delta>_of \<G> \<turnstile> \<langle> \<delta>_of \<G>  , s \<rangle> \<Leftarrow>  \<tau>
+\<rbrakk> \<Longrightarrow> \<turnstile>  \<langle> AP_prog \<Theta> \<Phi> \<G> s \<rangle> \<Leftarrow> \<tau>"
+
+inductive_cases config_type_prog_elims [elim!]:
+  "\<turnstile>  \<langle> AP_prog \<Theta> \<Phi> \<G> s \<rangle> \<Leftarrow> \<tau>"
+       
+
 end

@@ -249,6 +249,9 @@ next
 qed
 
 
+text \<open>The wf check for \<Phi> deliberately omits a wf check for the body of the function s. This is done in the definition of
+      \<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta>  , s \<rangle> \<Leftarrow>  \<tau> \<close>
+
 inductive 
           wfE :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta> \<Rightarrow> e \<Rightarrow> b \<Rightarrow> bool" (" _ ; _ ; _ ; _ ; _ \<turnstile>\<^sub>w\<^sub>f _ : _ " [50,50,50] 50)  and
           wfS :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta> \<Rightarrow> s \<Rightarrow> b \<Rightarrow> bool" (" _ ; _ ; _ ; _ ; _ \<turnstile>\<^sub>w\<^sub>f _ : _ " [50,50,50] 50)  and
@@ -435,12 +438,13 @@ inductive
         \<Theta>  \<turnstile>\<^sub>w\<^sub>f ((AF_fundef f ft)#\<Phi>)"  
 | wfFTNone: " \<Theta> ; \<Phi> ; {||} \<turnstile>\<^sub>w\<^sub>f ft \<Longrightarrow>  \<Theta> ; \<Phi> \<turnstile>\<^sub>w\<^sub>f AF_fun_typ_none ft"
 | wfFTSome: " \<Theta> ; \<Phi> ; {| bv |} \<turnstile>\<^sub>w\<^sub>f ft \<Longrightarrow>  \<Theta> ; \<Phi> \<turnstile>\<^sub>w\<^sub>f AF_fun_typ_some bv ft"
+
 | wfFTI: "\<lbrakk>
-        \<Theta> ; B  \<turnstile>\<^sub>w\<^sub>f b;
-         \<Theta> ; \<Phi> ; B  ; (x,b,c) #\<^sub>\<Gamma> GNil ; []\<^sub>\<Delta> \<turnstile>\<^sub>w\<^sub>f s : b_of \<tau> ; 
-        supp s \<subseteq> {atom x} ;
+        \<Theta> ; B  \<turnstile>\<^sub>w\<^sub>f b; 
+        supp s \<subseteq> {atom x} \<union> supp B ;
         supp c \<subseteq> { atom x } ;
-        \<Theta> ; B ; (x,b,c) #\<^sub>\<Gamma> GNil \<turnstile>\<^sub>w\<^sub>f \<tau>
+        \<Theta> ; B ; (x,b,c) #\<^sub>\<Gamma> GNil \<turnstile>\<^sub>w\<^sub>f \<tau>;
+        \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>        
    \<rbrakk> \<Longrightarrow> 
          \<Theta> ; \<Phi> ; B \<turnstile>\<^sub>w\<^sub>f (AF_fun_typ x b c \<tau> s)"
 

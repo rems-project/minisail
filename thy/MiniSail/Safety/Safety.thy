@@ -296,9 +296,9 @@ using assms proof(nominal_induct \<tau> and \<tau> and \<tau>   avoiding: v rule
   have seq:"[[atom x3]]lst. s3 = [[atom x1]]lst. s1'" using fun_def_eq check_letI ** option.inject by metis
 
   let ?ft = "AF_fun_typ x3 b3 c3 \<tau>3 s3"
-  thm check_fundef_elims
 
-  have sup: "supp \<tau>3 \<subseteq> { atom x3} \<and> supp s3 \<subseteq> { atom x3}"  using wfPhi_f_supp ** by force
+
+  have sup: "supp \<tau>3 \<subseteq> { atom x3} \<and> supp s3 \<subseteq> { atom x3}"  using wfPhi_f_supp ** by metis
 
   have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let2 x2  \<tau>3[x3::=v]\<^sub>\<tau>\<^sub>v (s3[x3::=v]\<^sub>s\<^sub>v) s2 \<Leftarrow> \<tau>" proof
     show \<open>atom x2 \<sharp> (\<Theta>, \<Phi>, {||}::bv fset, GNil, \<Delta>, \<tau>3[x3::=v]\<^sub>\<tau>\<^sub>v, s3[x3::=v]\<^sub>s\<^sub>v, \<tau>)\<close>
@@ -367,7 +367,8 @@ using assms proof(nominal_induct \<tau> and \<tau> and \<tau>   avoiding: v x1 r
 
   let ?ft = "AF_fun_typ_some bv3 (AF_fun_typ x3 b3 c3 \<tau>3 s3)"
 
-  have sup: "supp \<tau>3 \<subseteq> { atom x3, atom bv3} \<and> supp s3 \<subseteq> { atom x3, atom bv3 }"  using wfPhi_f_poly_supp_s wfPhi_f_poly_supp_t ** by force
+  have sup: "supp \<tau>3 \<subseteq> { atom x3, atom bv3} \<and> supp s3 \<subseteq> { atom x3, atom bv3 }"  
+    using  wfPhi_f_poly_supp_t wfPhi_f_poly_supp_s ** by metis
 
   have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let2 x2  \<tau>3[bv3::=b']\<^sub>\<tau>\<^sub>b[x3::=v]\<^sub>\<tau>\<^sub>v (s3[bv3::=b']\<^sub>s\<^sub>b[x3::=v]\<^sub>s\<^sub>v) s2 \<Leftarrow> \<tau>" 
   proof
@@ -1118,7 +1119,8 @@ next
   hence tt: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_app f v) s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" using config_type_elims[OF reduce_let_appI(2)] by metis 
   hence *:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_app f v) s \<Leftarrow> \<tau>" by auto
 
-  hence  "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let2 x   (\<tau>'[z::=v]\<^sub>\<tau>\<^sub>v) (s'[z::=v]\<^sub>s\<^sub>v) s \<Leftarrow> \<tau>" using preservation_app reduce_let_appI tt by auto
+  hence  "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let2 x   (\<tau>'[z::=v]\<^sub>\<tau>\<^sub>v) (s'[z::=v]\<^sub>s\<^sub>v) s \<Leftarrow> \<tau>" 
+    using preservation_app reduce_let_appI tt by auto
 
   hence "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , AS_let2 x (\<tau>'[z::=v]\<^sub>\<tau>\<^sub>v) s'[z::=v]\<^sub>s\<^sub>v s \<rangle> \<Leftarrow> \<tau>"  using  config_typeI tt by auto
   then show ?case using tt order_refl reduce_let_appI by metis
@@ -1428,9 +1430,8 @@ next
       show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using check_s_wf elim by auto
       show \<open> \<Theta> ; {||} ; GNil  \<turnstile> V_lit (L_bitvec v) \<Rightarrow> \<lbrace> z : B_bitvec | CE_val (V_var z) == CE_val (V_lit (L_bitvec v)) \<rbrace>\<close> 
         using infer_v_litI infer_l.intros  \<open>\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f GNil\<close>  fresh_GNil by auto
-      show "\<Theta> ; {||} ; GNil  \<turnstile> [ L_num
-                           n ]\<^sup>v \<Leftarrow> \<lbrace> z : B_int  | [ leq [ [ L_num
-                                                                  0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   AND  [ leq [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e [| [ [ L_bitvec
+      show "\<Theta> ; {||} ; GNil  \<turnstile> ([ L_num
+                           n ]\<^sup>v) \<Leftarrow> \<lbrace> z : B_int  | (([ leq [ [ L_num 0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e)  ==  ([ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e))   AND  [ leq [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e [| [ [ L_bitvec
                    v ]\<^sup>v ]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   \<rbrace>" using split_n  reduce_let_splitI check_v_num_leq * wfX_wfY  by metis
       show \<open>atom z \<sharp> AE_split [ L_bitvec v ]\<^sup>v [ L_num n ]\<^sup>v\<close> using z fresh_Pair by auto
       show \<open>atom z \<sharp> GNil\<close> using z fresh_Pair by auto
@@ -1776,6 +1777,13 @@ lemma  safety:
   assumes " \<Phi>   \<turnstile> \<langle> \<delta> , s \<rangle> \<longrightarrow>\<^sup>* \<langle> \<delta>' , s' \<rangle>" and "\<Theta> ; \<Phi> ; \<Delta> \<turnstile>  \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau>"
   shows  "(\<exists>v. s' = [v]\<^sup>s) \<or> (\<exists>\<delta>'' s''. \<Phi>  \<turnstile> \<langle>  \<delta>' , s'  \<rangle> \<longrightarrow> \<langle>  \<delta>'' , s'' \<rangle>)"  
   using preservation_many progress assms  by meson
+
+
+lemma safety_prog:
+  assumes "\<turnstile> \<langle> AP_prog \<Theta> \<Phi> \<G> s  \<rangle> \<Leftarrow> \<tau>" and
+          "\<Phi>  \<turnstile> \<langle> \<delta>_of \<G> , s \<rangle> \<longrightarrow>\<^sup>* \<langle> \<delta>' , s' \<rangle>"
+        shows  "(\<exists>v. s' = [v]\<^sup>s) \<or> (\<exists>\<delta>'' s''. \<Phi>  \<turnstile> \<langle>  \<delta>' , s'  \<rangle> \<longrightarrow> \<langle>  \<delta>'' , s'' \<rangle>)"   
+  using assms config_type_prog_elims safety by metis
 
 
 unused_thms "Eisbach_Tools" "Nominal2" "AList" "Nominal-Utils" RCLogic-

@@ -981,7 +981,7 @@ next
       show "\<Theta> ; \<B> ; \<Gamma>  \<turnstile> \<tau>\<^sub>1 \<lesssim> \<lbrace> z0 : b\<^sub>1  | c0 \<rbrace>" using infer_e_appI by metis
       show "atom z0 \<sharp> (x, v)" using infer_e_appI by metis
     qed
-    moreover have "atom x \<sharp> c" using wfPhi_f_supp_c  infer_e_appI fresh_def \<open>x\<noteq>x'\<close> 
+    moreover have "atom x \<sharp> c" using wfPhi_f_simple_supp_c  infer_e_appI fresh_def \<open>x\<noteq>x'\<close> 
        atom_eq_iff empty_iff infer_e_appI.hyps insert_iff subset_singletonD by metis
 
     moreover hence "atom x \<sharp> \<lbrace> x' : b  | c \<rbrace>" using \<tau>.fresh supp_b_empty fresh_def by blast
@@ -1171,8 +1171,7 @@ next
   case (infer_e_splitI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v1 z1 c1 v2 z2 z3)
   hence *:"atom z3 \<sharp> (x,v)" using fresh_Pair by auto
   have \<open>x \<noteq> z3 \<close> using infer_e_splitI by force
-  have " \<Theta> ; \<Phi> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @
-                  \<Gamma> ; \<Delta>[x::=v]\<^sub>\<Delta>\<^sub>v  \<turnstile> AE_split v1[x::=v]\<^sub>v\<^sub>v v2[x::=v]\<^sub>v\<^sub>v \<Rightarrow> 
+  have "\<Theta> ; \<Phi> ; \<B> ; (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>) ; \<Delta>[x::=v]\<^sub>\<Delta>\<^sub>v  \<turnstile> (AE_split v1[x::=v]\<^sub>v\<^sub>v v2[x::=v]\<^sub>v\<^sub>v) \<Rightarrow> 
                \<lbrace> z3 : [ B_bitvec , B_bitvec ]\<^sup>b  | [ v1[x::=v]\<^sub>v\<^sub>v ]\<^sup>c\<^sup>e  ==  [ [#1[ [ z3 ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e @@ [#2[ [ z3 ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e   AND  
                      [| [#1[ [ z3 ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e  ==  [ v2[x::=v]\<^sub>v\<^sub>v ]\<^sup>c\<^sup>e   \<rbrace>"
   proof

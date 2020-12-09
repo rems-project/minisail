@@ -639,16 +639,18 @@ next
   then show ?case using fun_def.supp
     by (simp add: pure_supp supp_Cons)
 next
-  case (wfFTI \<Theta> B' b \<Phi> x c s \<tau>)
+  case (wfFTI \<Theta> B' b s x c \<tau> \<Phi>)
+  thm fun_typ.supp
   have " supp (AF_fun_typ x b c \<tau> s) = supp c \<union> (supp \<tau> \<union> supp s) - set [atom x] \<union> supp b" using fun_typ.supp by auto
   thus ?case using wfFTI wf_supp1 
   proof -
     have f1: "supp \<tau> \<subseteq> {atom x} \<union> atom_dom GNil \<union> supp B'"
-      using dom_cons wfFTI.hyps(6) wf_supp1(4) by blast (* 0.0 ms *)
+      using dom_cons wfFTI.hyps wf_supp1(4) by blast (* 0.0 ms *)
     have "supp b \<subseteq> supp B'"
       using wfFTI.hyps(1) wf_supp1(7) by blast (* 0.0 ms *)
     then show ?thesis
-      using f1 \<open>supp (AF_fun_typ x b c \<tau> s) = supp c \<union> (supp \<tau> \<union> supp s) - set [atom x] \<union> supp b\<close> wfFTI.hyps(4) wfFTI.hyps(5) by auto (* 234 ms *)
+      using f1 \<open>supp (AF_fun_typ x b c \<tau> s) = supp c \<union> (supp \<tau> \<union> supp s) - set [atom x] \<union> supp b\<close> 
+             wfFTI.hyps(4) wfFTI.hyps by auto (* 234 ms *)
   qed 
 next
   case (wfFTNone \<Theta> \<Phi> ft)
@@ -2276,8 +2278,23 @@ next
   case (wfFTSome \<Theta> bv ft)
   then show ?case  using wf_intros wb_b_weakening1 by metis
 next
-  case (wfFTI \<Theta> B b \<Phi> x c s \<tau>)
-  then show ?case  using  wb_b_weakening1 Wellformed.wfFTI by auto
+  case (wfFTI \<Theta> B b s x c \<tau> \<Phi>)
+  show ?case proof
+    show "\<Theta> ; \<B>'  \<turnstile>\<^sub>w\<^sub>f b"   using wfFTI wb_b_weakening1 by auto
+    
+    show "supp c \<subseteq> {atom x}" using wfFTI wb_b_weakening1 by auto
+    show "\<Theta> ; \<B>' ; (x, b, c) #\<^sub>\<Gamma> GNil   \<turnstile>\<^sub>w\<^sub>f \<tau> " using wfFTI wb_b_weakening1 by auto
+    show "\<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> " using wfFTI wb_b_weakening1 by auto
+    from \<open> B |\<subseteq>| \<B>'\<close> have "supp B \<subseteq> supp \<B>'" proof(induct B)
+      case empty
+      then show ?case by auto
+    next
+      case (insert x B)
+      then show ?case 
+        by (metis fsubset_funion_eq subset_Un_eq supp_union_fset)
+    qed
+    thus  "supp s \<subseteq> {atom x} \<union> supp \<B>'" using wfFTI by auto
+  qed  
 next
   case (wfS_assertI \<Theta> \<Phi> \<B> x c \<Gamma> \<Delta> s b)
   show ?case proof
@@ -2496,6 +2513,21 @@ next
   have "atom x \<sharp> \<Phi>'" using wfS_assertI wfPhi_supp fresh_def by blast
   thus  \<open>atom x \<sharp> (\<Phi>', \<Theta>, \<B>, \<Gamma>, \<Delta>, c, b, s)\<close>  using fresh_prodN wfS_assertI wfPhi_supp fresh_def by auto
 qed
+next
+  case (wfFTI \<Theta> B b s x c \<tau> \<Phi>)
+  show ?case proof
+
+  show \<open> \<Theta> ; B  \<turnstile>\<^sub>w\<^sub>f b \<close>  using wfFTI by auto
+next
+
+  show \<open>supp c \<subseteq> {atom x}\<close> using wfFTI by auto
+next
+  show \<open> \<Theta> ; B ; (x, b, c) #\<^sub>\<Gamma> GNil   \<turnstile>\<^sub>w\<^sub>f \<tau> \<close> using wfFTI by auto
+next
+  show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi>' \<close> using wfFTI by auto
+next
+  show \<open>supp s \<subseteq> {atom x} \<union> supp B\<close> using wfFTI by auto
+qed
 qed(auto|metis wf_intros)+
 
 
@@ -2519,25 +2551,24 @@ proof -
   thus ?thesis  using  beta_flip_eq theta_flip_eq  wfT_wf wfG_wf  * ** True_eqvt wfT.eqvt permute_flip_cancel by metis
 qed
 
+
 lemma wfFT_wf_aux:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q and s::s and \<Delta>::\<Delta>
   assumes "\<Theta> ; \<Phi>  ; B \<turnstile>\<^sub>w\<^sub>f (AF_fun_typ x b c \<tau> s)" 
-  shows "\<Theta> ; B ; (x,b,c) #\<^sub>\<Gamma> GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta> ; \<Phi>  ; B ; (x,b,c) #\<^sub>\<Gamma> GNil ; []\<^sub>\<Delta> \<turnstile>\<^sub>w\<^sub>f s : b_of \<tau>"
+  shows "\<Theta> ; B ; (x,b,c) #\<^sub>\<Gamma> GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta>  \<turnstile>\<^sub>w\<^sub>f  \<Phi> \<and> supp s \<subseteq> { atom x } \<union> supp B"
 proof -
 
-  obtain xa and ca and sa and \<tau>' where *:"\<Theta> ; B  \<turnstile>\<^sub>w\<^sub>f b  \<and>  (\<Theta> ; \<Phi>  ; B ; (xa, b, ca)  #\<^sub>\<Gamma> GNil ; []\<^sub>\<Delta> \<turnstile>\<^sub>w\<^sub>f sa : b_of \<tau>')  \<and>
-    supp sa \<subseteq> {atom xa} \<and>  (\<Theta> ; B ; (xa, b, ca)  #\<^sub>\<Gamma> GNil   \<turnstile>\<^sub>w\<^sub>f \<tau>')  \<and>
-  AF_fun_typ x b c \<tau> s = AF_fun_typ xa b ca \<tau>' sa" 
+  obtain xa and ca and sa and \<tau>' where *:"\<Theta> ; B  \<turnstile>\<^sub>w\<^sub>f b  \<and>  (\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>  )  \<and>
+    supp sa \<subseteq> {atom xa} \<union> supp B \<and>  (\<Theta> ; B ; (xa, b, ca)  #\<^sub>\<Gamma> GNil   \<turnstile>\<^sub>w\<^sub>f \<tau>')  \<and>  
+  AF_fun_typ x b c \<tau> s = AF_fun_typ xa b ca \<tau>' sa " 
     using wfFT.simps[of \<Theta> \<Phi> B "AF_fun_typ x b c \<tau> s"] assms by auto
-
-  moreover hence "(AF_fun_typ x b c \<tau> s) = (AF_fun_typ xa b ca \<tau>' sa)" by simp
+ 
+  moreover hence **: "(AF_fun_typ x b c \<tau> s) = (AF_fun_typ xa b ca \<tau>' sa)" by simp
   ultimately have "\<Theta> ; B ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau>"  using wfT_fun_return_t by metis
-  moreover have " (\<Theta> ; \<Phi>  ; B ; (x, b, c)  #\<^sub>\<Gamma> GNil ; []\<^sub>\<Delta> \<turnstile>\<^sub>w\<^sub>f s : b_of \<tau>) " proof -
-    have **:"\<Theta> ; \<Phi>  ; B ; (xa, b, ca)  #\<^sub>\<Gamma> GNil ; []\<^sub>\<Delta> \<turnstile>\<^sub>w\<^sub>f sa : b_of \<tau>'" using * by auto
-    moreover have "[[atom xa]]lst. sa = [[atom x]]lst. s \<and> [[atom xa]]lst. \<tau>' = [[atom x]]lst. \<tau> \<and>  [[atom xa]]lst. ca = [[atom x]]lst. c" 
-      using * fun_typ.eq_iff lst_fst lst_snd by metis
-    moreover have "atom x \<sharp> GNil"   by auto
-    ultimately show ?thesis using assms wfS_flip_eq wfD_emptyI wfG_nilI wfX_wfY * by metis
+  moreover have " (\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>  ) "  using * by auto
+  moreover have "supp s \<subseteq> { atom x } \<union> supp B" proof -
+    have "[[atom x]]lst.s = [[atom xa]]lst.sa" using ** fun_typ.eq_iff lst_fst lst_snd by metis
+    thus ?thesis using lst_supp_subset * by metis
   qed
   ultimately show ?thesis by auto
 qed
@@ -2545,17 +2576,17 @@ qed
 lemma wfFT_simple_wf:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q and s::s and \<Delta>::\<Delta>
   assumes "\<Theta> ; \<Phi>  \<turnstile>\<^sub>w\<^sub>f (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))" 
-  shows "\<Theta> ; {||} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta> ; \<Phi>  ; {||} ; (x,b,c) #\<^sub>\<Gamma>GNil ; []\<^sub>\<Delta> \<turnstile>\<^sub>w\<^sub>f s : b_of \<tau>"
+  shows "\<Theta> ; {||} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> \<and> supp s \<subseteq> { atom x } "
 proof -
   have  *:"\<Theta> ; \<Phi>  ; {||} \<turnstile>\<^sub>w\<^sub>f (AF_fun_typ x b c \<tau> s)" using wfFTQ_elims assms by auto
-  thus ?thesis using wfFT_wf_aux by auto
+  thus ?thesis using wfFT_wf_aux by force
 qed
 
 
 lemma wfFT_poly_wf:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ftq :: fun_typ_q and s::s and \<Delta>::\<Delta>
   assumes "\<Theta> ; \<Phi>  \<turnstile>\<^sub>w\<^sub>f (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s))" 
-  shows "\<Theta> ; {|bv|} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta> ; \<Phi>  ; {|bv|} ; (x,b,c) #\<^sub>\<Gamma>GNil ; []\<^sub>\<Delta> \<turnstile>\<^sub>w\<^sub>f s : b_of \<tau>"
+  shows "\<Theta> ; {|bv|} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> \<and> \<Theta> ; \<Phi>  ; {|bv|}  \<turnstile>\<^sub>w\<^sub>f (AF_fun_typ x b c \<tau> s)"
 proof -
 
   obtain bv1 ft1 where  *:"\<Theta> ; \<Phi>  ; {|bv1|} \<turnstile>\<^sub>w\<^sub>f ft1 \<and> [[atom bv1]]lst. ft1 = [[atom bv]]lst. AF_fun_typ x b c \<tau> s" 
@@ -2587,10 +2618,18 @@ lemma wfFT_poly_wfT:
   shows "\<Theta> ; {| bv |} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau>"
   using wfFT_poly_wf assms by simp
 
+
+lemma b_of_supp:
+  "supp (b_of t) \<subseteq> supp t"
+proof(nominal_induct t rule:\<tau>.strong_induct)
+  case (T_refined_type x b c)
+  then show ?case by auto
+qed
+
 lemma wfPhi_f_simple_wf:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q and s::s and \<Phi>'::\<Phi>
    assumes "AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s)) \<in> set \<Phi> " and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>" and "set \<Phi> \<subseteq> set \<Phi>'" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>'"
-  shows "\<Theta> ; {||} ; (x,b,c) #\<^sub>\<Gamma> GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta> ; \<Phi>' ; {||} ; (x,b,c) #\<^sub>\<Gamma>GNil ; []\<^sub>\<Delta> \<turnstile>\<^sub>w\<^sub>f s : b_of \<tau>"
+  shows "\<Theta> ; {||} ; (x,b,c) #\<^sub>\<Gamma> GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> \<and> supp s \<subseteq> { atom x }"
 using assms proof(induct \<Phi> rule: \<Phi>_induct)
   case PNil
   then show ?case by auto
@@ -2622,11 +2661,76 @@ lemma wfPhi_f_simple_wfT:
   shows "\<Theta> ; {||} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau>"
   using wfPhi_f_simple_wf assms  using lookup_fun_member by blast
 
+
+lemma  wfPhi_f_simple_supp_b:
+  fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
+  assumes "Some (AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
+  shows "supp b = {}"
+proof -
+  have "\<Theta> ; {||} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau>" using wfPhi_f_simple_wfT assms by auto
+  thus ?thesis using wfT_wf wfG_cons wfB_supp by fastforce
+qed
+
+
 lemma wfPhi_f_simple_supp_t:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
   assumes "Some (AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
   shows "supp \<tau> \<subseteq> { atom x }"
   using wfPhi_f_simple_wfT wfT_supp assms by fastforce
+
+
+
+lemma  wfPhi_f_simple_supp_c:
+  fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
+  assumes "Some (AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
+  shows "supp c \<subseteq> { atom x }"
+proof -
+  have "\<Theta> ; {||} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau>" using wfPhi_f_simple_wfT assms by auto
+  thus ?thesis using wfG_wfC wfC_supp wfT_wf by fastforce
+qed
+
+lemma  wfPhi_f_simple_supp_s:
+  fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
+  assumes "Some (AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
+  shows "supp s \<subseteq> {atom x}"
+proof -
+  have "AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s)) \<in> set \<Phi>" using lookup_fun_member assms by auto
+  hence "supp s \<subseteq> { atom x }" using wfPhi_f_simple_wf assms by blast
+  thus ?thesis using wf_supp(3)  atom_dom.simps toSet.simps  x_not_in_u_set x_not_in_b_set setD.simps 
+    using wf_supp2(2) by fastforce
+qed
+
+lemma wfPhi_f_poly_wf:
+  fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q and s::s and \<Phi>'::\<Phi>
+   assumes "AF_fundef f  (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s)) \<in> set \<Phi> " and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>" and "set \<Phi> \<subseteq> set \<Phi>'" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>'"
+  shows "\<Theta> ; {|bv|} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>' \<and> \<Theta> ; \<Phi>' ;  {|bv|} \<turnstile>\<^sub>w\<^sub>f  (AF_fun_typ x b c \<tau> s)"
+using assms proof(induct \<Phi> rule: \<Phi>_induct)
+  case PNil
+  then show ?case by auto
+next
+  case (PConsNone f x b c \<tau> s' \<Phi>'')
+  moreover have " \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi>'' \<and> set \<Phi>'' \<subseteq> set \<Phi>'" using wfPhi_elims(3) PConsNone by auto
+  ultimately show  ?case using PConsNone wfPhi_elims wfFT_poly_wf by auto
+next
+  case (PConsSome f1 bv1 x1 b1 c1 \<tau>1 s1 \<Phi>'')
+  show ?case proof(cases "f=f1")
+  case True
+    have "AF_fun_typ_some bv1 (AF_fun_typ x1 b1 c1 \<tau>1 s1) = AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s)"       
+      by (metis PConsSome.prems(1) PConsSome.prems(2) True fun_def.eq_iff list.set_intros(1) option.inject wfPhi_lookup_fun_unique)
+    hence *:"\<Theta> ; \<Phi>''  \<turnstile>\<^sub>w\<^sub>f AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s) " using wfPhi_elims PConsSome by metis  
+    thus ?thesis using wfFT_poly_wf * wb_phi_weakening PConsSome 
+      by (meson set_subset_Cons)
+  next
+    case False
+    hence "AF_fundef f (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s)) \<in> set \<Phi>''" using PConsSome 
+      by (meson fun_def.eq_iff set_ConsD)
+    moreover have " \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi>'' \<and> set \<Phi>'' \<subseteq> set \<Phi>'" using wfPhi_elims(3) PConsSome 
+      by (meson dual_order.trans set_subset_Cons)
+    ultimately show  ?thesis using PConsSome wfPhi_elims wfFT_poly_wf 
+      by blast
+  qed
+qed
+
 
 lemma wfPhi_f_poly_wfT:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
@@ -2677,12 +2781,6 @@ lemma wfPhi_f_poly_supp_t:
   shows "supp \<tau> \<subseteq> { atom x , atom bv }"
  using wfPhi_f_poly_wfT[OF assms, THEN wfT_supp]  atom_dom.simps  supp_at_base by auto
 
-lemma b_of_supp:
-  "supp (b_of t) \<subseteq> supp t"
-proof(nominal_induct t rule:\<tau>.strong_induct)
-  case (T_refined_type x b c)
-  then show ?case by auto
-qed
 
 lemma wfPhi_f_poly_supp_b_of_t:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
@@ -2695,15 +2793,6 @@ proof -
   ultimately show ?thesis by blast
 qed
 
-lemma  wfPhi_f_supp_c:
-  fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
-  assumes "Some (AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
-  shows "supp c \<subseteq> { atom x }"
-proof -
-  have "\<Theta> ; {||} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau>" using wfPhi_f_simple_wfT assms by auto
-  thus ?thesis using wfG_wfC wfC_supp wfT_wf by fastforce
-qed
-
 lemma wfPhi_f_poly_supp_c:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
   assumes "Some (AF_fundef f  (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
@@ -2714,70 +2803,26 @@ proof -
     using supp_at_base by fastforce
 qed
 
-lemma  wfPhi_f_simple_supp_b:
-  fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
-  assumes "Some (AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
-  shows "supp b = {}"
-proof -
-  have "\<Theta> ; {||} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau>" using wfPhi_f_simple_wfT assms by auto
-  thus ?thesis using wfT_wf wfG_cons wfB_supp by fastforce
-qed
 
-lemma  wfPhi_f_simple_supp_s:
-  fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
-  assumes "Some (AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
-  shows "supp s \<subseteq> {atom x}"
-proof -
-  have "AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s)) \<in> set \<Phi>" using lookup_fun_member assms by auto
-  hence "\<Theta> ; \<Phi>  ; {||} ; (x,b,c) #\<^sub>\<Gamma>GNil ; []\<^sub>\<Delta> \<turnstile>\<^sub>w\<^sub>f s : b_of \<tau>" using wfPhi_f_simple_wf assms by auto
-  thus ?thesis using wf_supp(3)  atom_dom.simps toSet.simps  x_not_in_u_set x_not_in_b_set setD.simps 
-    using wf_supp2(2) by fastforce
-qed
 
-lemma wfPhi_f_poly_wf:
-  fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q and s::s and \<Phi>'::\<Phi>
-   assumes "AF_fundef f  (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s)) \<in> set \<Phi> " and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>" and "set \<Phi> \<subseteq> set \<Phi>'" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>'"
-  shows "\<Theta> ; {|bv|} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta> ; \<Phi>' ; {|bv|} ; (x,b,c) #\<^sub>\<Gamma>GNil ; []\<^sub>\<Delta> \<turnstile>\<^sub>w\<^sub>f s : b_of \<tau>"
-using assms proof(induct \<Phi> rule: \<Phi>_induct)
-  case PNil
-  then show ?case by auto
-next
-  case (PConsNone f x b c \<tau> s' \<Phi>'')
-  moreover have " \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi>'' \<and> set \<Phi>'' \<subseteq> set \<Phi>'" using wfPhi_elims(3) PConsNone by auto
-  ultimately show  ?case using PConsNone wfPhi_elims wfFT_poly_wf by auto
-next
-  case (PConsSome f1 bv1 x1 b1 c1 \<tau>1 s1 \<Phi>'')
-  show ?case proof(cases "f=f1")
-  case True
-    have "AF_fun_typ_some bv1 (AF_fun_typ x1 b1 c1 \<tau>1 s1) = AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s)"       
-      by (metis PConsSome.prems(1) PConsSome.prems(2) True fun_def.eq_iff list.set_intros(1) option.inject wfPhi_lookup_fun_unique)
-    hence *:"\<Theta> ; \<Phi>''  \<turnstile>\<^sub>w\<^sub>f AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s) " using wfPhi_elims PConsSome by metis  
-    thus ?thesis using wfFT_poly_wf * wb_phi_weakening PConsSome 
-      by (meson set_subset_Cons)
-  next
-    case False
-    hence "AF_fundef f (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s)) \<in> set \<Phi>''" using PConsSome 
-      by (meson fun_def.eq_iff set_ConsD)
-    moreover have " \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi>'' \<and> set \<Phi>'' \<subseteq> set \<Phi>'" using wfPhi_elims(3) PConsSome 
-      by (meson dual_order.trans set_subset_Cons)
-    ultimately show  ?thesis using PConsSome wfPhi_elims wfFT_poly_wf 
-      by blast
-  qed
-qed
+
 
 lemma  wfPhi_f_poly_supp_s:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
   assumes "Some (AF_fundef f  (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
   shows "supp s \<subseteq> {atom x, atom bv}"
 proof -
+
   have "AF_fundef f  (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s)) \<in> set \<Phi>" using lookup_fun_member assms by auto
-  hence "\<Theta> ; \<Phi>  ; {|bv|} ; (x,b,c) #\<^sub>\<Gamma>GNil ; []\<^sub>\<Delta> \<turnstile>\<^sub>w\<^sub>f s : b_of \<tau>" using wfPhi_f_poly_wf assms by auto
-  thus ?thesis using wf_supp2(2)  atom_dom.simps toSet.simps  setD.simps 
-    using Un_insert_right supp_at_base by fastforce
+  hence *:"\<Theta> ; \<Phi>  ; {|bv|} \<turnstile>\<^sub>w\<^sub>f (AF_fun_typ x b c \<tau> s)" using assms wfPhi_f_poly_wf by simp
+  
+  thus ?thesis using wfFT_wf_aux[OF *]  using supp_at_base by auto
 qed
 
+
 lemmas wfPhi_f_supp = wfPhi_f_poly_supp_b wfPhi_f_simple_supp_b wfPhi_f_poly_supp_c 
-    wfPhi_f_simple_supp_t wfPhi_f_poly_supp_t wfPhi_f_simple_supp_t wfPhi_f_poly_wfT wfPhi_f_simple_wfT wfPhi_f_simple_supp_s
+    wfPhi_f_simple_supp_t wfPhi_f_poly_supp_t wfPhi_f_simple_supp_t wfPhi_f_poly_wfT wfPhi_f_simple_wfT 
+    wfPhi_f_poly_supp_s wfPhi_f_simple_supp_s
 
 lemma fun_typ_eq_ret_unique: 
   assumes "(AF_fun_typ x1 b1 c1 \<tau>1' s1') =  (AF_fun_typ x2 b2 c2 \<tau>2' s2')"
