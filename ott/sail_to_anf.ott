@@ -248,16 +248,16 @@ by
 
 
 defn
-E |- typ ~> ta :: :: typ :: typ_
+E ; M  |- typ ~> ta :: :: typ :: typ_
 by
 {{ com
 \noindent Convert Sail type to MiniSail type.
 First form is that we normalise bringing out any exisentials to the top level.
 }}
 
-E ; empty |- typ ; za ~> ba ; ca
+E ; M |- typ ; za ~> ba ; ca
 ------------------------------------------------------------ :: conv
-E |- typ ~> { za : ba | ca }
+E ; M |- typ ~> { za : ba | ca }
 
 
 defn
@@ -398,59 +398,59 @@ by
 % but these are in close terms
 % We could make the xa a variable instead?
 defn
-E |- exp : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- va ; L : ta :: :: convert_e :: ce_
+E ; M |- exp : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- va ; L : ta :: :: convert_e :: ce_
 by
 
 fresh xa
 lit ~> la
-E |- typ ~> ta
+E ; M |- typ ~> ta
 E ~> TCa ; PCa ; BCa ; Ga ; Da
 --------------------------------------------------------------------- :: lit
-E |- lit : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- la ; __ : ta
+E ; M |- lit : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- la ; __ : ta
 
 
 id / immutable : id INN E
 id ~> xa
-E |- typ ~> ta
+E ; M |- typ ~> ta
 E ~> TCa ; PCa ; BCa ; Ga ; Da
 ----------------------------------------------------------------------------- :: immutable
-E |- id : typ ~> TCa ; PCa ; BCa ; Ga ; Da / xa : ta |- xa ; __ : ta
+E ; M |- id : typ ~> TCa ; PCa ; BCa ; Ga ; Da / xa : ta |- xa ; __ : ta
 
 % FIXME get tid
 fresh xa
 id / enum : typ INN E
 E |- id ~> ctor , tid
-E |- typ ~> ta
+E ; M |- typ ~> ta
 E ~> TCa ; PCa ; BCa ; Ga ; Da
 ----------------------------------------------------------------------------- :: enum
-E |- id : typ ~> TCa ; PCa ; BCa ; Ga ; Da / xa : ta |- ctor tid () ;  __ : ta
+E ; M |- id : typ ~> TCa ; PCa ; BCa ; Ga ; Da / xa : ta |- ctor tid () ;  __ : ta
 
 
 fresh xa
 id / mutable : typ INN E
 id ~> ua
-E |- typ ~> ta
+E ; M |- typ ~> ta
 E ~> TCa ; PCa ; BCa ; Ga ; Da
 ----------------------------------------------------------------------------- :: mutable
-E |- id : typ ~> TCa ; PCa ; BCa ; Ga ; Da / xa : ta |- xa ; let xa = ua in __ : ta
+E ; M |- id : typ ~> TCa ; PCa ; BCa ; Ga ; Da / xa : ta |- xa ; let xa = ua in __ : ta
 
 
 fresh xa
 id / register : typ INN E
 id ~> ua
-E |- typ ~> ta
+E ; M |- typ ~> ta
 E ~> TCa ; PCa ; BCa ; Ga ; Da
 ----------------------------------------------------------------------------- :: register
-E |- id : typ ~> TCa ; PCa ; BCa ; Ga ; Da / xa : ta |- xa ; let xa = ua in __ : ta
+E ; M |- id : typ ~> TCa ; PCa ; BCa ; Ga ; Da / xa : ta |- xa ; let xa = ua in __ : ta
 
 
 fresh xa
-E_of exp |- exp : t_of exp ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
-E |- (exp1 , .. , expn ) : typ ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 / ga2 |- va2 ; L2 : ta2
+E_of exp ; M |- exp : t_of exp ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
+E ; M |- (exp1 , .. , expn ) : typ ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 / ga2 |- va2 ; L2 : ta2
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 ------------------------------------------------------------------------------------------- :: tuple
-E |- (exp , exp1 , .. , expn ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1', ga2' , xa : ta  |- xa ; L1 [ L2 [ let xa = (va1,va2) in __ ]] : ta
+E ; M |- (exp , exp1 , .. , expn ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1', ga2' , xa : ta  |- xa ; L1 [ L2 [ let xa = (va1,va2) in __ ]] : ta
 
 %fresh xa
 %E_of ( exp1 , .. , expn )  |- ( exp1 , .. , expn ) : t_of ( exp1 , .. , expn ) ~> TCa' ; PCa' ; BCa' ; Ga' ; Da' / ga' |- va' ; L : ta'
@@ -460,235 +460,235 @@ E |- (exp , exp1 , .. , expn ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1', ga2' ,
 %E |- id ( exp1 , .. , expn ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga' , xa : ta |- xa ; L [ let xa = f va' in __ ] : ta
 
 fresh xa
-E_of ( exp1 , .. , expn )  |- ( exp1 , .. , expn ) : t_of ( exp1 , .. , expn ) ~> TCa' ; PCa' ; BCa' ; Ga' ; Da' / ga' |- va' ; L : ta'
+E_of ( exp1 , .. , expn ) ; M  |- ( exp1 , .. , expn ) : t_of ( exp1 , .. , expn ) ~> TCa' ; PCa' ; BCa' ; Ga' ; Da' / ga' |- va' ; L : ta'
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 E |- inst_of id ( exp1 , .. , expn ) ~> va'' ; L''
 -------------------------------------------------------------------------------------------------------- :: app
-E |- id ( exp1 , .. , expn ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga' , xa : ta |- xa ; L'' [ L [ let xa = f (va'',va') in __ ] ] : ta
+E ; M |- id ( exp1 , .. , expn ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga' , xa : ta |- xa ; L'' [ L [ let xa = f (va'',va') in __ ] ] : ta
 
 
 fresh xa
-E_of ( exp1 , .. , expn )  |- ( exp1 , .. , expn ) : t_of ( exp1 , .. , expn ) ~> TCa' ; PCa' ; BCa' ; Ga' ; Da' / ga' |- va' ; L : ta'
+E_of ( exp1 , .. , expn ) ; M  |- ( exp1 , .. , expn ) : t_of ( exp1 , .. , expn ) ~> TCa' ; PCa' ; BCa' ; Ga' ; Da' / ga' |- va' ; L : ta'
 E ~> TCa ; PCa ; BCa ; Ga ; Da
 E |- id ~> ctor , tid
-E |- typ ~> ta
+E ; M |- typ ~> ta
 -------------------------------------------------------------------------------------------------------- :: ctor
-E |- id ( exp1 , .. , expn ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga' , xa : ta |- xa ; L [ let xa = ctor tid va' in __ ] : ta
+E ; M |- id ( exp1 , .. , expn ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga' , xa : ta |- xa ; L [ let xa = ctor tid va' in __ ] : ta
 
 
 
 fresh xa
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
-E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 / ga2 |- va2 ; L2 : ta2
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
+E_of exp2 ; M |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 / ga2 |- va2 ; L2 : ta2
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 ----------------------------------------------------------------------- :: plus
-E |- exp1 + exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , ga2 , xa : ta |- xa ; L1 [ L2 [ let xa = va1 + va2 in __ ]] : ta
+E ; M |- exp1 + exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , ga2 , xa : ta |- xa ; L1 [ L2 [ let xa = va1 + va2 in __ ]] : ta
 
 fresh xa
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
-E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 / ga2 |- va2 ; L2 : ta2
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
+E_of exp2 ; M |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 / ga2 |- va2 ; L2 : ta2
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 ----------------------------------------------------------------------- :: leq
-E |- exp1 <= exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , ga2 , xa : ta |- xa ; L1 [ L2 [ let xa = va1 <= va2 in __ ]] : ta1
+E ; M |- exp1 <= exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , ga2 , xa : ta |- xa ; L1 [ L2 [ let xa = va1 <= va2 in __ ]] : ta1
 
 fresh xa
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 ----------------------------------------------------------------------- :: len
-E |- len ( exp1 )  : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , xa : ta |- xa ; L1 [ let xa = len va1 in __ ] : ta
+E ; M |- len ( exp1 )  : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , xa : ta |- xa ; L1 [ let xa = len va1 in __ ] : ta
 
 fresh xa
-E_of exp1 |- exp1 : t_of exp1 ~> TCa2 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
-E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 / ga2 |- va2 ; L2 : ta2
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa2 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
+E_of exp2 ; M |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 / ga2 |- va2 ; L2 : ta2
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 ----------------------------------------------------------------------- :: concat
-E |- exp1 @ exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , ga2 , xa : ta |- xa ; L1 [ L2 [ let xa = va1 @ va2 in __ ]] : ta
+E ; M |- exp1 @ exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , ga2 , xa : ta |- xa ; L1 [ L2 [ let xa = va1 @ va2 in __ ]] : ta
 
 % Direct mapping but unlkely to appear in actual Sail code
 fresh xa
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 ----------------------------------------------------------------------- :: fst
-E |- fst ( exp1 ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , xa : ta |- xa ; L1 [ let xa = fst va1 in __ ] : ta1
+E ; M |- fst ( exp1 ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , xa : ta |- xa ; L1 [ let xa = fst va1 in __ ] : ta1
 
 fresh xa
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1  |- va1 ; L1 : ta1
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1  |- va1 ; L1 : ta1
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 ----------------------------------------------------------------------- :: snd
-E |- snd ( exp1 ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , xa : ta |- xa ; L1 [ let xa = snd va1 in __ ] : ta
+E ; M |- snd ( exp1 ) : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga1 , xa : ta |- xa ; L1 [ let xa = snd va1 in __ ] : ta
 
 
 % FIXME - In this list I am trying to constraint the contexts and the E to be the same
 fresh xa
-%E |- exp1 : typ1 ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- va1 ; L1 : ta1 ... E |- expn : typn ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- van ; Ln : tan
-</ E |- expi : typi ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- vai ; Li : tai // i IN 1...n />
-E |- typ ~> ta
+%E ; M |- exp1 : typ1 ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- va1 ; L1 : ta1 ... E ; M |- expn : typn ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- van ; Ln : tan
+</ E ; M |- expi : typi ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- vai ; Li : tai // i IN 1...n />
+E ; M |- typ ~> ta
 E |- pack_record ta xa </ idi = vai // i IN 1...n /> ~> L
 ----------------------------------------------------------------------------------------------------------------------------------- :: record
-E |- struct { </ idi = expi // i IN 1...n /> } : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xa ; (L1 + ... + Ln ) [ L ] : ta
+E ; M |- struct { </ idi = expi // i IN 1...n /> } : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xa ; (L1 + ... + Ln ) [ L ] : ta
 
 
 fresh xa
-E |- exp : typ' ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- va' ; L : ta'
-E |- typ ~> ta
+E ; M |- exp : typ' ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- va' ; L : ta'
+E ; M |- typ ~> ta
 E |- unpack_field ta xa va' id ~> L'
 -------------------------------------------------------------- :: field
-E |- exp . id : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga|- xa ; L [ L' ] : ta
+E ; M |- exp . id : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga|- xa ; L [ L' ] : ta
 
 
 fresh xa
-E |- exp : typ' ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- va ; L : ta'
-</ E |- expi : typi ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- vai ; Li : tai // i IN 0...n />
-E |- typ ~> ta
+E ; M |- exp : typ' ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- va ; L : ta'
+</ E ; M |- expi : typi ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- vai ; Li : tai // i IN 0...n />
+E ; M |- typ ~> ta
 E |- update_record ta xa va </ idi = vai // i IN 0...n /> ~> L'
 -------------------------------------------------------------------------------- :: record_update
-E |- { exp with </ idi = expi // i IN 0...n /> } : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xa ; (L0 + ... + Ln ) [ L' ] : ta
+E ; M |- { exp with </ idi = expi // i IN 0...n /> } : typ ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- xa ; (L0 + ... + Ln ) [ L' ] : ta
 
 fresh xa
-E |- if exp1 then exp2 else exp3 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+E ; M |- if exp1 then exp2 else exp3 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 ------------------------------------------------------------------------------------------------------------------ :: if
-E |- if exp1 then exp2 else exp3 : typ ~> TCa ; PCa ; BCa ; Ga ; Da / empty |- xa ; let2 xa : ta = sa in __ : ta
+E ; M |- if exp1 then exp2 else exp3 : typ ~> TCa ; PCa ; BCa ; Ga ; Da / empty |- xa ; let2 xa : ta = sa in __ : ta
 
 
 fresh xa
-E |- match exp { pat1 -> exp1 , .. , patn -> expn } : typ  ~>  TCa ; PCa ; BCa ; Ga ; Da |-  sa : ta
+E ; M |- match exp { pat1 -> exp1 , .. , patn -> expn } : typ  ~>  TCa ; PCa ; BCa ; Ga ; Da |-  sa : ta
 ------------------------------------------------------------------------------------------------------------ :: match
-E |- match exp { pat1 -> exp1 , .. , patn -> expn } : typ  ~>  TCa ; PCa ; BCa ; Ga ; Da / empty |- xa ; let2 xa : ta = sa in __ : ta
+E ; M |- match exp { pat1 -> exp1 , .. , patn -> expn } : typ  ~>  TCa ; PCa ; BCa ; Ga ; Da / empty |- xa ; let2 xa : ta = sa in __ : ta
 
 
 
 defn
-E |- exp : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta :: :: convert_s :: cs_
+E ; M |- exp : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta :: :: convert_s :: cvs_
 by
 
 id ~> xa
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L : ta1
-%E |- typ ~> ta
-E |- ( pat => exp2 ) : [ta1]b / va ~>  TCa ; PCa ; BCa ; Ga ; Da |- sa2 : ta
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L : ta1
+%E ; M |- typ ~> ta
+E ; M |- ( pat => exp2 ) : [ta1]b / va ~>  TCa ; PCa ; BCa ; Ga ; Da |- sa2 : ta
 ---------------------------------------------------------------------------------------- :: let
-E |- let pat = exp1 in exp2 : typ ~>  TCa ; PCa ; BCa ; Ga ; Da |- L [ sa2 ] : ta
+E ; M |- let pat = exp1 in exp2 : typ ~>  TCa ; PCa ; BCa ; Ga ; Da |- L [ sa2 ] : ta
 
 
 id ~> ua
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L : ta'
-E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L : ta'
+E_of exp2 ; M |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
-E |- typ'' ~> ta''
+E ; M |- typ ~> ta
+E ; M |- typ'' ~> ta''
 %id / mutable NOTIN E
 --------------------------------------- :: var
-E |- var (typ'') id = exp1 in exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ var ua : ta'' := va in sa2] : ta
+E ; M |- var (typ'') id = exp1 in exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ var ua : ta'' := va in sa2] : ta
 
 %id ~> ua
-%E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- xa1 ; L : ta1
-%E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta
+%E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- xa1 ; L : ta1
+%E_of exp2 ; M |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta
 %E ~> TCa ; PCa ; BCa ; Ga ; Da
-%E |- typ ~> ta
-%E |- typ' ~> ta'
+%E ; M |- typ ~> ta
+%E ; M |- typ' ~> ta'
 %--------------------------------------- :: cast
-%E |- var ( typ' ) id = exp1 in exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ var ua : ta' := xa1 in sa2] : ta
+%E ; M |- var ( typ' ) id = exp1 in exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ var ua : ta' := xa1 in sa2] : ta
 
 
 id ~> ua
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L : ta'
-%E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L : ta'
+%E_of exp2 ; M |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 %id / mutable : typ' INN  E
 ------------------------------------------------------------------------------ :: basic_a
-E |- id = exp1 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ ua := va ] : ta
+E ; M |- id = exp1 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ ua := va ] : ta
 
 id1 ~> ua
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L[ let xa2 = ua in __ ] : ta'
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L[ let xa2 = ua in __ ] : ta'
 E ~> TCa ; PCa ; BCa ; Ga ; Da
 E |- update_record ta xa1 xa2 id2 = va ~> L'
 ------------------------------------------------------------------------------------------------ :: field_a
-E |- id1 . id2 = exp1  : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ L' [ ua := xa1 ] ] : ta
+E ; M |- id1 . id2 = exp1  : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ L' [ ua := xa1 ] ] : ta
 
 % Deref is directly against an id so treat like normal assign
 
 id ~> ua
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L : ta'
-%E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L : ta'
+%E_of exp2 ; M |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 %id / register : typ' INN E
 ------------------------------------------------------------------------------ :: deref_a
-E |- deref id = exp1 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ ua := va ] : ta
+E ; M |- deref id = exp1 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ ua := va ] : ta
 
 
 id ~> ua
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
-E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 / ga2 |- va2 ; L2 : ta2
-E_of exp3 |- exp3 : t_of exp3 ~> TCa3 ; PCa3 ; BCa3 ; Ga3 ; Da3 / ga3 |- va3 ; L3 : ta3
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va1 ; L1 : ta1
+E_of exp2 ; M |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 / ga2 |- va2 ; L2 : ta2
+E_of exp3 ; M |- exp3 : t_of exp3 ~> TCa3 ; PCa3 ; BCa3 ; Ga3 ; Da3 / ga3 |- va3 ; L3 : ta3
 %E_of exp4 |- exp4 : t_of exp4 ~> TCa4 ; PCa4 ; BCa4 ; Ga4 ; Da4 |- sa4 : ta
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 L4 = let xa = ua in __
 L5 = let xa4 = update_vector_range xa va1 va2 va3 in __
 ------------------------------------------------------------------------------- :: vec_r_a
-E |- id [ exp1 .. exp2 ] = exp3 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- (L1 + L2 + L3 + L4 + L5) [ ua := xa4 ] : ta
+E ; M |- id [ exp1 .. exp2 ] = exp3 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- (L1 + L2 + L3 + L4 + L5) [ ua := xa4 ] : ta
 
-E |- exp : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+E ; M |- exp : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 --------------------------- :: block_single
-E |- { exp } : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+E ; M |- { exp } : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 
-E |- exp : t_of exp ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
-E |- { exp1 ; .. ; expn } : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa' : ta'
+E ; M |- exp : t_of exp ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+E ; M |- { exp1 ; .. ; expn } : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa' : ta'
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 ---------------------------------------------------------------------------------- :: block_cons
-E |- { exp ; exp1 ; .. ; expn } : typ  ~> TCa ; PCa ; BCa ; Ga ; Da |- sa ; sa' : ta'
+E ; M |- { exp ; exp1 ; .. ; expn } : typ  ~> TCa ; PCa ; BCa ; Ga ; Da |- sa ; sa' : ta'
 
 
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L : ta'
-E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta2
-E_of exp3 |- exp2 : t_of exp3 ~> TCa3 ; PCa3 ; BCa3 ; Ga3 ; Da3 |- sa3 : ta3
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 / ga1 |- va ; L : ta'
+E_of exp2 ; M |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta2
+E_of exp3 ; M |- exp2 : t_of exp3 ~> TCa3 ; PCa3 ; BCa3 ; Ga3 ; Da3 |- sa3 : ta3
 E ~> TCa ; PCa ; BCa ; Ga ; Da
-E |- typ ~> ta
+E ; M |- typ ~> ta
 ------------------------------------------------------------------ :: if
-E |- if exp1 then exp2 else exp3 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ if va then sa2 else sa3 ] : ta
+E ; M |- if exp1 then exp2 else exp3 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L [ if va then sa2 else sa3 ] : ta
 
-E_of exp |- exp : t_of exp ~>  TCa ; PCa ; BCa ; Ga ; Da / ga1 |- va ; L : ta'
-E |- ( pat1 => exp1 ) , .. , ( patn => expn ) : [ta']b / va ~>  TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+E_of exp ; M |- exp : t_of exp ~>  TCa ; PCa ; BCa ; Ga ; Da / ga1 |- va ; L : ta'
+E ; M |- ( pat1 => exp1 ) , .. , ( patn => expn ) : [ta']b / va ~>  TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 ------------------------------------------------------------------------------------------------------------------- :: match
-E |- match exp { pat1 -> exp1 , .. , patn -> expn } : typ  ~>  TCa ; PCa ; BCa ; Ga ; Da |- L [ sa ] : ta
+E ; M |- match exp { pat1 -> exp1 , .. , patn -> expn } : typ  ~>  TCa ; PCa ; BCa ; Ga ; Da |- L [ sa ] : ta
 
 % FIXME. What if za appears in ca ?
-E |- t_of exp1 ~> { za : ba | ca }
-E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 |- sa1 : ta1
-E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta2
+E ; M |- t_of exp1 ~> { za : ba | ca }
+E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 |- sa1 : ta1
+E_of exp2 ; M |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- sa2 : ta2
 --------------------------------------------------------------------------------------- :: while
-E |- while exp1 exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- while ( sa1 ) do { assert ca in sa2 }  : ta
+E ; M |- while exp1 exp2 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- while ( sa1 ) do { assert ca in sa2 }  : ta
 
-E_of exp |- exp : t_of exp ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- va ; L : ta
+E_of exp ; M |- exp : t_of exp ~> TCa ; PCa ; BCa ; Ga ; Da / ga |- va ; L : ta
 ------------------------------------------------------------------------------- :: expr
-E |- exp : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L[va] : ta
+E ; M |- exp : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L[va] : ta
 
 %fresh u1
 %fresh xa5
 %id ~> xa
-%E_of exp1 |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 |- xa1 ; L1 : ta1
-%E_of exp2 |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- xa2 ; L2 : ta2
+%E_of exp1 ; M |- exp1 : t_of exp1 ~> TCa1 ; PCa1 ; BCa1 ; Ga1 ; Da1 |- xa1 ; L1 : ta1
+%E_of exp2 ; M |- exp2 : t_of exp2 ~> TCa2 ; PCa2 ; BCa2 ; Ga2 ; Da2 |- xa2 ; L2 : ta2
 %E_of exp3 |- exp3 : t_of exp3 ~> TCa3 ; PCa3 ; BCa3 ; Ga3 ; Da3 |- xa3 ; L3 : ta3
 %E_of exp4 |- exp4 : t_of exp4 ~> TCa4 ; PCa4 ; BCa4 ; Ga4 ; Da4 |- sa4 : ta4
 %L4 = var ix : { z : int | xa1 <= z /\ z <= xa2 } =  xa1 in let xa = ix in var flg : { z : bool | top } = x <= xa2 in __
 %sa2 = let x = ix in { sa4 ; 
 %---------------------------------------------------------------------------------------- :: foreach
-%E |- foreach ( id from exp1 to exp2 by exp3 in order ) exp4 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L1 [ L2 [ L3 [ L4 while ( flg ) do { sa2 }]]]] : ta
+%E ; M |- foreach ( id from exp1 to exp2 by exp3 in order ) exp4 : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- L1 [ L2 [ L3 [ L4 while ( flg ) do { sa2 }]]]] : ta
 
 
 defn
-E |- blist : ba1 / va1 .. ban / van  ~>  TCa ; PCa ; BCa ; Ga ; Da |- sa : ta :: :: convert_branches :: cb_
+E ; M |- blist : ba1 / va1 .. ban / van  ~>  TCa ; PCa ; BCa ; Ga ; Da |- sa : ta :: :: convert_branches :: cb_
 {{ com Convert match branches }}
 by
 {{ com 
@@ -702,41 +702,41 @@ For tuples, we will replace the column with one or more patterns from the compon
 
 % FIXME - bitvec ?
 
-E |- exp : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+E ; M |- exp : typ ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 ---------------------------------------------------------- :: empty
-E |-   => exp , blist :  ~>  TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+E ; M |-   => exp , blist :  ~>  TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 
-%E |- blist : unit / xa ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+%E ; M |- blist : unit / xa ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 %--------------------------------------------------------------------------------- :: unit
-%E |- ()  => exp , blist : unit / va ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+%E ; M |- ()  => exp , blist : unit / va ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 
 
 
 ba INN { int , bool , unit }
-E |- blist ~> blist1 ; lp1 || .. || blistn ; lpn 
-</ E |- blisti : ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- sai : ta // i IN 1..n />
+E ; M |- blist ~> blist1 ; lp1 || .. || blistn ; lpn 
+</ E ; M |- blisti : ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- sai : ta // i IN 1..n />
 --------------------------------------------------- :: ground
-E |- blist : ba / va  ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- switch va { </ lpi => sai // i IN 1..n /> } : ta
+E ; M |- blist : ba / va  ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- switch va { </ lpi => sai // i IN 1..n /> } : ta
 
 % ANF doesn't have wild cards or binding at top level in match patterns, so will need
 % to have branches with all cases and fiddle
-E |- blist ~> blist1 ; ctor1 ba'1 xa'1 || .. || blistn ; ctorn ba'n xa'n
-</ E |- blisti : ba'i / xa'i ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- sai : ta  // i IN 1..n />
+E ; M |- blist ~> blist1 ; ctor1 ba'1 xa'1 || .. || blistn ; ctorn ba'n xa'n
+</ E ; M |- blisti : ba'i / xa'i ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- sai : ta  // i IN 1..n />
 ------------------------------------------------------------ :: ctor
-E |- blist : tid / va ba1 / va1 .. bam / vam  ~>  TCa ; PCa ; BCa ; Ga ; Da |- match va of </ ctori xa'i => sai // i IN 1..n /> : ta
+E ; M |- blist : tid / va ba1 / va1 .. bam / vam  ~>  TCa ; PCa ; BCa ; Ga ; Da |- match va of </ ctori xa'i => sai // i IN 1..n /> : ta
 %, .. , ctorn xa'n => san : ta
 
 ba = ( ba'1 , ... , ba'n )
-E |- blist : ba ~> blist' ; ba'1 / xa'1 ... ba'n / xa'n
-E |- blist' : ba'1 / xa'1 ... ba'n / xa'n ba1 / va1 .. bam / vam  ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+E ; M |- blist : ba ~> blist' ; ba'1 / xa'1 ... ba'n / xa'n
+E ; M |- blist' : ba'1 / xa'1 ... ba'n / xa'n ba1 / va1 .. bam / vam  ~> TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
 ---------------------------------------------------------------------------------------- :: tuple
-E |- blist : ba / va ba1 / va1 .. bam / vam  ~> TCa ; PCa ; BCa ; Ga ; Da |- unpack va into xa'1 , ... , xa'n in sa : ta
+E ; M |- blist : ba / va ba1 / va1 .. bam / vam  ~> TCa ; PCa ; BCa ; Ga ; Da |- unpack va into xa'1 , ... , xa'n in sa : ta
 
 ba INN { bvec }
-E |- blist / va ~> blist1 ; L1 va'1 || .. || blistn ; Ln va'n
-</ E |- blisti : ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- sai : ta // i IN 1..n />
+E ; M |- blist / va ~> blist1 ; L1 va'1 || .. || blistn ; Ln va'n
+</ E ; M |- blisti : ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- sai : ta // i IN 1..n />
 --------------------------------------------------- :: vector
-E |- blist : ba / va  ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- switch_vec { </ Li va'i => sai // i IN 1..n /> } : ta
+E ; M |- blist : ba / va  ba1 / va1 .. bam / vam ~> TCa ; PCa ; BCa ; Ga ; Da |- switch_vec { </ Li va'i => sai // i IN 1..n /> } : ta
 
 
 
@@ -753,64 +753,64 @@ defns pattern_expansion :: '' ::=
 {{ tex \subsection{Convert patterns} }}
 
 defn
-E |- blist / va ~> blist1 ; L1 va1 || .. || blistn ; Ln van :: :: process_bvec :: phbv_
+E ; M |- blist / va ~> blist1 ; L1 va1 || .. || blistn ; Ln van :: :: process_bvec :: phbv_
 by
 
-E |- blist / va ~> blist1 ; L1 va1 || .. || blistn ; Ln van
-E |- va ; true ; pat ~> L  ; va3
+E ; M |- blist / va ~> blist1 ; L1 va1 || .. || blistn ; Ln van
+E ; M |- va ; true ; pat ~> L  ; va3
 ------------------------------------------------------------------------------------------------------------ :: vec
-E |- ( pat pat1 .. patn => exp ) , blist / va ~> blist1 ; L1 va1 || .. || blistn ; Ln van || (pat1 .. patn => exp ) ; L va3
+E ; M |- ( pat pat1 .. patn => exp ) , blist / va ~> blist1 ; L1 va1 || .. || blistn ; Ln van || (pat1 .. patn => exp ) ; L va3
 
 
 ------------------------------------------------------------------------------------------------------------ :: wild
-E |- ( _ pat1 .. patn => exp ) , blist / va ~> (pat1 .. patn => exp ) ; __ true
+E ; M |- ( _ pat1 .. patn => exp ) , blist / va ~> (pat1 .. patn => exp ) ; __ true
 
 
 id ~> xa
 ------------------------------------------------------------------------------------------------------------ :: var
-E |- ( id pat1 .. patn => exp ) , blist / va ~> (pat1 .. patn => exp ) ; ( let xa = va in __ ) true
+E ; M |- ( id pat1 .. patn => exp ) , blist / va ~> (pat1 .. patn => exp ) ; ( let xa = va in __ ) true
 
 
 % va1 is the match value
 % va2 is current boolean for the branch
 % va3 is the rest of the vector
 defn
-E |- va1 ; va2 ; pat1 , .. , patn ~> L ; va3 :: :: process_vector :: phv_
+E ; M |- va1 ; va2 ; pat1 , .. , patn ~> L ; va3 :: :: process_vector :: phv_
 by
 
 ---------------------------- :: empty
-E |- va1 ; va2 ; ~> L ; va1
+E ; M |- va1 ; va2 ; ~> L ; va1
 
 fresh xa0' .. xa4'
 lit ~> la
 L1 = let xa'0 = ( len la ) in let xa1' = split va1 xa0' in __ 
 L2 = let xa2' = ( fst xa1' ) in let xa3' = snd xa1' in let xa4' = eqand va2 xa2' la in __
-E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; va3
+E ; M |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; va3
 --------------------------------------------------------------------- :: lit
-E |- va1 ; va2 ; lit , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; va3
+E ; M |- va1 ; va2 ; lit , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; va3
 
 fresh xa0' .. xa4'
 id ~> xa
 L1 = let xa'0 = ( len la ) in let xa1' = split va1 xa0' in __ 
 L2 = let xa = ( fst xa1' ) in let xa3' = snd xa1' in let xa4' = va2 in __
-E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; va3
+E ; M |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; va3
 --------------------------------------------------------------------- :: var
-E |- va1 ; va2 ; id , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; va3
+E ; M |- va1 ; va2 ; id , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; va3
 
 fresh xa0' .. xa4'
 L1 = let xa'0 = ( len la ) in let xa1' = split va1 xa0' in __ 
 L2 = let xa3' = snd xa1' in let xa4' = va2 in __
-E |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; va3
+E ; M |- xa3' ; xa4' ; pat1 , .. , patn ~> L3 ; va3
 --------------------------------------------------------------------- :: wild
-E |- va1 ; va2 ; _ , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; va3
+E ; M |- va1 ; va2 ; _ , pat1 , .. , patn ~> L1 [ L2 [ L3 ]] ; va3
 
 
-E |- va1 ; va2 ; pat'1 , ... , pat'm , pat1 , .. , patn ~> L ; va3
+E ; M |- va1 ; va2 ; pat'1 , ... , pat'm , pat1 , .. , patn ~> L ; va3
 ------------------------------------------------------------------- :: concat
-E |- va1 ; va2 ; pat'1 @ ... @ pat'm , pat1 , .. , patn ~> L ; va3
+E ; M |- va1 ; va2 ; pat'1 @ ... @ pat'm , pat1 , .. , patn ~> L ; va3
 
 defn
-E |- blist ~> blist1 ; lp1 || .. || blistn ; lpn  :: :: process_head_ground :: phg_
+E ; M |- blist ~> blist1 ; lp1 || .. || blistn ; lpn  :: :: process_head_ground :: phg_
 by
 {{ com
 \forstandalone{\noindent Strip off the head pattern of each branch in $[[blist]]$. Returning new pattern matrices BLIST
@@ -819,28 +819,28 @@ by
 
 
 ------------------ :: empty
-E |-  ~> 
+E ; M |-  ~> 
 
 % Case where la is in lp-index child list
 lit ~> la
-E |- blist ~> </ blisti ; lpi // i IN 1..q /> || blist' ; la || </ blist'i ; lp'i // i IN 1.. m />
+E ; M |- blist ~> </ blisti ; lpi // i IN 1..q /> || blist' ; la || </ blist'i ; lp'i // i IN 1.. m />
 ------------------------------------------------------------------------------------------------------------ :: lit1
-E |- ( lit pat1 .. patn => exp ) , blist ~> </ blisti ; lpi // i IN 1..q /> || ( pat1 .. patn => exp ) , blist' ; la || </ blist'i ; lp'i // i IN 1.. m />
+E ; M |- ( lit pat1 .. patn => exp ) , blist ~> </ blisti ; lpi // i IN 1..q /> || ( pat1 .. patn => exp ) , blist' ; la || </ blist'i ; lp'i // i IN 1.. m />
 
 % Case where la is not in list
 lit ~> la
 la NOTIN lp1 .. lpm
-E |- blist ~> blist1 ; lp1 || .. || blistm ; lpm 
+E ; M |- blist ~> blist1 ; lp1 || .. || blistm ; lpm 
 ------------------------------------------------------------------------------------------------------------ :: lit2
-E |- ( lit pat1 .. patn => exp ) , blist ~> (pat1 .. patn => exp ) ; la || blist1 ; lp1 || .. || blistm ; lpm 
+E ; M |- ( lit pat1 .. patn => exp ) , blist ~> (pat1 .. patn => exp ) ; la || blist1 ; lp1 || .. || blistm ; lpm 
 
 
 ------------------------------------------------------------------------------------------------------------ :: wild
-E |- ( _ pat1 .. patn => exp ) , blist ~> (pat1 .. patn => exp ) ; _ 
+E ; M |- ( _ pat1 .. patn => exp ) , blist ~> (pat1 .. patn => exp ) ; _ 
 
 
 ------------------------------------------------------------------------------------------------------------ :: var
-E |- ( id pat1 .. patn => exp ) , blist ~> (pat1 .. patn => exp ) ; id
+E ; M |- ( id pat1 .. patn => exp ) , blist ~> (pat1 .. patn => exp ) ; id
 
 
 
@@ -851,55 +851,55 @@ E |- ( id pat1 .. patn => exp ) , blist ~> (pat1 .. patn => exp ) ; id
 % when we hit a wild or var we hand to all ctors with empty blist its blist and then process no more
 %
 defn
-E |- blist ~> blist1 ; ctorp1 || .. || blistn ; ctorpn  :: :: process_head_ctor :: phc_
+E ; M |- blist ~> blist1 ; ctorp1 || .. || blistn ; ctorpn  :: :: process_head_ctor :: phc_
 by
 
 ------------------ :: empty
-E |-  ~>
+E ; M |-  ~>
 
 fresh xa'
 (ctor,ba') INN E
 E |- id ~> ctor , tid
-E |- blist ~> </ blisti ; ctorpi // i IN 1..q /> || blist'  ; ctor ba' xa' || </ blist'i ; ctorp'i // i IN 1.. r />
+E ; M |- blist ~> </ blisti ; ctorpi // i IN 1..q /> || blist'  ; ctor ba' xa' || </ blist'i ; ctorp'i // i IN 1.. r />
 --------------------------------------------------------------------------------------------------------------------- :: ctor1
-E |- :P_app: id ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist ~> </ blisti ; ctorpi // i IN 1..q /> || ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist'  ; ctor ba' xa' || </ blist'i ; ctorp'i  // i IN 1.. r />
+E ; M |- :P_app: id ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist ~> </ blisti ; ctorpi // i IN 1..q /> || ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist'  ; ctor ba' xa' || </ blist'i ; ctorp'i  // i IN 1.. r />
 
 fresh xa'
 E |- id ~> ctor , tid
 (ctor,ba') INN E
 ctor NOTIN ctor1 .. ctorn
-E |- blist ~> blist1 ; ctorp1  || .. || blistn ; ctorpn 
+E ; M |- blist ~> blist1 ; ctorp1  || .. || blistn ; ctorpn
 ----------------------------------------------------------------------- :: ctor2
-E |- :P_app: id ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist ~> blist1 ; ctorp1  || .. || blistn ; ctorpn  || ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist'  ; ctor ba' xa'
+E ; M |- :P_app: id ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist ~> blist1 ; ctorp1  || .. || blistn ; ctorpn  || ( pat'1 , .. , pat'm ) pat1 .. patn => exp , blist'  ; ctor ba' xa'
 
 
 ---------------------------------------------------------------------------- :: var
-E |- id pat1 .. patn => exp , blist ~> pat1 .. patn => exp , blist ; id
+E ; M |- id pat1 .. patn => exp , blist ~> pat1 .. patn => exp , blist ; id
 
-%E |- blist ~> blist1 ; ctor1 ba1 xa1 || ... || blistn ; ctorn ban xan
+%E ; M |- blist ~> blist1 ; ctor1 ba1 xa1 || ... || blistn ; ctorn ban xan
 ---------------------------------------------------------------------------- :: wild
-E |- _ pat1 .. patn => exp , blist ~> pat1 .. patn => exp , blist ; _ 
+E ; M |- _ pat1 .. patn => exp , blist ~> pat1 .. patn => exp , blist ; _ 
 
 
 
 defn
-E |- blist : ba ~> blist' ; ba1 / xa1 .. ban / xan  :: :: process_head_tuple :: pht_
+E ; M |- blist : ba ~> blist' ; ba1 / xa1 .. ban / xan  :: :: process_head_tuple :: pht_
 by
 
 
 ------------------ :: empty
-E |- : ba  ~>  ;
+E ; M |- : ba  ~>  ;
 
 fresh xa1 .. xan
 ba = ( ba1 , .. , ban )
 ---------------------------------------------------------------------------- :: tuple
-E |- (pat1 , .. , patn ) pat'1 .. pat'm => exp , blist : ba ~> pat1 .. patn pat'1 .. pat'm => exp , blist ; ba1 / xa1 .. ban / xan
+E ; M |- (pat1 , .. , patn ) pat'1 .. pat'm => exp , blist : ba ~> pat1 .. patn pat'1 .. pat'm => exp , blist ; ba1 / xa1 .. ban / xan
 
 fresh xa1 .. xan
 ba = ( ba1 , .. , ban )
 pat''1 .. pat''n = duplicate _ ba1 .. ban
 --------------------------------------------------------------------------------------------------------------------- :: wild
-E |- _  pat'1 .. pat'm => exp , blist : ba ~> pat''1 .. pat''n pat'1 .. pat'm => exp, blist ; ba1 / xa1 .. ban / xan
+E ; M |- _  pat'1 .. pat'm => exp , blist : ba ~> pat''1 .. pat''n pat'1 .. pat'm => exp, blist ; ba1 / xa1 .. ban / xan
 
 
 
@@ -907,20 +907,21 @@ fresh xa1 .. xan
 ba = ( ba1 , .. , ban )
 pat''1 .. pat''n = duplicate id ba1 .. ban
 --------------------------------------------------------------------------------------------------------------------------- :: var
-E |- id pat'1 .. pat'm => exp , blist : ba ~> pat''1 .. pat''n  pat'1 .. pat'm => exp, blist ; ba1 / xa1 .. ban / xan
+E ; M |- id pat'1 .. pat'm => exp , blist : ba ~> pat''1 .. pat''n  pat'1 .. pat'm => exp, blist ; ba1 / xa1 .. ban / xan
 
 defns convert_defs :: '' ::=
 
-defn E |- funcl1 and ... and funcln ~> TCa ; PCa ; Da |- defa :: :: convert_funcl :: cfl_
+defn E ; M |- funcl1 and ... and funcln ~> TCa ; PCa ; Da |- defa :: :: convert_funcl :: cfl_
 by
 
 
 % FIXME need to get ba from function type
 % Also handle type level variables
+fresh xa'
 id1 ... idn ~> f
-E |- ( pat1 => exp1 ) , ... , ( patn => expn ) : ba / xa ~>  TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
------------------------------------------------------------ :: funcl
-E |- id1 pat1 = exp1 and ... and idn patn = expn ~> TCa ; PCa ; Da |- function f ( xa ) = sa
+E ; M |- ( pat1 => exp1 ) , ... , ( patn => expn ) : ba / xa' ~>  TCa ; PCa ; BCa ; Ga ; Da |- sa : ta
+------------------------------------------------------------------------------------------------------------------- :: funcl
+E ; M |- id1 pat1 = exp1 and ... and idn patn = expn ~> TCa ; PCa ; Da |- function f ( xa ) = let xa' = snd xa in sa
 
 defn E |- def ~> TCa ; PCa ; Da |- defa1 , .. , defan :: :: convert_def :: cdef_
 by
@@ -938,9 +939,10 @@ E ; M |- typ ; za ~> ba2 ; ca2
 --------------------------------------------------------- :: funspec_poly
 E |- val typquant ( </ typi // i IN 1 ... n /> ) -> typ effectkw effect id ~> TCa ; PCa ; Da |- val f : ( xa : ba * ba1 [ ca /\ ca1 ] ) -> { za : ba2 | ca2 }
 
+% FIXME what about type variables and constraints?
 id ~> tid
 E |- id1 ~> ctor1 , tid ... E |- idn ~> ctorn , tid
-E |- typ1 ~> ta1 ... E |- typn ~> tan
+E ; empty |- typ1 ~> ta1 ... E ; empty |- typn ~> tan
 ----------------------------------------------------------------------------------------------------- :: variant
 E |- typedef id = const union { typ1 id1 ; ... ; typn idn semi_opt } ~> TCa ; PCa ; Da |- union tid = { ctor1 : ta1 , ... , ctorn : tan }
 
@@ -964,18 +966,19 @@ id ~> tid
 E |- typedef id = enumerate { id1 ; ... ; idn semi_opt } ~> TCa ; PCa ; Da |- union tid = { ctor1 : { za : unit | Top } , ... , ctorn : { za : unit | Top } } 
 
 
-E |- funcl1 and ... and funcln ~> TCa ; PCa ; Da |- defa
+% FIXME - Lookup M
+E ; M |- funcl1 and ... and funcln ~> TCa ; PCa ; Da |- defa
 ---------------------------------------------------------------------------- :: fundef
 E |- :DEF_fundef: function rec_opt :Typ_annot_opt_none: effect_opt funcl1 and ... and funcln ~> TCa ; PCa  ; Da|- defa
 
 
 E |- val typquant typ id ~> TCa ; PCa ; Da |- defa1
-E |- funcl1 and ... and funcln ~> TCa ; PCa ; Da |- defa2
+E ; M |- funcl1 and ... and funcln ~> TCa ; PCa ; Da |- defa2
 ---------------------------------------------------------------------------- :: fundef_spec
 E |- function rec_opt typquant typ effect_opt funcl1 and ... and funcln ~> TCa ; PCa ; Da |- defa1 , defa2
 
 
-E |- typ ~> ta
+E ; empty |- typ ~> ta
 id ~> ua
 ------------------------------------------------------------------------------- :: register
 E |- register effect effect' typ id ~> TCa ; PCa ; Da , ua : ta |- 
