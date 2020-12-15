@@ -17,7 +17,6 @@ embed
 {{ tex
 \section{Syntax}
 \label{ms_anf.syntax}
-The syntax ...
 }}
 
 
@@ -200,17 +199,18 @@ defa
 %b {{ tex def }}
 :: 'DEFA_' ::= {{ com Definitions }}
   | val f : ( xa : ba [ ca ] ) -> ta :: :: valspec (+ bind xa in ta +) (+ bind xa in ca +)
-  | val forall bv . f : ( xa : ba [ ca ] ) -> ta :: :: valspecpoly (+ bind xa in ta +) (+ bind xa in ca +)
+  | val forall bv . f : ( xa : ba [ ca ] ) -> ta :: :: valspecpoly (+ bind xa in ta +) (+ bind xa in ca +) (+ bind bv in ba +) (+ bind bv in ta +)
   | function f ( xa ) = sa :: :: fundef (+ bind xa in sa +)
   | function f ( xa ) = sa :: :: fundefpoly (+ bind xa in sa +)
   | union tid = { ctor1 : ta1 , ... , ctorn : tan } :: :: union
   | union tid = forall bv . { ctor1 : ta1 , ... , ctorn : tan } :: :: union_poly
 
+
 pa
 %a {{ tex p^a }}
 %b {{ tex p }}
 :: 'PA_' ::= {{ menhir-start }} {{ com Program }} 
-  | defa1 ; .. ; defan ;; sa :: :: prog
+  | defa1 ; .. ; defan ;; var ua1 : ta1 = va1 ; .. ; var uam : tam = vam  ;; sa :: :: prog
 
 
 Ga {{tex \Gamma }} :: 'GA_' ::= {{ com Variable type context }} {{ isa (x*A) list }}
@@ -357,7 +357,9 @@ formula :: formula_ ::=
   | rcl_v = rcl_v1 /\ rcl_v2  :: :: rcl_and
   | rcl_v = rcl_v1 ==> rcl_v2 :: :: rcl_imp
   | rcl_v = ~ rcl_v1 :: :: rcl_not
-
+  | PCa , TCa = defa1 ..  defan :: :: split_defs
+  | Da = ( ua1 , ta1 ) .. ( uam , tam ) :: :: D_of
+  | d = ( ua1 , va1 ) .. ( uam , vam ) :: :: d_of
 
 parsing
 CA_conj left CA_conj
@@ -372,7 +374,7 @@ freevars
 
 
 defns rcl :: '' ::=
-{{tex \section{MiniSail type system}\subsection{Refinement constraint logic} }}
+{{tex \section{Type system}\subsection{Refinement constraint logic} }}
 
 defn
   [ la ] ~ rcl_v :: :: eval_lit :: eval_lit_
@@ -963,7 +965,7 @@ defns subtype_anf :: '' ::=
 {{ tex \subsection{Subtyping} }}
 
 defn
-TCa ; BCa ; Ga |- ta1 ~< ta2 :: :: subtype_anf :: subtype_anf_ {{ com Subtyping }}
+TCa ; BCa ; Ga |- ta1 ~< ta2 :: :: subtype_anf :: st_ {{ com Subtyping }}
 by
 
 TCa ; BCa ; Ga |-w { za1 : ba | ca1 }
@@ -977,7 +979,7 @@ defns typing :: '' ::=
 {{ tex \subsection{Typing} }}
 
 defn
-|- la => ta :: :: infer_l :: infer_l_
+|- la => ta :: :: infer_l :: il_
 {{ com Type synthesis for literals. Infer that type of $[[la]]$ is $[[ta]]$ }}
 by
 
@@ -1002,7 +1004,7 @@ by
 
 
 defn
-TCa ; BCa ; Ga |v- va => ta :: :: infer_v_anf :: infer_v_anf_
+TCa ; BCa ; Ga |v- va => ta :: :: infer_v_anf :: iv_
 {{ com Type synthesis. Infer that type of $[[va]]$ is $[[ta]]$ }}
 by
 
@@ -1026,13 +1028,13 @@ TCa ; BCa ; Ga |v- (va1,va2) =>  { za : ba1*ba2 | za = (va1,va2) }
 za # Ga
 union tid = { .. , ctor : ta , ..  } INN TCa
 TCa ; BCa ; Ga |v- va <= ta
----------------------------------------------------------------------- :: data_cons
+---------------------------------------------------------------------- :: ctor
 TCa ; BCa ; Ga |v- ctor tid va => { za : tid | za = ctor tid va }
 
 za # Ga
 union tid = forall bv . { .. , ctor : ta , ..  } INN TCa
 TCa ; BCa ; Ga |v- va <= ta[ba/bv]
----------------------------------------------------------------------- :: data_cons_poly
+---------------------------------------------------------------------- :: ctor_poly
 TCa ; BCa ; Ga |v- ctor tid [ ba ] va => { za : tid | za = ctor tid [ ba ] va }
 
 
@@ -1040,7 +1042,7 @@ TCa ; BCa ; Ga |v- ctor tid [ ba ] va => { za : tid | za = ctor tid [ ba ] va }
 
 % Need |v- form to disambigute
 defn
-TCa ; BCa ; Ga |v- va <= ta :: :: check_v_anf :: check_v_anf_
+TCa ; BCa ; Ga |v- va <= ta :: :: check_v_anf :: cv_
 {{ com Check that type of $[[va]]$ is $[[ta]]$ }}
 by
 
@@ -1051,7 +1053,7 @@ TCa ; BCa ; Ga |- { za2 : ba | ca2 } ~< { za1 : ba | ca1 }
 TCa ; BCa ; Ga |v- va <= { za1 : ba | ca1 }
 
 defn
-TCa ; PCa ; BCa ; Ga ; Da |- ea => ta :: :: infer_e_anf :: infer_e_anf_
+TCa ; PCa ; BCa ; Ga ; Da |- ea => ta :: :: infer_e_anf :: ie_
 {{ com Infer that type of $[[ea]]$ is $[[ta]]$ }}
 by
 
@@ -1131,7 +1133,7 @@ TCa ; PCa ; BCa ; Ga ; Da |- ua => ta
 
 
 defn
-TCa ; PCa ; BCa ; Ga ; Da |- ea <= ta :: :: check_e_anf :: check_e_anf_
+TCa ; PCa ; BCa ; Ga ; Da |- ea <= ta :: :: check_e_anf :: ce_
 {{ com Check that type of $[[ea]]$ is $[[ta]]$ }}
 by
 
@@ -1143,7 +1145,7 @@ TCa ; PCa ; BCa ; Ga ; Da  |- ea <= { za1 : ba | ca1 }
 
 
 defn
-TCa ; PCa ; BCa ; Ga ; Da |- sa <= ta :: :: check_s :: check_s_
+TCa ; PCa ; BCa ; Ga ; Da |- sa <= ta :: :: check_s :: cs_
 {{com Check that type of $[[sa]]$ is $[[ta]]$ }}
 by
 
@@ -1217,7 +1219,7 @@ TCa ; PCa ; BCa ; Ga ; Da |- abort <= ta
 
 
 defn
-TCa1 ; PCa1 |- defa1 .. defan ~> TCa2 ; PCa2 :: :: check_defs_anf :: check_defs_anf_
+TCa1 ; PCa1 |- defa1 .. defan ~> TCa2 ; PCa2 :: :: check_defs_anf :: cd_
 by
 
 val f : ( xa : ba [ ca ] ) -> ta INN PCa
@@ -1258,41 +1260,17 @@ by
 
 empty ; empty |- defa1 .. defan ~> TCa2 ; PCa2
 TCa2 ; PCa2 ; empty ; empty ; empty |- sa <= { za:int| Top }
---------------------------------- :: prog
-|- defa1 ; .. ; defan ;; sa
+-------------------------------------------------------------------------------- :: prog
+|- defa1 ; .. ; defan ;; var ua1 : ta1 = va1 ; .. ; var uam : tam = vam ;; sa
 
 
-defn
-TCa  |- Da ~ d  :: :: dsim :: dsim_
-{{ tex [[TCa]] \vdash [[Da]] \sim [[d]] }}
-by
-
-
-d = ua1 -> va1 , .. , uan -> van
-Da = ua1 : ta1 , .. , uan : tan
-TCa ; empty ; empty |v- va1 <= ta1 .. TCa ; empty ; empty |v- van <= tan
-----------------------------  :: dsim
-TCa |- Da ~ d
-
-
-defn
-TCa ; PCa ; Da |- ( d , sa  ) <= ta :: :: check_redex :: check_redex_ {{ com Program state typing judgement }}
-by
-
-
-TCa  |- Da ~ d
-TCa ; PCa ; empty ; empty ; Da |- sa  <= ta
-----------------------------  :: stmt
-TCa ; PCa ; Da |- ( d , sa ) <= ta
-
-%% Using embed puts the tex in the wrong place; have to use com
 
 
 defns reduction :: '' ::=
 {{ tex \subsection{Operational semantics} }}
 
 defn
-PCa |- ( d , sa1 ) --> ( d' , sa2 ) :: :: reduce :: reduce_ {{ com One step reduction }}
+PCa |- ( d , sa1 ) --> ( d' , sa2 ) :: :: reduce :: rd_ {{ com One step reduction }}
 {{tex [[PCa]] \vdash \langle [[d]] , [[sa1]] \rangle \rightarrow \langle [[d']] , [[sa2]] \rangle }}
 by
 
@@ -1416,7 +1394,7 @@ defns check_config :: '' ::=
 {{ tex \subsection{Machine configuration check} }}
 
 defn
-TCa |- d ~ Da :: :: check_store :: check_store_
+TCa |- d ~ Da :: :: check_store :: cst_
 by
 
 -------------------- :: empty
@@ -1429,7 +1407,8 @@ TCa ; empty ; empty |v- va <= ta
 TCa |- d [ ua <- va ] ~ Da , ua : ta
 
 defn
-TCa ; PCa ; Da |- ( d , sa ) <= ta :: :: check_config :: check_config_
+TCa ; PCa ; Da |- ( d , sa ) <= ta :: :: check_config :: cc_
+{{tex [[TCa]] ; [[PCa]] ; [[Da]] \vdash \langle [[d]] , [[sa]] \rangle \Leftarrow [[ta]]}}
 by
 
 
@@ -1438,3 +1417,20 @@ TCa ; PCa ; empty ; empty ; Da |- sa <= ta
 ------------------------------------------ :: config
 TCa ; PCa ; Da |- ( d , sa ) <= ta
 
+defn
+|- < pa > <= ta :: :: check_config_prog :: ccp_
+{{tex \vdash \langle [[pa]] \rangle \Leftarrow [[ta]]}}
+by
+
+PCa, TCa = defa1 ..  defan
+Da = ( ua1 , ta1 ) .. ( uam , tam )
+d = ( ua1 , va1 ) .. ( uam , vam )
+TCa ; PCa ; Da |- ( d , sa ) <= ta
+----------------------------------------------------------------------------------------- :: prog
+|- < defa1 ; .. ; defan ;; var ua1 : ta1 = va1 ; .. ; var uam : tam = vam  ;; sa > <= ta
+
+% This final rule is used in safety proof for programs:
+% Assume:
+%    |- < defa1 ; .. ; defan ;; var ua1 : ta1 = va1 ; .. ; var uam : tam = vam  ;; sa > <= ta
+%    |- < d , sa > -->* < d', sa' >
+% Then sa' is a value or we can take another step

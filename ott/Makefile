@@ -20,6 +20,16 @@ all: minisail_anf.pdf  minisail_anf_include.tex ms_to_anf_include.tex sail_to_ms
 	pdflatex $<
 
 ##
+## Simple example
+##
+
+example.tex: example.ott
+	$(OTT_MASTER)  -sort false -generate_aux_rules false -merge true -alltt $@ -picky_multiple_parses false $^
+
+example_include.tex: example.ott
+	$(OTT_MASTER) -alltt -tex_name_prefix otteg -sort false -tex_wrap false -generate_aux_rules false -merge true -o $@ -picky_multiple_parses false $^
+
+##
 ## MiniSail ANF
 ##
 
@@ -28,7 +38,8 @@ minisail_anf_b.ott : minisail_anf.ott
 
 minisail_anf.tex:   common_metavar.ott minisail_anf_b.ott
 	$(OTT) -merge true -sort false -generate_aux_rules false -picky_multiple_parses false -o $@  common_metavar.ott minisail_anf_b.ott
-	python fixup_tex.py $@
+	#python fixup_tex.py $@
+
 
 # Exclude superscripts on metavars
 minisail_anf_include.tex: common_metavar.ott minisail_anf_b.ott
