@@ -1280,9 +1280,6 @@ proof -
        z1 "CE_val v  ==  CE_val (V_lit ll)   IMP ca[za::=[z1]\<^sup>v]\<^sub>c\<^sub>v"] by blast
 qed 
 
-text \<open>NOTE: Using  'using [[simproc del: alpha_lst]]' after the first step helps to see what is 
-needed next but is not required for the final script. alpha_lst goes too far.\<close>
-
 lemma subst_sv_var_flip:
   fixes x::x and s::s and z::x
   shows "atom x \<sharp> s \<Longrightarrow> ((x \<leftrightarrow> z) \<bullet> s) = s[z::=[x]\<^sup>v]\<^sub>s\<^sub>v" and 

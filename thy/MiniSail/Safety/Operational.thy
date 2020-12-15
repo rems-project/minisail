@@ -58,66 +58,66 @@ fun split :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list * 'a list" where
 
 
 text {* Reduction rules *}
-inductive reduce_stmt :: "\<Phi> \<Rightarrow> \<delta> \<Rightarrow> s \<Rightarrow> \<delta> \<Rightarrow> s \<Rightarrow> bool"  (" _  \<turnstile> \<langle> _ , _ \<rangle> \<longrightarrow> \<langle>  _ , _ \<rangle>" [50, 50, 50] 50)  where
-  reduce_if_trueI:  " \<Phi> \<turnstile> \<langle>  \<delta> , AS_if [L_true]\<^sup>v s1 s2 \<rangle> \<longrightarrow> \<langle> \<delta> , s1 \<rangle> "
-| reduce_if_falseI: " \<Phi> \<turnstile> \<langle>  \<delta> , AS_if [L_false]\<^sup>v s1 s2 \<rangle> \<longrightarrow> \<langle> \<delta> , s2 \<rangle> "
-| reduce_let_valI:  " \<Phi> \<turnstile> \<langle>  \<delta> , AS_let x (AE_val v)  s \<rangle> \<longrightarrow> \<langle>  \<delta> , s[x::=v]\<^sub>s\<^sub>v \<rangle>"  
-| reduce_let_plusI: " \<Phi> \<turnstile>  \<langle> \<delta> , AS_let x (AE_op Plus ((V_lit (L_num n1))) ((V_lit (L_num n2))))  s \<rangle> \<longrightarrow> 
-                           \<langle> \<delta> , AS_let x (AE_val (V_lit (L_num ( (( n1)+(n2)))))) s  \<rangle> "  
+inductive reduce_stmt :: "\<Phi> \<Rightarrow> \<delta> \<Rightarrow> s \<Rightarrow> \<delta> \<Rightarrow> s \<Rightarrow> bool"  (" _  \<turnstile> \<langle> _ , _\<rangle> \<longrightarrow> \<langle>  _ , _\<rangle>" [50, 50, 50] 50)  where
+  reduce_if_trueI:  " \<Phi> \<turnstile> \<langle>\<delta>, AS_if [L_true]\<^sup>v s1 s2\<rangle> \<longrightarrow> \<langle>\<delta>, s1\<rangle> "
+| reduce_if_falseI: " \<Phi> \<turnstile> \<langle>\<delta>, AS_if [L_false]\<^sup>v s1 s2\<rangle> \<longrightarrow> \<langle>\<delta>, s2\<rangle> "
+| reduce_let_valI:  " \<Phi> \<turnstile> \<langle>\<delta>, AS_let x (AE_val v)  s\<rangle> \<longrightarrow> \<langle>\<delta>, s[x::=v]\<^sub>s\<^sub>v\<rangle>"  
+| reduce_let_plusI: " \<Phi> \<turnstile>  \<langle>\<delta>, AS_let x (AE_op Plus ((V_lit (L_num n1))) ((V_lit (L_num n2))))  s\<rangle> \<longrightarrow> 
+                           \<langle>\<delta>, AS_let x (AE_val (V_lit (L_num ( (( n1)+(n2)))))) s \<rangle> "  
 | reduce_let_leqI:  "b = (if (n1 \<le> n2) then L_true else L_false) \<Longrightarrow> 
-             \<Phi>  \<turnstile>  \<langle> \<delta> ,  AS_let x  ((AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2)))) s \<rangle> \<longrightarrow> 
-                                                          \<langle> \<delta> , AS_let x  (AE_val (V_lit b)) s \<rangle>"  
+             \<Phi>  \<turnstile>  \<langle>\<delta>,  AS_let x  ((AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2)))) s\<rangle> \<longrightarrow> 
+                                                          \<langle>\<delta>, AS_let x  (AE_val (V_lit b)) s\<rangle>"  
 | reduce_let_appI:  "Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ z b c \<tau> s'))) = lookup_fun \<Phi> f \<Longrightarrow>  
-             \<Phi>  \<turnstile>  \<langle> \<delta> , AS_let x  ((AE_app f v)) s \<rangle> \<longrightarrow> \<langle> \<delta> ,  AS_let2 x \<tau>[z::=v]\<^sub>\<tau>\<^sub>v s'[z::=v]\<^sub>s\<^sub>v s \<rangle> "     
+             \<Phi>  \<turnstile>  \<langle>\<delta>, AS_let x  ((AE_app f v)) s\<rangle> \<longrightarrow> \<langle>\<delta>,  AS_let2 x \<tau>[z::=v]\<^sub>\<tau>\<^sub>v s'[z::=v]\<^sub>s\<^sub>v s\<rangle> "     
 | reduce_let_appPI:  "Some (AF_fundef f (AF_fun_typ_some bv (AF_fun_typ z b c \<tau> s'))) = lookup_fun \<Phi> f \<Longrightarrow>  
-             \<Phi>  \<turnstile>  \<langle> \<delta> , AS_let x  ((AE_appP f b' v)) s \<rangle> \<longrightarrow> \<langle> \<delta> ,  AS_let2 x \<tau>[bv::=b']\<^sub>\<tau>\<^sub>b[z::=v]\<^sub>\<tau>\<^sub>v s'[bv::=b']\<^sub>s\<^sub>b[z::=v]\<^sub>s\<^sub>v s \<rangle> "  
-| reduce_let_fstI:  "\<Phi> \<turnstile> \<langle>  \<delta> , AS_let x (AE_fst (V_pair v1 v2))  s \<rangle> \<longrightarrow> \<langle>  \<delta> , AS_let x (AE_val v1)  s \<rangle>"
-| reduce_let_sndI:  "\<Phi> \<turnstile> \<langle>  \<delta> , AS_let x (AE_snd (V_pair v1 v2))  s \<rangle> \<longrightarrow> \<langle>  \<delta> , AS_let x (AE_val v2)  s \<rangle>"
-| reduce_let_concatI:  "\<Phi> \<turnstile> \<langle>  \<delta> , AS_let x (AE_concat (V_lit (L_bitvec v1))  (V_lit (L_bitvec v2)))  s \<rangle> \<longrightarrow> 
-                            \<langle>  \<delta> , AS_let x (AE_val (V_lit (L_bitvec (v1@v2))))  s \<rangle>"
-| reduce_let_splitI: " split n v (v1 , v2 )  \<Longrightarrow> \<Phi> \<turnstile> \<langle>  \<delta> , AS_let x (AE_split (V_lit (L_bitvec v))  (V_lit (L_num n)))  s \<rangle> \<longrightarrow> 
-                            \<langle>  \<delta> , AS_let x (AE_val (V_pair (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2))))  s \<rangle>"
-| reduce_let_lenI:  "\<Phi> \<turnstile> \<langle>  \<delta> , AS_let x (AE_len (V_lit (L_bitvec v)))  s \<rangle> \<longrightarrow> 
-                              \<langle>  \<delta> , AS_let x (AE_val (V_lit (L_num (int (List.length v)))))  s \<rangle>"
-| reduce_let_mvar:  "(u,v) \<in> set \<delta> \<Longrightarrow>  \<Phi> \<turnstile> \<langle>  \<delta> , AS_let x (AE_mvar u)  s \<rangle> \<longrightarrow> \<langle>  \<delta> , AS_let x (AE_val v) s  \<rangle>" 
-| reduce_assert1I: "\<Phi> \<turnstile> \<langle>  \<delta> , AS_assert c (AS_val v) \<rangle> \<longrightarrow> \<langle>  \<delta> , AS_val v \<rangle>" 
-| reduce_assert2I:  " \<Phi>  \<turnstile> \<langle>  \<delta> , s  \<rangle> \<longrightarrow> \<langle>  \<delta>' , s' \<rangle> \<Longrightarrow> \<Phi>  \<turnstile> \<langle>  \<delta> , AS_assert c s \<rangle> \<longrightarrow> \<langle>  \<delta>' , AS_assert c s' \<rangle>"  
-| reduce_varI: "atom u \<sharp> \<delta> \<Longrightarrow>  \<Phi>  \<turnstile>  \<langle>  \<delta> , AS_var u \<tau> v s  \<rangle> \<longrightarrow> \<langle> ((u,v)#\<delta>) , s \<rangle>"
-| reduce_assignI: "  \<Phi>  \<turnstile>  \<langle> \<delta> , AS_assign u v  \<rangle> \<longrightarrow> \<langle> update_d \<delta> u v , AS_val (V_lit L_unit) \<rangle>"
-| reduce_seq1I: "\<Phi>   \<turnstile>  \<langle> \<delta> , AS_seq (AS_val (V_lit L_unit )) s  \<rangle> \<longrightarrow> \<langle>  \<delta> , s \<rangle>"
-| reduce_seq2I: "\<lbrakk>s1 \<noteq> AS_val v ; \<Phi>  \<turnstile>  \<langle> \<delta> , s1 \<rangle> \<longrightarrow> \<langle>  \<delta>' , s1' \<rangle> \<rbrakk> \<Longrightarrow> 
-                          \<Phi>  \<turnstile>  \<langle> \<delta> , AS_seq s1 s2 \<rangle> \<longrightarrow> \<langle>  \<delta>' , AS_seq s1' s2 \<rangle>"
-| reduce_let2_valI:  "\<Phi>  \<turnstile>  \<langle>  \<delta> , AS_let2 x t (AS_val v) s \<rangle> \<longrightarrow> \<langle>  \<delta> , s[x::=v]\<^sub>s\<^sub>v \<rangle>" 
-| reduce_let2I:  " \<Phi>  \<turnstile> \<langle>  \<delta> , s1  \<rangle> \<longrightarrow> \<langle>  \<delta>' , s1' \<rangle> \<Longrightarrow> \<Phi>  \<turnstile> \<langle>  \<delta> , AS_let2 x t s1 s2 \<rangle> \<longrightarrow> \<langle>  \<delta>' , AS_let2 x t s1' s2 \<rangle>"  
+             \<Phi>  \<turnstile>  \<langle>\<delta>, AS_let x  ((AE_appP f b' v)) s\<rangle> \<longrightarrow> \<langle>\<delta>,  AS_let2 x \<tau>[bv::=b']\<^sub>\<tau>\<^sub>b[z::=v]\<^sub>\<tau>\<^sub>v s'[bv::=b']\<^sub>s\<^sub>b[z::=v]\<^sub>s\<^sub>v s\<rangle> "  
+| reduce_let_fstI:  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x (AE_fst (V_pair v1 v2))  s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let x (AE_val v1)  s\<rangle>"
+| reduce_let_sndI:  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x (AE_snd (V_pair v1 v2))  s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let x (AE_val v2)  s\<rangle>"
+| reduce_let_concatI:  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x (AE_concat (V_lit (L_bitvec v1))  (V_lit (L_bitvec v2)))  s\<rangle> \<longrightarrow> 
+                            \<langle>\<delta>, AS_let x (AE_val (V_lit (L_bitvec (v1@v2))))  s\<rangle>"
+| reduce_let_splitI: " split n v (v1 , v2 )  \<Longrightarrow> \<Phi> \<turnstile> \<langle>\<delta>, AS_let x (AE_split (V_lit (L_bitvec v))  (V_lit (L_num n)))  s\<rangle> \<longrightarrow> 
+                            \<langle>\<delta>, AS_let x (AE_val (V_pair (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2))))  s\<rangle>"
+| reduce_let_lenI:  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x (AE_len (V_lit (L_bitvec v)))  s\<rangle> \<longrightarrow> 
+                              \<langle>\<delta>, AS_let x (AE_val (V_lit (L_num (int (List.length v)))))  s\<rangle>"
+| reduce_let_mvar:  "(u,v) \<in> set \<delta> \<Longrightarrow>  \<Phi> \<turnstile> \<langle>\<delta>, AS_let x (AE_mvar u)  s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let x (AE_val v) s \<rangle>" 
+| reduce_assert1I: "\<Phi> \<turnstile> \<langle>\<delta>, AS_assert c (AS_val v)\<rangle> \<longrightarrow> \<langle>\<delta>, AS_val v\<rangle>" 
+| reduce_assert2I:  " \<Phi>  \<turnstile> \<langle>\<delta>, s \<rangle> \<longrightarrow> \<langle> \<delta>', s'\<rangle> \<Longrightarrow> \<Phi>  \<turnstile> \<langle>\<delta>, AS_assert c s\<rangle> \<longrightarrow> \<langle> \<delta>', AS_assert c s'\<rangle>"  
+| reduce_varI: "atom u \<sharp> \<delta> \<Longrightarrow>  \<Phi>  \<turnstile>  \<langle>\<delta>, AS_var u \<tau> v s \<rangle> \<longrightarrow> \<langle> ((u,v)#\<delta>) , s\<rangle>"
+| reduce_assignI: "  \<Phi>  \<turnstile>  \<langle>\<delta>, AS_assign u v \<rangle> \<longrightarrow> \<langle> update_d \<delta> u v , AS_val (V_lit L_unit)\<rangle>"
+| reduce_seq1I: "\<Phi>   \<turnstile>  \<langle>\<delta>, AS_seq (AS_val (V_lit L_unit )) s \<rangle> \<longrightarrow> \<langle>\<delta>, s\<rangle>"
+| reduce_seq2I: "\<lbrakk>s1 \<noteq> AS_val v ; \<Phi>  \<turnstile>  \<langle>\<delta>, s1\<rangle> \<longrightarrow> \<langle> \<delta>', s1'\<rangle> \<rbrakk> \<Longrightarrow> 
+                          \<Phi>  \<turnstile>  \<langle>\<delta>, AS_seq s1 s2\<rangle> \<longrightarrow> \<langle> \<delta>', AS_seq s1' s2\<rangle>"
+| reduce_let2_valI:  "\<Phi>  \<turnstile>  \<langle>\<delta>, AS_let2 x t (AS_val v) s\<rangle> \<longrightarrow> \<langle>\<delta>, s[x::=v]\<^sub>s\<^sub>v\<rangle>" 
+| reduce_let2I:  " \<Phi>  \<turnstile> \<langle>\<delta>, s1 \<rangle> \<longrightarrow> \<langle> \<delta>', s1'\<rangle> \<Longrightarrow> \<Phi>  \<turnstile> \<langle>\<delta>, AS_let2 x t s1 s2\<rangle> \<longrightarrow> \<langle> \<delta>', AS_let2 x t s1' s2\<rangle>"  
 
-| reduce_caseI:  "\<lbrakk> Some (AS_branch dc x' s') = lookup_branch dc cs \<rbrakk> \<Longrightarrow>  \<Phi> \<turnstile>  \<langle> \<delta> , AS_match (V_cons tyid dc v) cs \<rangle>  \<longrightarrow> \<langle> \<delta> , s'[x'::=v]\<^sub>s\<^sub>v \<rangle> "
+| reduce_caseI:  "\<lbrakk> Some (AS_branch dc x' s') = lookup_branch dc cs \<rbrakk> \<Longrightarrow>  \<Phi> \<turnstile>  \<langle>\<delta>, AS_match (V_cons tyid dc v) cs\<rangle>  \<longrightarrow> \<langle>\<delta>, s'[x'::=v]\<^sub>s\<^sub>v\<rangle> "
 | reduce_whileI: "\<lbrakk> atom x \<sharp> (s1,s2); atom z \<sharp> x \<rbrakk> \<Longrightarrow> 
-                    \<Phi>  \<turnstile>  \<langle> \<delta> , AS_while s1 s2  \<rangle> \<longrightarrow> 
-            \<langle> \<delta> , AS_let2 x (\<lbrace> z : B_bool | TRUE \<rbrace>) s1 (AS_if (V_var x) (AS_seq s2 (AS_while s1 s2))  (AS_val (V_lit L_unit)))  \<rangle>"
+                    \<Phi>  \<turnstile>  \<langle>\<delta>, AS_while s1 s2 \<rangle> \<longrightarrow> 
+            \<langle>\<delta>, AS_let2 x (\<lbrace> z : B_bool | TRUE \<rbrace>) s1 (AS_if (V_var x) (AS_seq s2 (AS_while s1 s2))  (AS_val (V_lit L_unit))) \<rangle>"
 
 equivariance reduce_stmt
 nominal_inductive reduce_stmt .
 
 inductive_cases reduce_stmt_elims[elim!]:
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_if (V_lit L_true) s1 s2 \<rangle> \<longrightarrow> \<langle>\<delta> , s1 \<rangle>"
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_if (V_lit L_false) s1 s2 \<rangle> \<longrightarrow> \<langle> \<delta> ,s2 \<rangle>"
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_let x (AE_val v)  s \<rangle> \<longrightarrow> \<langle> \<delta> ,s' \<rangle>"
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_let x  (AE_op Plus ((V_lit (L_num n1))) ((V_lit (L_num n2))))  s \<rangle> \<longrightarrow> 
-            \<langle> \<delta> ,AS_let x  (AE_val (V_lit (L_num ( (( n1)+(n2)))))) s  \<rangle>"
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_let x  ((AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2)))) s \<rangle> \<longrightarrow> \<langle> \<delta> , AS_let x  (AE_val (V_lit b)) s \<rangle>"
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_let x  ((AE_app f v)) s \<rangle> \<longrightarrow> \<langle> \<delta> ,AS_let2 x \<tau> (subst_sv s' x v ) s \<rangle> "  
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_let x  ((AE_len v)) s \<rangle> \<longrightarrow> \<langle> \<delta> ,AS_let x  v' s \<rangle> "  
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_let x  ((AE_concat v1 v2)) s \<rangle> \<longrightarrow> \<langle> \<delta> ,AS_let x  v' s \<rangle> " 
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_seq s1 s2 \<rangle> \<longrightarrow> \<langle> \<delta>' ,s' \<rangle>"
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_let x  ((AE_appP  f b v)) s \<rangle> \<longrightarrow> \<langle> \<delta> ,AS_let2 x \<tau> (subst_sv s' z v) s \<rangle> "  
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_let x  ((AE_split v1 v2)) s \<rangle> \<longrightarrow> \<langle> \<delta> ,AS_let x  v' s \<rangle> " 
-  "\<Phi> \<turnstile> \<langle> \<delta> , AS_assert c s  \<rangle> \<longrightarrow> \<langle> \<delta> , s' \<rangle> " 
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_if (V_lit L_true) s1 s2\<rangle> \<longrightarrow> \<langle>\<delta> , s1\<rangle>"
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_if (V_lit L_false) s1 s2\<rangle> \<longrightarrow> \<langle>\<delta>,s2\<rangle>"
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x (AE_val v)  s\<rangle> \<longrightarrow> \<langle>\<delta>,s'\<rangle>"
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x  (AE_op Plus ((V_lit (L_num n1))) ((V_lit (L_num n2))))  s\<rangle> \<longrightarrow> 
+            \<langle>\<delta>, AS_let x  (AE_val (V_lit (L_num ( (( n1)+(n2)))))) s \<rangle>"
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x  ((AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2)))) s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let x  (AE_val (V_lit b)) s\<rangle>"
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x  ((AE_app f v)) s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let2 x \<tau> (subst_sv s' x v ) s\<rangle> "  
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x  ((AE_len v)) s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let x  v' s\<rangle> "  
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x  ((AE_concat v1 v2)) s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let x  v' s\<rangle> " 
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_seq s1 s2\<rangle> \<longrightarrow> \<langle> \<delta>' ,s'\<rangle>"
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x  ((AE_appP  f b v)) s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let2 x \<tau> (subst_sv s' z v) s\<rangle> "  
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x  ((AE_split v1 v2)) s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let x  v' s\<rangle> " 
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_assert c s \<rangle> \<longrightarrow> \<langle>\<delta>, s'\<rangle> " 
 
 
 
-inductive reduce_stmt_many :: "\<Phi> \<Rightarrow> \<delta> \<Rightarrow> s \<Rightarrow> \<delta> \<Rightarrow> s \<Rightarrow> bool"    ("_ \<turnstile> \<langle> _ , _ \<rangle> \<longrightarrow>\<^sup>* \<langle>  _ , _ \<rangle>" [50, 50, 50] 50)  where  
-  reduce_stmt_many_oneI:  "\<Phi> \<turnstile> \<langle> \<delta>  , s \<rangle> \<longrightarrow> \<langle>  \<delta>' , s' \<rangle>  \<Longrightarrow> \<Phi> \<turnstile> \<langle> \<delta>  , s \<rangle> \<longrightarrow>\<^sup>* \<langle>  \<delta>' , s' \<rangle> "
-| reduce_stmt_many_manyI:  "\<lbrakk> \<Phi> \<turnstile> \<langle> \<delta>  , s \<rangle> \<longrightarrow>   \<langle>  \<delta>' , s' \<rangle> ; \<Phi> \<turnstile>  \<langle> \<delta>'  , s' \<rangle> \<longrightarrow>\<^sup>* \<langle>  \<delta>'' , s'' \<rangle> \<rbrakk> \<Longrightarrow> \<Phi> \<turnstile>  \<langle> \<delta>  , s \<rangle> \<longrightarrow>\<^sup>* \<langle>  \<delta>'' , s'' \<rangle>"
+inductive reduce_stmt_many :: "\<Phi> \<Rightarrow> \<delta> \<Rightarrow> s \<Rightarrow> \<delta> \<Rightarrow> s \<Rightarrow> bool"    ("_ \<turnstile> \<langle> _ , _\<rangle> \<longrightarrow>\<^sup>* \<langle>  _ , _\<rangle>" [50, 50, 50] 50)  where  
+  reduce_stmt_many_oneI:  "\<Phi> \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow> \<langle>\<delta>', s'\<rangle>  \<Longrightarrow> \<Phi> \<turnstile> \<langle>\<delta>  , s\<rangle> \<longrightarrow>\<^sup>* \<langle>\<delta>', s'\<rangle> "
+| reduce_stmt_many_manyI:  "\<lbrakk> \<Phi> \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow>   \<langle>\<delta>', s'\<rangle> ; \<Phi> \<turnstile>  \<langle>\<delta>', s'\<rangle> \<longrightarrow>\<^sup>* \<langle>\<delta>'', s''\<rangle> \<rbrakk> \<Longrightarrow> \<Phi> \<turnstile>  \<langle>\<delta>, s\<rangle> \<longrightarrow>\<^sup>* \<langle>\<delta>'', s''\<rangle>"
 
 nominal_function  convert_fds :: "fun_def list \<Rightarrow> (f*fun_def) list" where
   "convert_fds [] = []"
@@ -159,16 +159,16 @@ inductive_cases delta_sim_elims[elim!]:
 
 
 text \<open>A typing judgement that combines typing of the statement, the store and the condition that definitions are well-typed\<close>
-inductive config_type ::  "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<Delta> \<Rightarrow> \<delta> \<Rightarrow> s \<Rightarrow> \<tau> \<Rightarrow>  bool"   ("_ ; _ ; _ \<turnstile> \<langle> _ , _ \<rangle> \<Leftarrow> _ " [50, 50, 50] 50)  where 
+inductive config_type ::  "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<Delta> \<Rightarrow> \<delta> \<Rightarrow> s \<Rightarrow> \<tau> \<Rightarrow>  bool"   ("_ ; _ ; _ \<turnstile> \<langle> _ , _\<rangle> \<Leftarrow> _ " [50, 50, 50] 50)  where 
 config_typeI: "\<lbrakk> \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta> \<turnstile> s \<Leftarrow> \<tau>; 
                 (\<forall> fd \<in> set \<Phi>. \<Theta> ; \<Phi> \<turnstile> fd) ;
                 \<Theta>  \<turnstile> \<delta> \<sim> \<Delta> \<rbrakk>
-                \<Longrightarrow> \<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta>  , s \<rangle> \<Leftarrow>  \<tau>"
+                \<Longrightarrow> \<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta>  , s\<rangle> \<Leftarrow>  \<tau>"
 equivariance config_type
 nominal_inductive config_type .
 
 inductive_cases config_type_elims [elim!]:
-  " \<Theta> ; \<Phi>  ; \<Delta> \<turnstile> \<langle> \<delta>  , s \<rangle> \<Leftarrow>  \<tau>"
+  " \<Theta> ; \<Phi>  ; \<Delta> \<turnstile> \<langle> \<delta>  , s\<rangle> \<Leftarrow>  \<tau>"
 
 nominal_function \<delta>_of  :: "var_def list \<Rightarrow> \<delta>" where
   "\<delta>_of [] = []"
@@ -179,13 +179,13 @@ nominal_function \<delta>_of  :: "var_def list \<Rightarrow> \<delta>" where
   by (metis var_def.strong_exhaust)
 nominal_termination (eqvt) by lexicographic_order
 
-inductive config_type_prog :: "p \<Rightarrow> \<tau> \<Rightarrow> bool"  (" \<turnstile> \<langle> _ \<rangle> \<Leftarrow> _") where
+inductive config_type_prog :: "p \<Rightarrow> \<tau> \<Rightarrow> bool"  (" \<turnstile> \<langle> _\<rangle> \<Leftarrow> _") where
 "\<lbrakk>
-  \<Theta> ; \<Phi> ; \<Delta>_of \<G> \<turnstile> \<langle> \<delta>_of \<G>  , s \<rangle> \<Leftarrow>  \<tau>
-\<rbrakk> \<Longrightarrow> \<turnstile>  \<langle> AP_prog \<Theta> \<Phi> \<G> s \<rangle> \<Leftarrow> \<tau>"
+  \<Theta> ; \<Phi> ; \<Delta>_of \<G> \<turnstile> \<langle> \<delta>_of \<G>  , s\<rangle> \<Leftarrow>  \<tau>
+\<rbrakk> \<Longrightarrow> \<turnstile>  \<langle> AP_prog \<Theta> \<Phi> \<G> s\<rangle> \<Leftarrow> \<tau>"
 
 inductive_cases config_type_prog_elims [elim!]:
-  "\<turnstile>  \<langle> AP_prog \<Theta> \<Phi> \<G> s \<rangle> \<Leftarrow> \<tau>"
+  "\<turnstile>  \<langle> AP_prog \<Theta> \<Phi> \<G> s\<rangle> \<Leftarrow> \<tau>"
        
 
 end

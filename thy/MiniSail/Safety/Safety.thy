@@ -198,7 +198,7 @@ using assms proof(nominal_induct  " ({||}::bv fset)" "AF_fun_typ x b c \<tau> s"
     show \<open> \<Theta> ; \<Phi> ; {||} ; (x', b, c''[x''::=[ x' ]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> GNil ; []\<^sub>\<Delta>  \<turnstile> s' \<Leftarrow> \<tau>'\<close> using check_funtypI eq2 by metis
     show \<open> (x', b, c''[x''::=[ x' ]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> GNil = GNil  @ (x', b, c''[x''::=[ x' ]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> GNil\<close> using append_g.simps by auto
   qed
-  hence " \<Theta> ; \<Phi> ; {||} ; GNil ; []\<^sub>\<Delta>  \<turnstile> s'[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>'[x'::=v]\<^sub>\<tau>\<^sub>v" using subst_gv.simps subst_dv.simps by auto
+  hence " \<Theta>; \<Phi>; {||}; GNil; []\<^sub>\<Delta>  \<turnstile> s'[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>'[x'::=v]\<^sub>\<tau>\<^sub>v" using subst_gv.simps subst_dv.simps by auto
   thus ?case using eq  by auto
 qed
 
@@ -207,12 +207,12 @@ lemma funtypq_simple_check:
   fixes s::s  and \<Delta>::\<Delta> and \<tau>::\<tau> and v::v  
   assumes "check_funtypq \<Theta> \<Phi>   (AF_fun_typ_none (AF_fun_typ x b c t s))" and
           "\<Theta> ; {||} ; GNil \<turnstile> v \<Leftarrow> \<lbrace> x : b | c \<rbrace>" 
-    shows "\<Theta> ; \<Phi> ; {||} ; GNil ; DNil \<turnstile> s[x::=v]\<^sub>s\<^sub>v \<Leftarrow> t[x::=v]\<^sub>\<tau>\<^sub>v"
+    shows "\<Theta>; \<Phi>; {||}; GNil; DNil \<turnstile> s[x::=v]\<^sub>s\<^sub>v \<Leftarrow> t[x::=v]\<^sub>\<tau>\<^sub>v"
 using assms proof(nominal_induct  "(AF_fun_typ_none (AF_fun_typ x b c t s))" avoiding: v rule: check_funtypq.strong_induct)
   case (check_fundefq_simpleI \<Theta> \<Phi> x' c' t' s')
   hence eq: "\<lbrace> x : b  | c \<rbrace> = \<lbrace> x' : b  | c' \<rbrace> \<and> s'[x'::=v]\<^sub>s\<^sub>v = s[x::=v]\<^sub>s\<^sub>v \<and> t[x::=v]\<^sub>\<tau>\<^sub>v = t'[x'::=v]\<^sub>\<tau>\<^sub>v" 
      using funtyp_eq_iff_equalities by metis
-  hence "\<Theta> ; \<Phi> ; {||} ; GNil ; []\<^sub>\<Delta>  \<turnstile> s'[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> t'[x'::=v]\<^sub>\<tau>\<^sub>v" 
+  hence "\<Theta>; \<Phi>; {||}; GNil; []\<^sub>\<Delta>  \<turnstile> s'[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> t'[x'::=v]\<^sub>\<tau>\<^sub>v" 
     using funtyp_simple_check[OF check_fundefq_simpleI(1)] check_fundefq_simpleI by metis
   thus ?case  using eq by metis
 qed
@@ -234,7 +234,7 @@ lemma funtypq_poly_check:
   assumes "check_funtypq \<Theta> \<Phi>   (AF_fun_typ_some bv (AF_fun_typ x b c t s))" and
           "\<Theta> ; {||} ; GNil \<turnstile> v \<Leftarrow> \<lbrace> x : b[bv::=b']\<^sub>b\<^sub>b | c[bv::=b']\<^sub>c\<^sub>b \<rbrace>"   and
           "\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f b'" 
-    shows "\<Theta> ; \<Phi> ; {||} ; GNil ; DNil \<turnstile> s[bv::=b']\<^sub>s\<^sub>b[x::=v]\<^sub>s\<^sub>v \<Leftarrow> t[bv::=b']\<^sub>\<tau>\<^sub>b[x::=v]\<^sub>\<tau>\<^sub>v"
+    shows "\<Theta>; \<Phi>; {||}; GNil; DNil \<turnstile> s[bv::=b']\<^sub>s\<^sub>b[x::=v]\<^sub>s\<^sub>v \<Leftarrow> t[bv::=b']\<^sub>\<tau>\<^sub>b[x::=v]\<^sub>\<tau>\<^sub>v"
 using assms proof(nominal_induct  "(AF_fun_typ_some bv (AF_fun_typ x b c t s))" avoiding: v rule: check_funtypq.strong_induct)
   case (check_funtypq_polyI bv' \<Theta> \<Phi>  x' b'' c' t' s')
 
@@ -245,7 +245,7 @@ using assms proof(nominal_induct  "(AF_fun_typ_some bv (AF_fun_typ x b c t s))" 
   have *:"check_funtyp \<Theta> \<Phi> {||} (AF_fun_typ x' b''[bv'::=b']\<^sub>b\<^sub>b (c'[bv'::=b']\<^sub>c\<^sub>b) (t'[bv'::=b']\<^sub>\<tau>\<^sub>b) s'[bv'::=b']\<^sub>s\<^sub>b)"
     using check_funtyp_subst_b[OF check_funtypq_polyI(5) check_funtypq_polyI(8)]  by metis
   moreover have "\<Theta> ; {||} ; GNil  \<turnstile> v \<Leftarrow> \<lbrace> x' : b''[bv'::=b']\<^sub>b\<^sub>b  | c'[bv'::=b']\<^sub>c\<^sub>b \<rbrace>" using ** check_funtypq_polyI by metis
-  ultimately have "\<Theta> ; \<Phi> ; {||} ; GNil ; []\<^sub>\<Delta>  \<turnstile> s'[bv'::=b']\<^sub>s\<^sub>b[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> t'[bv'::=b']\<^sub>\<tau>\<^sub>b[x'::=v]\<^sub>\<tau>\<^sub>v"
+  ultimately have "\<Theta>; \<Phi>; {||}; GNil; []\<^sub>\<Delta>  \<turnstile> s'[bv'::=b']\<^sub>s\<^sub>b[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> t'[bv'::=b']\<^sub>\<tau>\<^sub>b[x'::=v]\<^sub>\<tau>\<^sub>v"
     using funtyp_simple_check[OF *] check_funtypq_polyI by metis
   thus ?case using ** by metis
 
@@ -256,7 +256,7 @@ lemma fundef_simple_check:
   fixes s::s  and \<Delta>::\<Delta> and \<tau>::\<tau> and v::v  
   assumes "check_fundef \<Theta> \<Phi>   (AF_fundef f (AF_fun_typ_none (AF_fun_typ x b c t s)))" and
           "\<Theta> ; {||} ; GNil \<turnstile> v \<Leftarrow> \<lbrace> x : b | c \<rbrace>" and "\<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f \<Delta>"
-    shows "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta> \<turnstile> s[x::=v]\<^sub>s\<^sub>v \<Leftarrow> t[x::=v]\<^sub>\<tau>\<^sub>v"
+    shows "\<Theta>; \<Phi>; {||}; GNil; \<Delta> \<turnstile> s[x::=v]\<^sub>s\<^sub>v \<Leftarrow> t[x::=v]\<^sub>\<tau>\<^sub>v"
 using assms proof(nominal_induct  "(AF_fundef f (AF_fun_typ_none (AF_fun_typ x b c t s)))" avoiding: v rule: check_fundef.strong_induct)
   case (check_fundefI \<Theta> \<Phi>)
   then show ?case using funtypq_simple_check[THEN check_s_d_weakening(1) ] setD.simps by auto
@@ -266,7 +266,7 @@ lemma fundef_poly_check:
   fixes s::s  and \<Delta>::\<Delta> and \<tau>::\<tau> and v::v  and b'::b
   assumes "check_fundef \<Theta> \<Phi>   (AF_fundef f (AF_fun_typ_some bv (AF_fun_typ x b c t s)))" and
           "\<Theta> ; {||} ; GNil \<turnstile> v \<Leftarrow> \<lbrace> x : b[bv::=b']\<^sub>b\<^sub>b | c[bv::=b']\<^sub>c\<^sub>b \<rbrace>" and "\<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f \<Delta>" and  "\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f b'" 
-    shows "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta> \<turnstile> s[bv::=b']\<^sub>s\<^sub>b[x::=v]\<^sub>s\<^sub>v \<Leftarrow> t[bv::=b']\<^sub>\<tau>\<^sub>b[x::=v]\<^sub>\<tau>\<^sub>v" 
+    shows "\<Theta>; \<Phi>; {||}; GNil; \<Delta> \<turnstile> s[bv::=b']\<^sub>s\<^sub>b[x::=v]\<^sub>s\<^sub>v \<Leftarrow> t[bv::=b']\<^sub>\<tau>\<^sub>b[x::=v]\<^sub>\<tau>\<^sub>v" 
 using assms proof(nominal_induct  "(AF_fundef f (AF_fun_typ_some bv (AF_fun_typ x b c t s)))" avoiding: v rule: check_fundef.strong_induct)
   case (check_fundefI \<Theta> \<Phi>)
   then show ?case using funtypq_poly_check[THEN check_s_d_weakening(1) ] setD.simps by auto
@@ -277,7 +277,7 @@ lemma preservation_app:
   assumes
           "Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x1 b1 c1 \<tau>1' s1'))) = lookup_fun \<Phi> f" and  "(\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)"
         shows "\<Theta> ; \<Phi> ; B ; G ; \<Delta>  \<turnstile> ss \<Leftarrow> \<tau> \<Longrightarrow>  B = {||} \<Longrightarrow> G = GNil \<Longrightarrow> ss = LET x = (AE_app f v) IN s \<Longrightarrow>  
-           \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> LET x : (\<tau>1'[x1::=v]\<^sub>\<tau>\<^sub>v) = (s1'[x1::=v]\<^sub>s\<^sub>v) IN s \<Leftarrow> \<tau>" and
+           \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> LET x : (\<tau>1'[x1::=v]\<^sub>\<tau>\<^sub>v) = (s1'[x1::=v]\<^sub>s\<^sub>v) IN s \<Leftarrow> \<tau>" and
         "check_branch_s \<Theta> \<Phi> \<B> GNil \<Delta> tid dc const v cs \<tau> \<Longrightarrow> True" and 
         "check_branch_list \<Theta> \<Phi> \<B> \<Gamma> \<Delta> tid dclist v css \<tau> \<Longrightarrow> True"
 using assms proof(nominal_induct \<tau> and \<tau> and \<tau>   avoiding: v rule: check_s_check_branch_s_check_branch_list.strong_induct)
@@ -300,12 +300,12 @@ using assms proof(nominal_induct \<tau> and \<tau> and \<tau>   avoiding: v rule
 
   have sup: "supp \<tau>3 \<subseteq> { atom x3} \<and> supp s3 \<subseteq> { atom x3}"  using wfPhi_f_supp ** by metis
 
-  have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let2 x2  \<tau>3[x3::=v]\<^sub>\<tau>\<^sub>v (s3[x3::=v]\<^sub>s\<^sub>v) s2 \<Leftarrow> \<tau>" proof
+  have "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let2 x2  \<tau>3[x3::=v]\<^sub>\<tau>\<^sub>v (s3[x3::=v]\<^sub>s\<^sub>v) s2 \<Leftarrow> \<tau>" proof
     show \<open>atom x2 \<sharp> (\<Theta>, \<Phi>, {||}::bv fset, GNil, \<Delta>, \<tau>3[x3::=v]\<^sub>\<tau>\<^sub>v, s3[x3::=v]\<^sub>s\<^sub>v, \<tau>)\<close>
           unfolding fresh_prodN using check_letI fresh_subst_v_if subst_v_\<tau>_def sup
       by (metis all_not_in_conv fresh_def fresh_empty_fset fresh_subst_sv_if fresh_subst_tv_if singleton_iff subset_singleton_iff)
 
-    show \<open> \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> s3[x3::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>3[x3::=v]\<^sub>\<tau>\<^sub>v\<close> proof(rule fundef_simple_check)
+    show \<open> \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> s3[x3::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>3[x3::=v]\<^sub>\<tau>\<^sub>v\<close> proof(rule fundef_simple_check)
        show \<open>check_fundef \<Theta> \<Phi> (AF_fundef f (AF_fun_typ_none (AF_fun_typ x3 b3 c3 \<tau>3 s3)))\<close> using ** check_letI lookup_fun_member by metis
        show \<open>\<Theta> ; {||} ; GNil  \<turnstile> v \<Leftarrow> \<lbrace> x3 : b3  | c3 \<rbrace>\<close> using ** by auto
        show \<open> \<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using ** by auto
@@ -342,7 +342,7 @@ lemma preservation_poly_app:
   assumes
           "Some (AF_fundef f (AF_fun_typ_some bv1 (AF_fun_typ x1 b1 c1 \<tau>1' s1'))) = lookup_fun \<Phi> f" and  "(\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)"
         shows "\<Theta> ; \<Phi> ; B ; G ; \<Delta>  \<turnstile> ss \<Leftarrow> \<tau> \<Longrightarrow>  B = {||} \<Longrightarrow> G = GNil \<Longrightarrow> ss = LET x = (AE_appP f b' v) IN s \<Longrightarrow> \<Theta> ; {||}  \<turnstile>\<^sub>w\<^sub>f b'  \<Longrightarrow> 
-               \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> LET x : (\<tau>1'[bv1::=b']\<^sub>\<tau>\<^sub>b[x1::=v]\<^sub>\<tau>\<^sub>v) = (s1'[bv1::=b']\<^sub>s\<^sub>b[x1::=v]\<^sub>s\<^sub>v) IN s \<Leftarrow> \<tau>" and
+               \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> LET x : (\<tau>1'[bv1::=b']\<^sub>\<tau>\<^sub>b[x1::=v]\<^sub>\<tau>\<^sub>v) = (s1'[bv1::=b']\<^sub>s\<^sub>b[x1::=v]\<^sub>s\<^sub>v) IN s \<Leftarrow> \<tau>" and
         "check_branch_s \<Theta> \<Phi> \<B> GNil \<Delta> tid dc const v cs \<tau> \<Longrightarrow> True" and 
         "check_branch_list \<Theta> \<Phi> \<B> \<Gamma> \<Delta> tid dclist v css \<tau> \<Longrightarrow> True"
 using assms proof(nominal_induct \<tau> and \<tau> and \<tau>   avoiding: v x1 rule: check_s_check_branch_s_check_branch_list.strong_induct)
@@ -370,7 +370,7 @@ using assms proof(nominal_induct \<tau> and \<tau> and \<tau>   avoiding: v x1 r
   have sup: "supp \<tau>3 \<subseteq> { atom x3, atom bv3} \<and> supp s3 \<subseteq> { atom x3, atom bv3 }"  
     using  wfPhi_f_poly_supp_t wfPhi_f_poly_supp_s ** by metis
 
-  have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let2 x2  \<tau>3[bv3::=b']\<^sub>\<tau>\<^sub>b[x3::=v]\<^sub>\<tau>\<^sub>v (s3[bv3::=b']\<^sub>s\<^sub>b[x3::=v]\<^sub>s\<^sub>v) s2 \<Leftarrow> \<tau>" 
+  have "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let2 x2  \<tau>3[bv3::=b']\<^sub>\<tau>\<^sub>b[x3::=v]\<^sub>\<tau>\<^sub>v (s3[bv3::=b']\<^sub>s\<^sub>b[x3::=v]\<^sub>s\<^sub>v) s2 \<Leftarrow> \<tau>" 
   proof
     show \<open>atom x2 \<sharp> (\<Theta>, \<Phi>, {||}::bv fset, GNil, \<Delta>, \<tau>3[bv3::=b']\<^sub>\<tau>\<^sub>b[x3::=v]\<^sub>\<tau>\<^sub>v, s3[bv3::=b']\<^sub>s\<^sub>b[x3::=v]\<^sub>s\<^sub>v, \<tau>)\<close> 
     proof -
@@ -389,7 +389,7 @@ using assms proof(nominal_induct \<tau> and \<tau> and \<tau>   avoiding: v x1 r
       ultimately show ?thesis using fresh_prodN check_letI by metis
     qed
 
-    show \<open> \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> s3[bv3::=b']\<^sub>s\<^sub>b[x3::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>3[bv3::=b']\<^sub>\<tau>\<^sub>b[x3::=v]\<^sub>\<tau>\<^sub>v\<close> proof( rule fundef_poly_check)
+    show \<open> \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> s3[bv3::=b']\<^sub>s\<^sub>b[x3::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>3[bv3::=b']\<^sub>\<tau>\<^sub>b[x3::=v]\<^sub>\<tau>\<^sub>v\<close> proof( rule fundef_poly_check)
       show \<open>check_fundef \<Theta> \<Phi> (AF_fundef f (AF_fun_typ_some bv3 (AF_fun_typ x3 b3 c3 \<tau>3 s3)))\<close>   
         using **  lookup_fun_member check_letI by metis
       show \<open>\<Theta> ; {||} ; GNil  \<turnstile> v \<Leftarrow> \<lbrace> x3 : b3[bv3::=b']\<^sub>b\<^sub>b  | c3[bv3::=b']\<^sub>c\<^sub>b \<rbrace>\<close> using ** by metis
@@ -411,10 +411,10 @@ using assms proof(nominal_induct \<tau> and \<tau> and \<tau>   avoiding: v x1 r
 qed(auto+)
 
 lemma check_s_plus:
-  assumes "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> LET x = (AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2))) IN s'  \<Leftarrow> \<tau>" 
-  shows   "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> LET x = (AE_val (V_lit (L_num (n1+n2)))) IN s' \<Leftarrow> \<tau>"   
+  assumes "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> LET x = (AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2))) IN s'  \<Leftarrow> \<tau>" 
+  shows   "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> LET x = (AE_val (V_lit (L_num (n1+n2)))) IN s' \<Leftarrow> \<tau>"   
 proof -
-   obtain t1 where 1: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2)) \<Rightarrow> t1"
+   obtain t1 where 1: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2)) \<Rightarrow> t1"
      using assms check_s_elims by metis
    then obtain z1 where 2: "t1 =  \<lbrace> z1 : B_int  | CE_val (V_var z1)  ==  CE_op Plus  ([V_lit (L_num n1)]\<^sup>c\<^sup>e) ([V_lit (L_num n2)]\<^sup>c\<^sup>e)  \<rbrace>"
      using infer_e_plus by metis
@@ -429,9 +429,9 @@ proof -
 
 lemma check_s_leq:
   assumes "\<Theta> ; \<Phi> ;  {||} ; GNil ; \<Delta>  \<turnstile> LET x = (AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2))) IN s'  \<Leftarrow> \<tau>" 
-  shows "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> LET x = (AE_val (V_lit (if (n1 \<le> n2) then L_true else L_false))) IN s' \<Leftarrow> \<tau>"   
+  shows "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> LET x = (AE_val (V_lit (if (n1 \<le> n2) then L_true else L_false))) IN s' \<Leftarrow> \<tau>"   
 proof -
-   obtain t1 where 1: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2)) \<Rightarrow> t1"
+   obtain t1 where 1: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2)) \<Rightarrow> t1"
      using assms check_s_elims by metis
    then obtain z1 where 2: "t1 =  \<lbrace> z1 : B_bool  | CE_val (V_var z1)  ==  CE_op LEq  ([V_lit (L_num n1)]\<^sup>c\<^sup>e) ([V_lit (L_num n2)]\<^sup>c\<^sup>e)  \<rbrace>"
      using infer_e_leq by auto
@@ -442,9 +442,9 @@ proof -
      by simp
    thm subtype_let
    show ?thesis proof(rule subtype_let)
-     show \<open> \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_op LEq [ L_num n1 ]\<^sup>v [ L_num n2 ]\<^sup>v) s' \<Leftarrow> \<tau>\<close> using assms by auto
-     show \<open>\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AE_op LEq [ L_num n1 ]\<^sup>v [ L_num n2 ]\<^sup>v \<Rightarrow> t1\<close> using 1 by auto
-     show \<open>\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> [ [ if n1 \<le> n2 then L_true else L_false ]\<^sup>v ]\<^sup>e \<Rightarrow> \<lbrace> z2 : B_bool  | CE_val (V_var z2)  ==  CE_val (V_lit ((if (n1 \<le> n2) then L_true else L_false))) \<rbrace>\<close> using 3 by auto
+     show \<open> \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_op LEq [ L_num n1 ]\<^sup>v [ L_num n2 ]\<^sup>v) s' \<Leftarrow> \<tau>\<close> using assms by auto
+     show \<open>\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AE_op LEq [ L_num n1 ]\<^sup>v [ L_num n2 ]\<^sup>v \<Rightarrow> t1\<close> using 1 by auto
+     show \<open>\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> [ [ if n1 \<le> n2 then L_true else L_false ]\<^sup>v ]\<^sup>e \<Rightarrow> \<lbrace> z2 : B_bool  | CE_val (V_var z2)  ==  CE_val (V_lit ((if (n1 \<le> n2) then L_true else L_false))) \<rbrace>\<close> using 3 by auto
      show \<open>\<Theta> ; {||} ; GNil  \<turnstile> \<lbrace> z2 : B_bool  | CE_val (V_var z2)  ==  CE_val (V_lit ((if (n1 \<le> n2) then L_true else L_false))) \<rbrace> \<lesssim> t1\<close> 
        using subtype_bop[where opp=LEq] check_s_wf assms 2 
        by (metis opp.distinct(1) subtype_bop type_l_eq)
@@ -455,31 +455,31 @@ proof -
 subsection \<open>Operators\<close>
 
 lemma preservation_plus:
-  assumes "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , LET x = (AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2))) IN s' \<rangle> \<Leftarrow> \<tau>"        
-  shows "\<Theta> ; \<Phi> ; \<Delta>  \<turnstile> \<langle> \<delta> , LET x =  (AE_val (V_lit (L_num (n1+n2)))) IN s' \<rangle> \<Leftarrow> \<tau>"
+  assumes "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , LET x = (AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2))) IN s' \<rangle> \<Leftarrow> \<tau>"        
+  shows "\<Theta>; \<Phi>; \<Delta>  \<turnstile> \<langle> \<delta> , LET x =  (AE_val (V_lit (L_num (n1+n2)))) IN s' \<rangle> \<Leftarrow> \<tau>"
 proof -
 
-  have tt: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2))) s' \<Leftarrow> \<tau>" and dsim: "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and fd:"(\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)"
+  have tt: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2))) s' \<Leftarrow> \<tau>" and dsim: "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and fd:"(\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)"
     using assms config_type_elims by blast+
 
-  hence "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>AS_let x (AE_val (V_lit  (L_num (n1+n2)))) s' \<Leftarrow> \<tau>" using check_s_plus assms by auto  
+  hence "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>AS_let x (AE_val (V_lit  (L_num (n1+n2)))) s' \<Leftarrow> \<tau>" using check_s_plus assms by auto  
 
-  hence "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_val (V_lit ( (L_num (n1+n2))))) s' \<rangle> \<Leftarrow> \<tau>" using dsim config_typeI fd by presburger
+  hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_val (V_lit ( (L_num (n1+n2))))) s' \<rangle> \<Leftarrow> \<tau>" using dsim config_typeI fd by presburger
   then show ?thesis using dsim config_typeI 
     by (meson order_refl)
 qed
 
 lemma preservation_leq:
-  assumes "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2))) s' \<rangle> \<Leftarrow> \<tau>"        
-  shows "\<Theta> ; \<Phi> ; \<Delta>  \<turnstile> \<langle> \<delta> , AS_let x (AE_val (V_lit (((if (n1 \<le> n2) then L_true else L_false))))) s' \<rangle> \<Leftarrow> \<tau>"
+  assumes "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2))) s' \<rangle> \<Leftarrow> \<tau>"        
+  shows "\<Theta>; \<Phi>; \<Delta>  \<turnstile> \<langle> \<delta> , AS_let x (AE_val (V_lit (((if (n1 \<le> n2) then L_true else L_false))))) s' \<rangle> \<Leftarrow> \<tau>"
 proof -
 
-  have tt: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2))) s' \<Leftarrow> \<tau>" and dsim: "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and fd:"(\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)"
+  have tt: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2))) s' \<Leftarrow> \<tau>" and dsim: "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and fd:"(\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)"
     using assms config_type_elims by blast+
 
-  hence "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>AS_let x (AE_val (V_lit  ( ((if (n1 \<le> n2) then L_true else L_false))))) s' \<Leftarrow> \<tau>" using check_s_leq assms by auto  
+  hence "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>AS_let x (AE_val (V_lit  ( ((if (n1 \<le> n2) then L_true else L_false))))) s' \<Leftarrow> \<tau>" using check_s_leq assms by auto  
 
-  hence "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_val (V_lit ( (((if (n1 \<le> n2) then L_true else L_false)))))) s' \<rangle> \<Leftarrow> \<tau>" using dsim config_typeI fd by presburger
+  hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_val (V_lit ( (((if (n1 \<le> n2) then L_true else L_false)))))) s' \<rangle> \<Leftarrow> \<tau>" using dsim config_typeI fd by presburger
   then show ?thesis using dsim config_typeI 
     by (meson order_refl)
 qed
@@ -504,7 +504,7 @@ qed
 lemma check_let_val: 
   fixes v::v and s::s
   shows "\<Theta> ; \<Phi> ; B ; G ; \<Delta>  \<turnstile> ss \<Leftarrow> \<tau> \<Longrightarrow>  B = {||} \<Longrightarrow> G = GNil \<Longrightarrow> 
-        ss = AS_let x (AE_val v) s \<or>  ss = AS_let2 x t (AS_val v) s \<Longrightarrow>  \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> (s[x::=v]\<^sub>s\<^sub>v) \<Leftarrow> \<tau>" and
+        ss = AS_let x (AE_val v) s \<or>  ss = AS_let2 x t (AS_val v) s \<Longrightarrow>  \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> (s[x::=v]\<^sub>s\<^sub>v) \<Leftarrow> \<tau>" and
         "check_branch_s \<Theta> \<Phi> \<B> GNil \<Delta> tid dc const v cs \<tau> \<Longrightarrow> True" and 
         "check_branch_list \<Theta> \<Phi> \<B> \<Gamma> \<Delta> tid dclist v css \<tau> \<Longrightarrow> True"
 proof(nominal_induct \<tau> and \<tau> and \<tau>  avoiding: v rule: check_s_check_branch_s_check_branch_list.strong_induct)
@@ -559,21 +559,21 @@ qed(auto+)
 
 
 lemma preservation_let_val:
-  assumes "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_val v) s \<rangle> \<Leftarrow> \<tau> \<or> \<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , AS_let2 x t (AS_val v) s \<rangle> \<Leftarrow> \<tau>" (is "?A \<or> ?B")
-  shows " \<exists>\<Delta>'. \<Theta> ; \<Phi> ; \<Delta>'  \<turnstile> \<langle> \<delta> , s[x::=v]\<^sub>s\<^sub>v \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>'"
+  assumes "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_val v) s \<rangle> \<Leftarrow> \<tau> \<or> \<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let2 x t (AS_val v) s \<rangle> \<Leftarrow> \<tau>" (is "?A \<or> ?B")
+  shows " \<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta>'  \<turnstile> \<langle> \<delta> , s[x::=v]\<^sub>s\<^sub>v \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>'"
 proof -
   have tt:  "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and fd: "(\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)"
     using assms by blast+
 
   have  "?A \<or> ?B" using assms by auto
-  then have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile>  s[x::=v]\<^sub>s\<^sub>v   \<Leftarrow> \<tau>"
+  then have "\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile>  s[x::=v]\<^sub>s\<^sub>v   \<Leftarrow> \<tau>"
   proof
-    assume "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_val v) s \<rangle> \<Leftarrow> \<tau>"
-    hence * : " \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile>  AS_let x (AE_val v) s  \<Leftarrow> \<tau>" by blast
+    assume "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_val v) s \<rangle> \<Leftarrow> \<tau>"
+    hence * : " \<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile>  AS_let x (AE_val v) s  \<Leftarrow> \<tau>" by blast
     thus ?thesis using check_let_val by simp
   next
-    assume "\<Theta> ; \<Phi> ; \<Delta>  \<turnstile> \<langle> \<delta> , AS_let2 x t (AS_val v) s \<rangle> \<Leftarrow> \<tau>"
-    hence * : "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile>  AS_let2 x t (AS_val v) s  \<Leftarrow> \<tau>" by blast
+    assume "\<Theta>; \<Phi>; \<Delta>  \<turnstile> \<langle> \<delta> , AS_let2 x t (AS_val v) s \<rangle> \<Leftarrow> \<tau>"
+    hence * : "\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile>  AS_let2 x t (AS_val v) s  \<Leftarrow> \<tau>" by blast
     thus ?thesis using check_let_val by simp
   qed
 
@@ -584,24 +584,24 @@ qed
 
 lemma check_s_fst_snd:
   assumes "fst_snd = AE_fst \<and> v=v1 \<or> fst_snd = AE_snd \<and> v=v2" 
-  and   "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta> \<turnstile> AS_let x (fst_snd (V_pair v1 v2)) s' \<Leftarrow> \<tau>"
-shows "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta> \<turnstile> AS_let x ( AE_val v) s' \<Leftarrow> \<tau>"
+  and   "\<Theta>; \<Phi>; {||}; GNil; \<Delta> \<turnstile> AS_let x (fst_snd (V_pair v1 v2)) s' \<Leftarrow> \<tau>"
+shows "\<Theta>; \<Phi>; {||}; GNil; \<Delta> \<turnstile> AS_let x ( AE_val v) s' \<Leftarrow> \<tau>"
 proof -
-  have  1: \<open> \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (fst_snd (V_pair v1 v2)) s' \<Leftarrow> \<tau>\<close> using assms by auto
+  have  1: \<open> \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (fst_snd (V_pair v1 v2)) s' \<Leftarrow> \<tau>\<close> using assms by auto
 
-  then obtain t1 where 2:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  (fst_snd (V_pair v1 v2)) \<Rightarrow> t1" using check_s_elims by auto
+  then obtain t1 where 2:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  (fst_snd (V_pair v1 v2)) \<Rightarrow> t1" using check_s_elims by auto
 
   show ?thesis using subtype_let 1 2 assms 
     by (meson infer_e_fst_pair infer_e_snd_pair)
 qed
 
 lemma preservation_fst_snd:
-  assumes "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , LET x = (fst_snd (V_pair v1 v2)) IN s' \<rangle> \<Leftarrow> \<tau>" and 
+  assumes "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , LET x = (fst_snd (V_pair v1 v2)) IN s' \<rangle> \<Leftarrow> \<tau>" and 
           "fst_snd = AE_fst \<and> v=v1 \<or> fst_snd = AE_snd \<and> v=v2"
-  shows "\<exists>\<Delta>'. \<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , LET x = (AE_val v) IN s' \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>'"
+  shows "\<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , LET x = (AE_val v) IN s' \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>'"
 proof - 
-   have  tt: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (fst_snd (V_pair v1 v2)) s' \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta>" using assms by blast
-   hence t2: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (fst_snd (V_pair v1 v2)) s' \<Leftarrow> \<tau>" by auto
+   have  tt: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (fst_snd (V_pair v1 v2)) s' \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta>" using assms by blast
+   hence t2: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (fst_snd (V_pair v1 v2)) s' \<Leftarrow> \<tau>" by auto
 
   moreover have "\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd" using assms config_type_elims by auto
   ultimately show ?thesis using config_typeI order_refl tt assms check_s_fst_snd by metis
@@ -666,9 +666,9 @@ subsection \<open>Other Statements\<close>
 
 lemma check_if:
   fixes s'::s and cs::branch_s and css::branch_list and v::v
-  shows    "\<Theta> ; \<Phi> ; B  ; G ; \<Delta>  \<turnstile>  s' \<Leftarrow> \<tau> \<Longrightarrow> s' =  IF (V_lit ll) THEN s1 ELSE s2 \<Longrightarrow>  
+  shows    "\<Theta>; \<Phi>; B; G; \<Delta> \<turnstile>  s' \<Leftarrow> \<tau> \<Longrightarrow> s' =  IF (V_lit ll) THEN s1 ELSE s2 \<Longrightarrow>  
         \<Theta> ; {||} ; GNil  \<turnstile>\<^sub>w\<^sub>f \<tau> \<Longrightarrow> G = GNil \<Longrightarrow> B = {||} \<Longrightarrow> ll = L_true \<and> s = s1 \<or> ll = L_false \<and> s = s2 \<Longrightarrow> 
-        \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  s \<Leftarrow> \<tau>" and
+        \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  s \<Leftarrow> \<tau>" and
     "check_branch_s \<Theta> \<Phi>  {||} GNil \<Delta> tid dc const v cs \<tau> \<Longrightarrow> True" and 
     "check_branch_list \<Theta> \<Phi>  {||} \<Gamma> \<Delta> tid dclist v css \<tau> \<Longrightarrow> True"
 proof(nominal_induct \<tau> and \<tau> and \<tau>  rule: check_s_check_branch_s_check_branch_list.strong_induct)
@@ -677,7 +677,7 @@ proof(nominal_induct \<tau> and \<tau> and \<tau>  rule: check_s_check_branch_s_
   hence ceq: "(c_of \<tau> z')[z'::=[ z ]\<^sup>v]\<^sub>c\<^sub>v = (c_of \<tau> z)" using c_of_switch fresh_Pair by metis
   have zf: " atom z \<sharp> c_of \<tau> z'"
      using c_of_fresh check_ifI teq fresh_Pair fresh_at_base by metis
-  hence 1:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> s \<Leftarrow>  \<lbrace> z : b_of \<tau>  | CE_val (V_lit ll)  ==  CE_val (V_lit ll)  IMP  c_of \<tau> z  \<rbrace>" using check_ifI by auto
+  hence 1:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> s \<Leftarrow>  \<lbrace> z : b_of \<tau>  | CE_val (V_lit ll)  ==  CE_val (V_lit ll)  IMP  c_of \<tau> z  \<rbrace>" using check_ifI by auto
   moreover have 2:"\<Theta> ; {||} ; GNil \<turnstile> (\<lbrace> z : b_of \<tau>  | CE_val (V_lit ll)  ==  CE_val (V_lit ll)  IMP  c_of \<tau> z  \<rbrace>) \<lesssim>  \<tau>" 
   proof - 
     have "\<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f (\<lbrace> z : b_of \<tau>  | CE_val (V_lit ll )  ==  CE_val (V_lit ll)   IMP c_of \<tau> z  \<rbrace>)" using check_ifI check_s_wf by auto
@@ -689,14 +689,14 @@ proof(nominal_induct \<tau> and \<tau> and \<tau>  rule: check_s_check_branch_s_
 qed(auto+)
 
 lemma preservation_if: 
-  assumes  "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , IF (V_lit ll) THEN s1 ELSE s2 \<rangle> \<Leftarrow> \<tau>" and 
+  assumes  "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , IF (V_lit ll) THEN s1 ELSE s2 \<rangle> \<Leftarrow> \<tau>" and 
            "ll = L_true \<and> s = s1 \<or> ll = L_false \<and> s = s2"
-  shows "\<Theta> ; \<Phi> ; \<Delta>  \<turnstile> \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>"
+  shows "\<Theta>; \<Phi>; \<Delta>  \<turnstile> \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>"
 proof -
-  have *: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  AS_if (V_lit ll) s1 s2 \<Leftarrow> \<tau> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
+  have *: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  AS_if (V_lit ll) s1 s2 \<Leftarrow> \<tau> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
     using assms config_type_elims by metis
-  hence "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  s \<Leftarrow> \<tau>" using check_s_wf check_if assms by metis
-  hence "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>" using config_typeI * 
+  hence "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  s \<Leftarrow> \<tau>" using check_s_wf check_if assms by metis
+  hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>" using config_typeI * 
     using assms(1) by blast
   thus ?thesis by blast
 qed
@@ -787,11 +787,11 @@ lemma check_match:
        "\<Theta> ; \<Phi> ; B ; G ; \<Delta> ; tid ; dc ; const  ;  vcons \<turnstile>  cs \<Leftarrow>  \<tau> \<Longrightarrow> 
              vcons = V_cons tid dc v \<Longrightarrow> B =  {||} \<Longrightarrow> G = GNil \<Longrightarrow> cs =  (dc x' \<Rightarrow> s') \<Longrightarrow>  
              \<Theta> ; {||} ; GNil \<turnstile> v \<Leftarrow> const \<Longrightarrow> 
-             \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> s'[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>" and
+             \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> s'[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>" and
        "\<Theta> ; \<Phi> ; B ; G ; \<Delta> ; tid ; dclist ; vcons  \<turnstile> css \<Leftarrow> \<tau> \<Longrightarrow> distinct (map fst dclist) \<Longrightarrow>
              vcons = V_cons tid dc v \<Longrightarrow> B =  {||} \<Longrightarrow> (dc, const) \<in> set dclist \<Longrightarrow> G = GNil \<Longrightarrow> 
              Some (AS_branch dc x' s') = lookup_branch dc css \<Longrightarrow> \<Theta> ; {||} ; GNil \<turnstile> v \<Leftarrow> const \<Longrightarrow> 
-             \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> s'[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>"
+             \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> s'[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>"
 proof(nominal_induct \<tau> and \<tau> and \<tau> avoiding: x' v  rule: check_s_check_branch_s_check_branch_list.strong_induct)
   case (check_branch_list_consI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> tid consa consta va cs \<tau> dclist cssa)
 
@@ -920,14 +920,14 @@ qed
 
 
 lemma preservation_var:
-  shows "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> VAR u : \<tau>' = v IN s \<Leftarrow> \<tau> \<Longrightarrow> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<Longrightarrow> atom u \<sharp> \<delta> \<Longrightarrow> atom u \<sharp> \<Delta> \<Longrightarrow>
-         \<Theta> ; \<Phi> ; {||} ; GNil ; (u,\<tau>')#\<^sub>\<Delta>\<Delta>  \<turnstile> s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> (u,v)#\<delta> \<sim> (u,\<tau>')#\<^sub>\<Delta>\<Delta>"
+  shows "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> VAR u : \<tau>' = v IN s \<Leftarrow> \<tau> \<Longrightarrow> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<Longrightarrow> atom u \<sharp> \<delta> \<Longrightarrow> atom u \<sharp> \<Delta> \<Longrightarrow>
+         \<Theta>; \<Phi>; {||}; GNil; (u,\<tau>')#\<^sub>\<Delta>\<Delta>  \<turnstile> s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> (u,v)#\<delta> \<sim> (u,\<tau>')#\<^sub>\<Delta>\<Delta>"
     and
    "check_branch_s \<Theta> \<Phi>  {||} GNil \<Delta> tid dc const v cs \<tau> \<Longrightarrow> True" and 
     "check_branch_list \<Theta> \<Phi>  {||} \<Gamma> \<Delta> tid dclist v css \<tau> \<Longrightarrow> True"
 proof(nominal_induct  "{||}::bv fset" GNil \<Delta> "VAR u : \<tau>' = v IN s" \<tau> and \<tau> and \<tau>  rule: check_s_check_branch_s_check_branch_list.strong_induct)
   case (check_varI u' \<Theta> \<Phi> \<Delta> \<tau> s')
-  hence "\<Theta> ; \<Phi> ; {||} ; GNil ; (u, \<tau>') #\<^sub>\<Delta> \<Delta>  \<turnstile> s \<Leftarrow> \<tau>" using check_s_abs_u check_v_wf by metis
+  hence "\<Theta>; \<Phi>; {||}; GNil; (u, \<tau>') #\<^sub>\<Delta> \<Delta>  \<turnstile> s \<Leftarrow> \<tau>" using check_s_abs_u check_v_wf by metis
 
   moreover have "\<Theta> \<turnstile> ((u,v)#\<delta>) \<sim> ((u,\<tau>')#\<^sub>\<Delta>\<Delta>)" proof
     show \<open>\<Theta>  \<turnstile> \<delta> \<sim> \<Delta> \<close> using check_varI by auto
@@ -939,8 +939,8 @@ proof(nominal_induct  "{||}::bv fset" GNil \<Delta> "VAR u : \<tau>' = v IN s" \
 qed(auto+)
 
 lemma check_while:
-  shows "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> WHILE s1 DO { s2 }  \<Leftarrow> \<tau> \<Longrightarrow> atom x \<sharp> (s1, s2) \<Longrightarrow>  atom z' \<sharp> x \<Longrightarrow>
-       \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> LET x : (\<lbrace> z' : B_bool  | TRUE \<rbrace>) = s1 IN (IF (V_var x) THEN (s2 ;; (WHILE s1 DO {s2}))  
+  shows "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> WHILE s1 DO { s2 }  \<Leftarrow> \<tau> \<Longrightarrow> atom x \<sharp> (s1, s2) \<Longrightarrow>  atom z' \<sharp> x \<Longrightarrow>
+       \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> LET x : (\<lbrace> z' : B_bool  | TRUE \<rbrace>) = s1 IN (IF (V_var x) THEN (s2 ;; (WHILE s1 DO {s2}))  
             ELSE ([ V_lit L_unit]\<^sup>s))  \<Leftarrow> \<tau>" and
    "check_branch_s \<Theta> \<Phi>  {||} GNil \<Delta> tid dc const v cs \<tau> \<Longrightarrow> True" and 
     "check_branch_list \<Theta> \<Phi>  {||} \<Gamma> \<Delta> tid dclist v css \<tau> \<Longrightarrow> True"
@@ -990,7 +990,7 @@ proof(nominal_induct  "{||}::bv fset" GNil \<Delta> "AS_while s1 s2" \<tau> and 
         
          show \<open> \<Theta> ; \<Phi> ; {||} ; ?G ; \<Delta>  \<turnstile> AS_while s1 s2 \<Leftarrow> \<lbrace> zz : b_of \<tau>'  | [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   IMP  c_of \<tau>' zz  \<rbrace>\<close>
          proof(rule check_s_supertype(1))
-           have \<open> \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_while s1 s2 \<Leftarrow> \<tau>'\<close> using  check_whileI by auto
+           have \<open> \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_while s1 s2 \<Leftarrow> \<tau>'\<close> using  check_whileI by auto
            thus *:\<open> \<Theta> ; \<Phi> ; {||} ; ?G ; \<Delta>  \<turnstile> AS_while s1 s2 \<Leftarrow> \<tau>' \<close> using  check_s_g_weakening(1)[OF _ _ wfg] toSet.simps by auto
 
            (*obtain zz where teq:"\<tau>' = \<lbrace> zz : b_of \<tau>' | c_of \<tau>' zz\<rbrace>" sory*)
@@ -1077,8 +1077,8 @@ qed
 
 lemma check_assert_s:
   fixes s::s and x::x
-  assumes "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  AS_assert c s  \<Leftarrow> \<tau>"
-        shows "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  s  \<Leftarrow> \<tau> \<and> \<Theta> ; {||} ; GNil  \<Turnstile> c "
+  assumes "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  AS_assert c s  \<Leftarrow> \<tau>"
+        shows "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  s  \<Leftarrow> \<tau> \<and> \<Theta> ; {||} ; GNil  \<Turnstile> c "
 proof -
   let ?B = "({||}::bv fset)"
   let ?v = "V_lit L_true"
@@ -1104,8 +1104,8 @@ lemma infer_v_pair2I:
 
 lemma preservation:
   fixes s::s and s'::s
-  assumes "\<Phi> \<turnstile> \<langle> \<delta> , s \<rangle> \<longrightarrow> \<langle> \<delta>' , s' \<rangle>" and "\<Theta> ; \<Phi> ; \<Delta> \<turnstile>  \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau>"
-  shows "\<exists>\<Delta>'. \<Theta> ; \<Phi> ; \<Delta>' \<turnstile>  \<langle> \<delta>' , s' \<rangle> \<Leftarrow> \<tau> \<and> setD \<Delta> \<subseteq> setD \<Delta>'" 
+  assumes "\<Phi> \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow> \<langle>\<delta>', s'\<rangle>" and "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau>"
+  shows "\<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle>\<delta>', s'\<rangle> \<Leftarrow> \<tau> \<and> setD \<Delta> \<subseteq> setD \<Delta>'" 
   using assms 
 proof(induct arbitrary: \<tau> rule: reduce_stmt.induct)
   case (reduce_let_plusI \<delta> x n1 n2 s')
@@ -1116,22 +1116,22 @@ next
   then show ?case using preservation_leq  by (metis order_refl)  
 next
   case (reduce_let_appI f z b c \<tau>' s' \<Phi> \<delta> x v s)
-  hence tt: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_app f v) s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" using config_type_elims[OF reduce_let_appI(2)] by metis 
-  hence *:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_app f v) s \<Leftarrow> \<tau>" by auto
+  hence tt: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_app f v) s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" using config_type_elims[OF reduce_let_appI(2)] by metis 
+  hence *:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_app f v) s \<Leftarrow> \<tau>" by auto
 
-  hence  "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let2 x   (\<tau>'[z::=v]\<^sub>\<tau>\<^sub>v) (s'[z::=v]\<^sub>s\<^sub>v) s \<Leftarrow> \<tau>" 
+  hence  "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let2 x   (\<tau>'[z::=v]\<^sub>\<tau>\<^sub>v) (s'[z::=v]\<^sub>s\<^sub>v) s \<Leftarrow> \<tau>" 
     using preservation_app reduce_let_appI tt by auto
 
-  hence "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , AS_let2 x (\<tau>'[z::=v]\<^sub>\<tau>\<^sub>v) s'[z::=v]\<^sub>s\<^sub>v s \<rangle> \<Leftarrow> \<tau>"  using  config_typeI tt by auto
+  hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let2 x (\<tau>'[z::=v]\<^sub>\<tau>\<^sub>v) s'[z::=v]\<^sub>s\<^sub>v s \<rangle> \<Leftarrow> \<tau>"  using  config_typeI tt by auto
   then show ?case using tt order_refl reduce_let_appI by metis
 
 next
   case (reduce_let_appPI f bv z b c \<tau>' s' \<Phi> \<delta> x b' v s)
 
-  hence tt: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_appP f b' v) s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" using config_type_elims[OF reduce_let_appPI(2)] by metis 
-  hence *:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_appP f b' v) s \<Leftarrow> \<tau>" by auto
+  hence tt: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_appP f b' v) s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" using config_type_elims[OF reduce_let_appPI(2)] by metis 
+  hence *:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_appP f b' v) s \<Leftarrow> \<tau>" by auto
 
-  have  "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let2 x   (\<tau>'[bv::=b']\<^sub>\<tau>\<^sub>b[z::=v]\<^sub>\<tau>\<^sub>v) (s'[bv::=b']\<^sub>s\<^sub>b[z::=v]\<^sub>s\<^sub>v) s \<Leftarrow> \<tau>" 
+  have  "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let2 x   (\<tau>'[bv::=b']\<^sub>\<tau>\<^sub>b[z::=v]\<^sub>\<tau>\<^sub>v) (s'[bv::=b']\<^sub>s\<^sub>b[z::=v]\<^sub>s\<^sub>v) s \<Leftarrow> \<tau>" 
   proof(rule preservation_poly_app) 
     show \<open>Some (AF_fundef f (AF_fun_typ_some bv (AF_fun_typ z b c  \<tau>' s'))) = lookup_fun \<Phi> f\<close> using reduce_let_appPI by metis
     show \<open>\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd\<close> using tt lookup_fun_member by metis
@@ -1139,7 +1139,7 @@ next
     show \<open> \<Theta> ; {||}  \<turnstile>\<^sub>w\<^sub>f b' \<close> using check_s_elims infer_e_wf wfE_elims * by metis
   qed(auto+)
 
-  hence "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , AS_let2 x (\<tau>'[bv::=b']\<^sub>\<tau>\<^sub>b[z::=v]\<^sub>\<tau>\<^sub>v) s'[bv::=b']\<^sub>s\<^sub>b[z::=v]\<^sub>s\<^sub>v s \<rangle> \<Leftarrow> \<tau>"  using  config_typeI tt by auto
+  hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let2 x (\<tau>'[bv::=b']\<^sub>\<tau>\<^sub>b[z::=v]\<^sub>\<tau>\<^sub>v) s'[bv::=b']\<^sub>s\<^sub>b[z::=v]\<^sub>s\<^sub>v s \<rangle> \<Leftarrow> \<tau>"  using  config_typeI tt by auto
   then show ?case using tt order_refl reduce_let_appI by metis
 
 next
@@ -1153,13 +1153,13 @@ next
   then show ?case using preservation_let_val by presburger
 next
    case (reduce_let_mvar u v \<delta> \<Phi>  x s)
-  hence *:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_mvar u) s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
+  hence *:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_mvar u) s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
     using config_type_elims by blast
 
-  hence **: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_mvar u) s \<Leftarrow> \<tau>" by auto
+  hence **: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_mvar u) s \<Leftarrow> \<tau>" by auto
   obtain xa::x and za::x and ca::c and ba::b and sa::s where
      sa1: "atom xa \<sharp> (\<Theta>, \<Phi>, {||}::bv fset, GNil, \<Delta>, AE_mvar u, \<tau>) \<and>  atom za \<sharp> (xa, \<Theta>, \<Phi>, {||}::bv fset, GNil, \<Delta>, AE_mvar u, \<tau>, sa) \<and>
-     \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> AE_mvar u \<Rightarrow> \<lbrace> za : ba  | ca \<rbrace> \<and>
+     \<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> AE_mvar u \<Rightarrow> \<lbrace> za : ba  | ca \<rbrace> \<and>
      \<Theta> ; \<Phi> ; {||} ; (xa, ba, ca[za::=V_var xa]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> GNil ; \<Delta>   \<turnstile> sa \<Leftarrow> \<tau> \<and>
        (\<forall>c. atom c \<sharp> (s, sa) \<longrightarrow> atom c \<sharp> (x, xa, s, sa) \<longrightarrow> (x \<leftrightarrow> c) \<bullet> s = (xa \<leftrightarrow> c) \<bullet> sa)" 
     using check_s_elims(2)[OF **] subst_defs by metis
@@ -1200,13 +1200,13 @@ next
    qed
   hence dwf: "\<Theta> ; {||} ; GNil  \<turnstile>\<^sub>w\<^sub>f \<Delta>" using sa1 infer_e_wf by meson
 
-  have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let xa (AE_val v) sa \<Leftarrow> \<tau>" proof 
+  have "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let xa (AE_val v) sa \<Leftarrow> \<tau>" proof 
     have "atom xa \<sharp> (AE_val v)" using infer_v_wf(1) wfV_supp fresh_def e.fresh x_not_in_b_set vst by fastforce
     thus  "atom xa \<sharp> (\<Theta>, \<Phi>, {||}::bv fset, GNil, \<Delta>, AE_val v, \<tau>)" using sa1 freshers by simp 
     have "atom za2 \<sharp> (AE_val v)" using infer_v_wf(1) wfV_supp fresh_def e.fresh x_not_in_b_set vst by fastforce
     thus "atom za2 \<sharp> (xa, \<Theta>, \<Phi>, {||}::bv fset, GNil, \<Delta>, AE_val v, \<tau>, sa)" using zbc freshers fresh_prodN by auto
     have " \<Theta>    \<turnstile>\<^sub>w\<^sub>f \<Phi>" using sa1 infer_e_wf by auto
-    thus  "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> AE_val v \<Rightarrow> \<lbrace> za2 : ba  | ca2 \<rbrace>" 
+    thus  "\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> AE_val v \<Rightarrow> \<lbrace> za2 : ba  | ca2 \<rbrace>" 
       using zbc vst beq dwf infer_e_valI by blast
     show "\<Theta> ; \<Phi> ; {||} ; (xa, ba, ca2[za2::=V_var xa]\<^sub>v) #\<^sub>\<Gamma> GNil ; \<Delta>   \<turnstile> sa \<Leftarrow> \<tau>" using sat2 append_g.simps subst_defs by metis
   qed
@@ -1215,26 +1215,26 @@ next
       using sa1 Abs1_eq_iff_all(3)[where z=" (s, sa)"] by metis
     thus ?thesis using s_branch_s_branch_list.eq_iff(2) by metis
   qed
-  ultimately have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let x (AE_val v) s \<Leftarrow> \<tau>"  by auto
+  ultimately have "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_val v) s \<Leftarrow> \<tau>"  by auto
     
   then show ?case using reduce_let_mvar * config_typeI
     by (meson order_refl)
 next
   case (reduce_let2I \<Phi> \<delta> s1 \<delta>' s1'  x t s2)
-  hence **: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> AS_let2 x t s1 s2  \<Leftarrow> \<tau>  \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" using config_type_elims[OF reduce_let2I(3)] by blast
-  hence *:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> AS_let2 x t s1 s2  \<Leftarrow> \<tau>" by auto
+  hence **: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> AS_let2 x t s1 s2  \<Leftarrow> \<tau>  \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" using config_type_elims[OF reduce_let2I(3)] by blast
+  hence *:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> AS_let2 x t s1 s2  \<Leftarrow> \<tau>" by auto
 
   obtain xa::x and  z::x and c and b and s2a::s where st: "atom xa \<sharp> (\<Theta>, \<Phi>, {||}::bv fset, GNil, \<Delta>, t, s1, \<tau>)  \<and>
-       \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> s1 \<Leftarrow> t \<and>
+       \<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> s1 \<Leftarrow> t \<and>
        \<Theta> ; \<Phi> ; {||} ; (xa, b_of t, c_of t xa) #\<^sub>\<Gamma> GNil ; \<Delta>   \<turnstile> s2a \<Leftarrow> \<tau> \<and>  ([[atom x]]lst. s2 = [[atom xa]]lst. s2a) "
     using check_s_elims(4)[OF *] Abs1_eq_iff_all(3) by metis
 
-  hence "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , s1 \<rangle> \<Leftarrow> t"  using config_typeI ** by auto
-  then obtain \<Delta>' where s1r: "\<Theta> ; \<Phi> ; \<Delta>' \<turnstile> \<langle> \<delta>' , s1' \<rangle> \<Leftarrow> t \<and> setD \<Delta> \<subseteq> setD \<Delta>'" using reduce_let2I by presburger
+  hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , s1 \<rangle> \<Leftarrow> t"  using config_typeI ** by auto
+  then obtain \<Delta>' where s1r: "\<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s1' \<rangle> \<Leftarrow> t \<and> setD \<Delta> \<subseteq> setD \<Delta>'" using reduce_let2I by presburger
 
-  have  "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>'  \<turnstile> AS_let2 xa t s1' s2a  \<Leftarrow> \<tau>" 
+  have  "\<Theta>; \<Phi>; {||}; GNil; \<Delta>'  \<turnstile> AS_let2 xa t s1' s2a  \<Leftarrow> \<tau>" 
   proof(rule check_let2I)
-    show *:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>'  \<turnstile> s1' \<Leftarrow> t" using config_type_elims st s1r by metis
+    show *:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>'  \<turnstile> s1' \<Leftarrow> t" using config_type_elims st s1r by metis
     show  "atom xa \<sharp> (\<Theta>, \<Phi>, {||}::bv fset, GNil, \<Delta>',t, s1', \<tau>)" proof -  
       have "atom xa \<sharp> s1'" using  check_s_x_fresh *  by auto
       moreover have "atom xa \<sharp> \<Delta>'" using check_s_x_fresh * by auto
@@ -1249,7 +1249,7 @@ next
   qed
   qed
   moreover have "AS_let2 xa t s1' s2a = AS_let2 x t s1' s2"  using st s_branch_s_branch_list.eq_iff by metis
-  ultimately have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>'  \<turnstile> AS_let2 x t s1' s2  \<Leftarrow> \<tau>" using st by argo
+  ultimately have "\<Theta>; \<Phi>; {||}; GNil; \<Delta>'  \<turnstile> AS_let2 x t s1' s2  \<Leftarrow> \<tau>" using st by argo
   moreover have "\<Theta> \<turnstile> \<delta>' \<sim> \<Delta>'" using config_type_elims s1r by fast
   ultimately show ?case using config_typeI **
     by (meson s1r)
@@ -1259,22 +1259,22 @@ next
 next
   case (reduce_varI u \<delta> \<Phi> \<tau>' v s)
   thm check_s_flip_u
-  hence ** : "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_var u \<tau>' v s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
+  hence ** : "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_var u \<tau>' v s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
     using config_type_elims by meson
   have uf: "atom u \<sharp> \<Delta>" using reduce_varI delta_sim_fresh by force  
-  hence *: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_var u \<tau>' v s \<Leftarrow> \<tau>" and " \<Theta> \<turnstile> \<delta> \<sim> \<Delta>" using **  by auto
+  hence *: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_var u \<tau>' v s \<Leftarrow> \<tau>" and " \<Theta> \<turnstile> \<delta> \<sim> \<Delta>" using **  by auto
 
   thus ?case using preservation_var reduce_varI config_typeI ** set_subset_Cons
     setD_ConsD subsetI  by (metis delta_sim_fresh)
 
 next
   case (reduce_assignI \<Phi> \<delta> u v )
-  hence *: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_assign u v  \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
+  hence *: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_assign u v  \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
     using config_type_elims by meson
   then obtain z and \<tau>' where zt: "\<Theta> ; {||} ; GNil \<turnstile> (\<lbrace> z : B_unit | TRUE \<rbrace>) \<lesssim> \<tau> \<and> (u,\<tau>') \<in> setD \<Delta> \<and> \<Theta> ; {||} ; GNil \<turnstile> v \<Leftarrow> \<tau>' \<and> \<Theta> ; {||} ; GNil  \<turnstile>\<^sub>w\<^sub>f \<Delta>" 
     using check_s_elims(8) by metis
   hence "\<Theta> \<turnstile> update_d \<delta> u v \<sim> \<Delta>" using update_d_sim  * by metis
-  moreover have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_val (V_lit L_unit ) \<Leftarrow> \<tau>" using zt * check_s_v_unit check_s_wf
+  moreover have "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_val (V_lit L_unit ) \<Leftarrow> \<tau>" using zt * check_s_v_unit check_s_wf
     by auto
   ultimately show ?case using config_typeI * by (meson order_refl)
 next
@@ -1284,46 +1284,46 @@ next
   then show ?case  using config_typeI by blast
 next
   case (reduce_seq2I s1 v \<Phi> \<delta> \<delta>' s1' s2)
-  hence tt: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_seq s1 s2 \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
+  hence tt: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_seq s1 s2 \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
     using config_type_elims by blast
-  then obtain z where zz: "\<Theta> ; \<Phi> ; {||} ; GNil; \<Delta>  \<turnstile> s1 \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>) \<and>  \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> s2 \<Leftarrow> \<tau>" 
+  then obtain z where zz: "\<Theta> ; \<Phi> ; {||} ; GNil; \<Delta>  \<turnstile> s1 \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>) \<and>  \<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> s2 \<Leftarrow> \<tau>" 
     using check_s_elims by blast
-  hence "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , s1 \<rangle> \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>)" 
+  hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , s1 \<rangle> \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>)" 
     using tt config_typeI tt by simp 
-  then obtain \<Delta>' where *: "\<Theta> ; \<Phi> ; \<Delta>' \<turnstile> \<langle> \<delta>' , s1' \<rangle> \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>) \<and> setD \<Delta> \<subseteq> setD \<Delta>'" 
+  then obtain \<Delta>' where *: "\<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s1' \<rangle> \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>) \<and> setD \<Delta> \<subseteq> setD \<Delta>'" 
     using reduce_seq2I by meson
-  moreover hence  s't: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>'  \<turnstile> s1' \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>) \<and> \<Theta> \<turnstile> \<delta>' \<sim> \<Delta>'" 
+  moreover hence  s't: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>'  \<turnstile> s1' \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>) \<and> \<Theta> \<turnstile> \<delta>' \<sim> \<Delta>'" 
     using config_type_elims by force
   moreover hence "\<Theta> ; {||} ; GNil  \<turnstile>\<^sub>w\<^sub>f \<Delta>'" using check_s_wf by meson
-  moreover hence  "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>'  \<turnstile> s2 \<Leftarrow> \<tau>" 
+  moreover hence  "\<Theta>; \<Phi>; {||}; GNil; \<Delta>'  \<turnstile> s2 \<Leftarrow> \<tau>" 
     using calculation(1) zz check_s_d_weakening * by metis
-  moreover hence  "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>'  \<turnstile> (AS_seq s1' s2) \<Leftarrow> \<tau>" 
+  moreover hence  "\<Theta>; \<Phi>; {||}; GNil; \<Delta>'  \<turnstile> (AS_seq s1' s2) \<Leftarrow> \<tau>" 
     using check_seqI zz s't by meson 
-  ultimately have  "\<Theta> ; \<Phi> ; \<Delta>'  \<turnstile> \<langle> \<delta>' , AS_seq s1' s2 \<rangle> \<Leftarrow> \<tau> \<and> setD \<Delta> \<subseteq> setD \<Delta>'"
+  ultimately have  "\<Theta>; \<Phi>; \<Delta>'  \<turnstile> \<langle> \<delta>' , AS_seq s1' s2 \<rangle> \<Leftarrow> \<tau> \<and> setD \<Delta> \<subseteq> setD \<Delta>'"
     using zz config_typeI tt  by meson
   then show ?case by meson
 next
   case (reduce_whileI x  s1 s2 z' \<Phi> \<delta> )
 
-  hence *: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_while s1 s2  \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
+  hence *: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_while s1 s2  \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
     using config_type_elims by meson
 
-  hence  **:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_while s1 s2  \<Leftarrow> \<tau>" by auto
-  hence "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_let2 x (\<lbrace> z' : B_bool  | TRUE \<rbrace>) s1 (AS_if (V_var x) (AS_seq s2 (AS_while s1 s2))  (AS_val (V_lit L_unit)) ) \<Leftarrow> \<tau>"
+  hence  **:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_while s1 s2  \<Leftarrow> \<tau>" by auto
+  hence "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let2 x (\<lbrace> z' : B_bool  | TRUE \<rbrace>) s1 (AS_if (V_var x) (AS_seq s2 (AS_while s1 s2))  (AS_val (V_lit L_unit)) ) \<Leftarrow> \<tau>"
     using check_while reduce_whileI by auto
   thus ?case  using config_typeI *   by (meson subset_refl)
 
 next
   case (reduce_caseI dc x' s' css \<Phi> \<delta> tyid  v)
 
-  hence **: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> AS_match (V_cons tyid dc v) css \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)"
+  hence **: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> AS_match (V_cons tyid dc v) css \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)"
     using config_type_elims[OF reduce_caseI(2)] by metis
-  hence ***: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AS_match (V_cons tyid  dc v) css \<Leftarrow> \<tau>" by auto
+  hence ***: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_match (V_cons tyid  dc v) css \<Leftarrow> \<tau>" by auto
 
   let ?vcons = "V_cons tyid dc v"
 
   obtain dclist tid  and z::x where cv:  "\<Theta>; {||} ; GNil \<turnstile> (V_cons tyid dc v) \<Leftarrow> (\<lbrace> z : B_id tid | TRUE \<rbrace>) \<and> 
-    \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta> ; tid ; dclist ; (V_cons tyid dc v) \<turnstile> css \<Leftarrow> \<tau> \<and>  AF_typedef tid dclist \<in> set \<Theta> \<and> 
+    \<Theta>; \<Phi>; {||}; GNil; \<Delta> ; tid ; dclist ; (V_cons tyid dc v) \<turnstile> css \<Leftarrow> \<tau> \<and>  AF_typedef tid dclist \<in> set \<Theta> \<and> 
  \<Theta> ; {||} ; GNil  \<turnstile> V_cons tyid dc v \<Leftarrow> \<lbrace> z : B_id tid  | TRUE \<rbrace>"
     using check_s_elims(9)[OF ***] by metis
 
@@ -1336,7 +1336,7 @@ next
     case (1 dclist2 tc tv z2)
     have "tyid = tid" using \<tau>.eq_iff using subtype_eq_base vi2 1 by fastforce 
     hence deq:"dclist = dclist2"  using check_v_wf wfX_wfY cv 1  wfTh_dclist_unique by metis
-    have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> s'[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>" proof(rule check_match(3))     
+    have "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> s'[x'::=v]\<^sub>s\<^sub>v \<Leftarrow> \<tau>" proof(rule check_match(3))     
       show \<open> \<Theta> ;  \<Phi> ;  {||} ; GNil ; \<Delta> ; tyid ; dclist ; ?vcons \<turnstile> css \<Leftarrow> \<tau>\<close> using \<open>tyid = tid\<close> cv by auto
       show "distinct (map fst dclist)" using wfTh_dclist_distinct check_v_wf wfX_wfY cv by metis
       show \<open>?vcons = V_cons tyid dc v\<close> by auto
@@ -1357,7 +1357,7 @@ next
   thus ?case using preservation_fst_snd order_refl by metis
 next
   case (reduce_let_concatI \<Phi> \<delta> x v1 v2 s)
-  hence elim: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  AS_let x (AE_concat (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2))) s \<Leftarrow> \<tau> \<and> 
+  hence elim: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  AS_let x (AE_concat (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2))) s \<Leftarrow> \<tau> \<and> 
                   \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
     using config_type_elims by metis
 
@@ -1366,10 +1366,10 @@ next
 
   have "\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f GNil" using check_s_wf elim by auto
 
-  have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta> \<turnstile> AS_let x (AE_val (V_lit (L_bitvec (v1 @ v2)))) s \<Leftarrow> \<tau>" proof(rule subtype_let)
-    show \<open> \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> AS_let x (AE_concat (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2))) s \<Leftarrow> \<tau>\<close> using elim by auto
-    show \<open>\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> (AE_concat (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2))) \<Rightarrow> \<lbrace> z : B_bitvec  | CE_val (V_var z)  == (CE_concat ([V_lit (L_bitvec v1)]\<^sup>c\<^sup>e) ([V_lit (L_bitvec v2)]\<^sup>c\<^sup>e))\<rbrace> \<close> 
-     (is "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> ?e1 \<Rightarrow> ?t1")
+  have "\<Theta>; \<Phi>; {||}; GNil; \<Delta> \<turnstile> AS_let x (AE_val (V_lit (L_bitvec (v1 @ v2)))) s \<Leftarrow> \<tau>" proof(rule subtype_let)
+    show \<open> \<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> AS_let x (AE_concat (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2))) s \<Leftarrow> \<tau>\<close> using elim by auto
+    show \<open>\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> (AE_concat (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2))) \<Rightarrow> \<lbrace> z : B_bitvec  | CE_val (V_var z)  == (CE_concat ([V_lit (L_bitvec v1)]\<^sup>c\<^sup>e) ([V_lit (L_bitvec v2)]\<^sup>c\<^sup>e))\<rbrace> \<close> 
+     (is "\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> ?e1 \<Rightarrow> ?t1")
     proof
       show \<open> \<Theta> ; {||} ; GNil  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using check_s_wf elim by auto
       show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using check_s_wf elim by auto
@@ -1380,8 +1380,8 @@ next
       show \<open>atom z \<sharp> AE_concat (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2))\<close> using z fresh_Pair by metis
       show \<open>atom z \<sharp> GNil\<close> using z fresh_Pair by auto
     qed
-    show \<open>\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> AE_val (V_lit (L_bitvec (v1 @ v2))) \<Rightarrow>  \<lbrace> z : B_bitvec  | CE_val (V_var z) == CE_val (V_lit (L_bitvec (v1 @ v2))) \<rbrace> \<close> 
-       (is "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> ?e2 \<Rightarrow> ?t2")
+    show \<open>\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> AE_val (V_lit (L_bitvec (v1 @ v2))) \<Rightarrow>  \<lbrace> z : B_bitvec  | CE_val (V_var z) == CE_val (V_lit (L_bitvec (v1 @ v2))) \<rbrace> \<close> 
+       (is "\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> ?e2 \<Rightarrow> ?t2")
       using infer_e_valI infer_v_litI infer_l.intros  \<open>\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f GNil\<close>  fresh_GNil check_s_wf elim by metis
     show \<open>\<Theta> ; {||} ; GNil  \<turnstile> ?t2 \<lesssim> ?t1\<close> using subtype_concat check_s_wf elim by auto
   qed
@@ -1389,26 +1389,26 @@ next
   thus ?case  using config_typeI elim by (meson order_refl)
 next
   case (reduce_let_lenI \<Phi> \<delta> x v s)
-  hence elim: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  AS_let x (AE_len (V_lit (L_bitvec v))) s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
+  hence elim: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  AS_let x (AE_len (V_lit (L_bitvec v))) s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
     using check_s_elims config_type_elims by metis
 
-  then obtain t where t: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> AE_len (V_lit (L_bitvec v)) \<Rightarrow> t"   using check_s_elims by meson
+  then obtain t where t: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AE_len (V_lit (L_bitvec v)) \<Rightarrow> t"   using check_s_elims by meson
  
   moreover then obtain z::x where  "t = \<lbrace> z : B_int  | CE_val (V_var z)  ==  CE_len ([V_lit (L_bitvec v)]\<^sup>c\<^sup>e)  \<rbrace>" using infer_e_elims by meson 
 
   moreover obtain z'::x where "atom z' \<sharp> v" using obtain_fresh by metis
-  moreover have  "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta> \<turnstile>  AE_val (V_lit (L_num (int (length v)))) \<Rightarrow> \<lbrace> z' : B_int  | CE_val (V_var z')  ==  CE_val (V_lit (L_num (int (length v))))  \<rbrace>" 
+  moreover have  "\<Theta>; \<Phi>; {||}; GNil; \<Delta> \<turnstile>  AE_val (V_lit (L_num (int (length v)))) \<Rightarrow> \<lbrace> z' : B_int  | CE_val (V_var z')  ==  CE_val (V_lit (L_num (int (length v))))  \<rbrace>" 
     using infer_e_valI infer_v_litI infer_l.intros(3)  t  check_s_wf elim 
     by (metis infer_l_form2 type_for_lit.simps(3))
 
   moreover have "\<Theta> ; {||} ; GNil \<turnstile>   \<lbrace> z' : B_int  | CE_val (V_var z')  ==  CE_val (V_lit (L_num (int (length v))))  \<rbrace> \<lesssim> 
                            \<lbrace> z : B_int  | CE_val (V_var z)  ==  CE_len [(V_lit (L_bitvec v))]\<^sup>c\<^sup>e  \<rbrace>" using subtype_len check_s_wf elim by auto
   
-  ultimately have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta> \<turnstile>  AS_let x (AE_val (V_lit (L_num (int (length v)))))  s \<Leftarrow> \<tau>" using subtype_let by (meson elim)
+  ultimately have "\<Theta>; \<Phi>; {||}; GNil; \<Delta> \<turnstile>  AS_let x (AE_val (V_lit (L_num (int (length v)))))  s \<Leftarrow> \<tau>" using subtype_let by (meson elim)
   thus ?case  using config_typeI elim by (meson order_refl)
 next
  case (reduce_let_splitI n v v1 v2 \<Phi> \<delta> x s)
-  hence elim: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  AS_let x (AE_split (V_lit (L_bitvec v)) (V_lit (L_num n))) s \<Leftarrow> \<tau> \<and> 
+  hence elim: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  AS_let x (AE_split (V_lit (L_bitvec v)) (V_lit (L_num n))) s \<Leftarrow> \<tau> \<and> 
                   \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
     using config_type_elims by metis
 
@@ -1418,13 +1418,13 @@ next
 
   have *:"\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f GNil" using check_s_wf elim by auto
 
-  have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta> \<turnstile> AS_let x (AE_val (V_pair (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2)))) s \<Leftarrow> \<tau>" proof(rule subtype_let)
+  have "\<Theta>; \<Phi>; {||}; GNil; \<Delta> \<turnstile> AS_let x (AE_val (V_pair (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2)))) s \<Leftarrow> \<tau>" proof(rule subtype_let)
 
-    show \<open> \<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> AS_let x (AE_split (V_lit (L_bitvec v)) (V_lit (L_num n))) s \<Leftarrow> \<tau>\<close> using elim by auto
-    show \<open>\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> (AE_split (V_lit (L_bitvec v)) (V_lit (L_num n))) \<Rightarrow> \<lbrace> z : B_pair B_bitvec B_bitvec  
+    show \<open> \<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> AS_let x (AE_split (V_lit (L_bitvec v)) (V_lit (L_num n))) s \<Leftarrow> \<tau>\<close> using elim by auto
+    show \<open>\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> (AE_split (V_lit (L_bitvec v)) (V_lit (L_num n))) \<Rightarrow> \<lbrace> z : B_pair B_bitvec B_bitvec  
                  |   ((CE_val (V_lit (L_bitvec v))) == (CE_concat (CE_fst (CE_val (V_var z))) (CE_snd (CE_val (V_var z)))))
                   AND (((CE_len (CE_fst (CE_val (V_var z))))) == (CE_val (V_lit (L_num n)))) \<rbrace> \<close> 
-     (is "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> ?e1 \<Rightarrow> ?t1") 
+     (is "\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> ?e1 \<Rightarrow> ?t1") 
     proof
       show \<open> \<Theta> ; {||} ; GNil  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using check_s_wf elim by auto
       show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using check_s_wf elim by auto
@@ -1441,8 +1441,8 @@ next
       show \<open>atom z \<sharp> GNil\<close> using z fresh_Pair by auto
     qed
 
-    show \<open>\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> AE_val (V_pair (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2))) \<Rightarrow>  \<lbrace> z : B_pair B_bitvec  B_bitvec  | CE_val (V_var z) == CE_val ((V_pair (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2)))) \<rbrace> \<close> 
-       (is "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> ?e2 \<Rightarrow> ?t2")
+    show \<open>\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> AE_val (V_pair (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2))) \<Rightarrow>  \<lbrace> z : B_pair B_bitvec  B_bitvec  | CE_val (V_var z) == CE_val ((V_pair (V_lit (L_bitvec v1)) (V_lit (L_bitvec v2)))) \<rbrace> \<close> 
+       (is "\<Theta>; \<Phi>; {||}; GNil; \<Delta>   \<turnstile> ?e2 \<Rightarrow> ?t2")
       apply(rule infer_e_valI)
       using check_s_wf elim apply metis
       using check_s_wf elim apply metis      
@@ -1459,34 +1459,34 @@ next
 next
   case (reduce_assert1I \<Phi> \<delta> c v)
 
-  hence elim: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  AS_assert c [v]\<^sup>s   \<Leftarrow> \<tau> \<and> 
+  hence elim: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  AS_assert c [v]\<^sup>s   \<Leftarrow> \<tau> \<and> 
                   \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
     using config_type_elims reduce_assert1I by metis
-  hence *:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  AS_assert c [v]\<^sup>s   \<Leftarrow> \<tau>" by auto
+  hence *:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  AS_assert c [v]\<^sup>s   \<Leftarrow> \<tau>" by auto
 
-  have  "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  [v]\<^sup>s   \<Leftarrow> \<tau>" using  check_assert_s *  by metis
+  have  "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  [v]\<^sup>s   \<Leftarrow> \<tau>" using  check_assert_s *  by metis
   thus  ?case using elim config_typeI  by blast
 next
   case (reduce_assert2I \<Phi> \<delta> s \<delta>' s' c)
 
-  hence elim: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  AS_assert c s  \<Leftarrow> \<tau> \<and> 
+  hence elim: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  AS_assert c s  \<Leftarrow> \<tau> \<and> 
                   \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" 
     using config_type_elims by metis
-  hence *:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  AS_assert c s   \<Leftarrow> \<tau>" by auto
+  hence *:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  AS_assert c s   \<Leftarrow> \<tau>" by auto
 
-  have  cv: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile>  s   \<Leftarrow> \<tau> \<and> \<Theta> ; {||} ; GNil  \<Turnstile> c " using check_assert_s *  by metis
+  have  cv: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  s   \<Leftarrow> \<tau> \<and> \<Theta> ; {||} ; GNil  \<Turnstile> c " using check_assert_s *  by metis
  
-  hence "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau>" using elim config_typeI by simp
-  then obtain \<Delta>' where D: "\<Theta> ; \<Phi> ; \<Delta>' \<turnstile> \<langle> \<delta>' , s' \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>'" using reduce_assert2I by metis
-  hence **:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>' \<turnstile> s' \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta>' \<sim> \<Delta>'" using config_type_elims by metis
+  hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau>" using elim config_typeI by simp
+  then obtain \<Delta>' where D: "\<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s' \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>'" using reduce_assert2I by metis
+  hence **:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>' \<turnstile> s' \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta>' \<sim> \<Delta>'" using config_type_elims by metis
 
   obtain x::x where x:"atom x \<sharp> (\<Theta>, \<Phi>, ({||}::bv fset), GNil, \<Delta>', c, \<tau>, s')" using obtain_fresh by metis
 
-  have *:"\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>'  \<turnstile> AS_assert c s'  \<Leftarrow> \<tau>" proof
+  have *:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>'  \<turnstile> AS_assert c s'  \<Leftarrow> \<tau>" proof
     show "atom x \<sharp> (\<Theta>, \<Phi>, {||}, GNil, \<Delta>', c, \<tau>, s')" using x by auto
     have "\<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f c" using * check_s_wf by auto
     hence wfg:"\<Theta> ; {||} \<turnstile>\<^sub>w\<^sub>f (x, B_bool, c) #\<^sub>\<Gamma> GNil" using wfC_wfG wfB_boolI check_s_wf *  fresh_GNil by auto
-    moreover have cs: "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>' \<turnstile> s' \<Leftarrow> \<tau>" using ** by auto
+    moreover have cs: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>' \<turnstile> s' \<Leftarrow> \<tau>" using ** by auto
     ultimately show  "\<Theta> ; \<Phi> ; {||} ; (x, B_bool, c) #\<^sub>\<Gamma> GNil ; \<Delta>'  \<turnstile> s' \<Leftarrow> \<tau>" using check_s_g_weakening(1)[OF cs _ wfg]   toSet.simps  by simp
     show "\<Theta> ; {||} ; GNil  \<Turnstile> c " using cv by auto
     show "\<Theta> ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f \<Delta>' " using check_s_wf ** by auto
@@ -1497,8 +1497,8 @@ qed
 
 lemma preservation_many:
   fixes s::s and s'::s 
-  assumes " \<Phi>  \<turnstile> \<langle> \<delta> , s \<rangle> \<longrightarrow>\<^sup>* \<langle> \<delta>' , s' \<rangle>"
-  shows "\<Theta> ; \<Phi> ; \<Delta> \<turnstile>  \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau> \<Longrightarrow> \<exists>\<Delta>'. \<Theta> ; \<Phi> ; \<Delta>' \<turnstile> \<langle> \<delta>' , s' \<rangle> \<Leftarrow> \<tau> \<and> setD \<Delta> \<subseteq> setD \<Delta>'" 
+  assumes " \<Phi>  \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow>\<^sup>* \<langle> \<delta>' , s' \<rangle>"
+  shows "\<Theta>; \<Phi>; \<Delta> \<turnstile>  \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau> \<Longrightarrow> \<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s' \<rangle> \<Leftarrow> \<tau> \<and> setD \<Delta> \<subseteq> setD \<Delta>'" 
   using assms proof(induct arbitrary: \<Delta> rule: reduce_stmt_many.induct)
   case (reduce_stmt_many_oneI \<Phi> \<delta> s \<delta>' s')
   then show ?case using preservation by simp
@@ -1512,10 +1512,10 @@ section \<open>Progress\<close>
 text {* Well typed program is either a value or we can make a step  *}
 
 lemma check_let_op_infer:
-  assumes  "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta>   \<turnstile> LET x = (AE_op opp v1 v2) IN s \<Leftarrow> \<tau>" and "supp ( LET x = (AE_op opp v1 v2) IN s) \<subseteq> atom`fst`setD \<Delta>"
-  shows  "\<exists> z b c. \<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile>  (AE_op opp v1 v2) \<Rightarrow> \<lbrace>z:b|c\<rbrace>"
+  assumes  "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta>   \<turnstile> LET x = (AE_op opp v1 v2) IN s \<Leftarrow> \<tau>" and "supp ( LET x = (AE_op opp v1 v2) IN s) \<subseteq> atom`fst`setD \<Delta>"
+  shows  "\<exists> z b c. \<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta> \<turnstile>  (AE_op opp v1 v2) \<Rightarrow> \<lbrace>z:b|c\<rbrace>"
 proof - 
-    have xx: "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile> LET x = (AE_op opp v1 v2) IN s \<Leftarrow> \<tau>" using assms by simp
+    have xx: "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta> \<turnstile> LET x = (AE_op opp v1 v2) IN s \<Leftarrow> \<tau>" using assms by simp
     then show ?thesis using check_s_elims(2)[OF xx] by meson
 qed
 
@@ -1542,11 +1542,11 @@ qed
 
 
 lemma progress_fst:
-  assumes  "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta>  \<turnstile> LET x = (AE_fst v) IN s \<Leftarrow> \<tau>" and  "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and "supp (LET x = (AE_fst v) IN s)  \<subseteq> atom`fst`setD \<Delta>"
-  shows "\<exists>\<delta>' s'. \<Phi>  \<turnstile> \<langle> \<delta> , LET x = (AE_fst v) IN s \<rangle> \<longrightarrow> \<langle>  \<delta>' , s' \<rangle>"
+  assumes  "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta>  \<turnstile> LET x = (AE_fst v) IN s \<Leftarrow> \<tau>" and  "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and "supp (LET x = (AE_fst v) IN s)  \<subseteq> atom`fst`setD \<Delta>"
+  shows "\<exists>\<delta>' s'. \<Phi>  \<turnstile> \<langle> \<delta> , LET x = (AE_fst v) IN s \<rangle> \<longrightarrow> \<langle>\<delta>', s'\<rangle>"
 proof -
   have *:"supp v = {}" using assms s_branch_s_branch_list.supp by auto
-  obtain z and b and c where "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile>  (AE_fst v ) \<Rightarrow> \<lbrace> z : b  | c \<rbrace>" 
+  obtain z and b and c where "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta> \<turnstile>  (AE_fst v ) \<Rightarrow> \<lbrace> z : b  | c \<rbrace>" 
     using check_s_elims(2)  using assms by meson
   moreover obtain z' and b' and c' where "\<Theta> ; {||} ; \<Gamma> \<turnstile>  v  \<Rightarrow> \<lbrace> z' : B_pair b b'  | c' \<rbrace>" 
     using infer_e_elims(8)  using calculation by auto 
@@ -1556,10 +1556,10 @@ proof -
 qed
 
 lemma progress_let:
-  assumes "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta> \<turnstile> LET x = e IN s \<Leftarrow> \<tau>" and "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and "supp (LET x = e IN s) \<subseteq> atom ` fst ` setD \<Delta>" and "sble \<Theta> \<Gamma>"
+  assumes "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta> \<turnstile> LET x = e IN s \<Leftarrow> \<tau>" and "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and "supp (LET x = e IN s) \<subseteq> atom ` fst ` setD \<Delta>" and "sble \<Theta> \<Gamma>"
   shows "\<exists>\<delta>' s'. \<Phi>  \<turnstile> \<langle> \<delta> , LET x = e IN s\<rangle> \<longrightarrow> \<langle> \<delta>' , s'\<rangle>"
 proof -
-  obtain z b c where *: "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta>  \<turnstile> e \<Rightarrow> \<lbrace> z : b  | c \<rbrace> " using check_s_elims(2)[OF assms(1)] by metis
+  obtain z b c where *: "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta>  \<turnstile> e \<Rightarrow> \<lbrace> z : b  | c \<rbrace> " using check_s_elims(2)[OF assms(1)] by metis
   have **: "supp e \<subseteq> atom ` fst ` setD \<Delta>" using assms s_branch_s_branch_list.supp by auto
   from * ** assms show ?thesis proof(nominal_induct "\<lbrace> z : b  | c \<rbrace>"  rule: infer_e.strong_induct)
     case (infer_e_valI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v)
@@ -1619,9 +1619,9 @@ qed
 lemma check_css_lookup_branch_exist:
   fixes s::s and cs::branch_s and css::branch_list and v::v
   shows 
-       "\<Theta> ; \<Phi> ; B  ; G ; \<Delta>  \<turnstile>  s \<Leftarrow> \<tau> \<Longrightarrow> True" and 
+       "\<Theta>; \<Phi>; B; G; \<Delta> \<turnstile>  s \<Leftarrow> \<tau> \<Longrightarrow> True" and 
        "check_branch_s \<Theta> \<Phi>  {||} GNil \<Delta> tid dc const v cs \<tau> \<Longrightarrow> True" and 
-       "\<Theta> ;  \<Phi> ; \<B> ; \<Gamma> ; \<Delta> ; tid ; dclist ; v \<turnstile> css \<Leftarrow> \<tau> \<Longrightarrow> (dc, t) \<in> set dclist \<Longrightarrow>  
+       "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>; tid; dclist; v \<turnstile> css \<Leftarrow> \<tau> \<Longrightarrow> (dc, t) \<in> set dclist \<Longrightarrow>  
               \<exists>x' s'. Some (AS_branch dc x' s') = lookup_branch dc css"
 proof(nominal_induct \<tau> and \<tau> and \<tau>  rule: check_s_check_branch_s_check_branch_list.strong_induct)
   case (check_branch_list_consI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> tid cons const v cs \<tau> dclist css)
@@ -1636,16 +1636,16 @@ qed(auto+)
 (* This is generalised. Rather than forcing \<Gamma> to be empty, we force s to be contain no immutable variables *)
 lemma progress_aux:
   fixes s::s and cs::branch_s and css::branch_list
-  shows    "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta>  \<turnstile> s \<Leftarrow> \<tau> \<Longrightarrow> \<B> = {||} \<Longrightarrow>  sble \<Theta> \<Gamma> \<Longrightarrow> supp s \<subseteq> atom ` fst ` setD \<Delta> \<Longrightarrow> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<Longrightarrow> 
-               (\<exists>v. s = [v]\<^sup>s) \<or> (\<exists>\<delta>' s'. \<Phi> \<turnstile> \<langle>  \<delta> , s  \<rangle> \<longrightarrow> \<langle>  \<delta>' , s' \<rangle>)" and
-           "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta>  ; tid ; dc ; const  ; v2 \<turnstile> cs \<Leftarrow> \<tau>  \<Longrightarrow> supp cs = {} \<Longrightarrow> True " 
-           "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta>  ; tid ; dclist ; v2 \<turnstile> css \<Leftarrow> \<tau> \<Longrightarrow> supp css = {} \<Longrightarrow> True " 
+  shows    "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> s \<Leftarrow> \<tau> \<Longrightarrow> \<B> = {||} \<Longrightarrow>  sble \<Theta> \<Gamma> \<Longrightarrow> supp s \<subseteq> atom ` fst ` setD \<Delta> \<Longrightarrow> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<Longrightarrow> 
+               (\<exists>v. s = [v]\<^sup>s) \<or> (\<exists>\<delta>' s'. \<Phi> \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow> \<langle>\<delta>', s'\<rangle>)" and
+           "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta>; tid; dc; const; v2 \<turnstile> cs \<Leftarrow> \<tau>  \<Longrightarrow> supp cs = {} \<Longrightarrow> True " 
+           "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta>; tid; dclist; v2 \<turnstile> css \<Leftarrow> \<tau> \<Longrightarrow> supp css = {} \<Longrightarrow> True " 
 proof(induct  rule: check_s_check_branch_s_check_branch_list.inducts)
 case (check_valI \<Delta> \<Theta> \<Gamma> v \<tau>' \<tau>)
   then show ?case by auto
 next
   case (check_letI x \<Theta> \<Phi> \<B> \<Gamma> \<Delta> e \<tau> z s b c)
-  hence "\<Theta> ; \<Phi> ; {||} ; \<Gamma> ; \<Delta>   \<turnstile>   AS_let x e s \<Leftarrow> \<tau>" using Typing.check_letI by meson
+  hence "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta>   \<turnstile>   AS_let x e s \<Leftarrow> \<tau>" using Typing.check_letI by meson
   then show ?case using progress_let check_letI by metis
 next
   case (check_branch_s_branchI \<Theta> \<B> \<Gamma> \<Delta> \<tau> const x \<Phi> tid cons v s)
@@ -1663,7 +1663,7 @@ next
   then show ?case using reduce_if_falseI reduce_if_trueI check_ifI by meson
 next
      case (check_let2I x \<Theta> \<Phi> \<B> G \<Delta> t s1 \<tau> s2 )
-  then consider  " (\<exists>v. s1 = AS_val v)" | "(\<exists>\<delta>' a. \<Phi>  \<turnstile> \<langle> \<delta> , s1 \<rangle> \<longrightarrow> \<langle>  \<delta>' , a \<rangle>)" by auto
+  then consider  " (\<exists>v. s1 = AS_val v)" | "(\<exists>\<delta>' a. \<Phi>  \<turnstile> \<langle>\<delta>, s1\<rangle> \<longrightarrow> \<langle>\<delta>', a\<rangle>)" by auto
   then show ?case proof(cases)
     case 1
     then show ?thesis using reduce_let2_valI by fast
@@ -1680,7 +1680,7 @@ next
   ultimately have "AS_var uu \<tau>' v sa = AS_var u \<tau>' v s" using s_branch_s_branch_list.eq_iff(7) Abs1_eq_iff(3)[of uu sa u s] by auto
 
   moreover have "atom uu \<sharp> \<delta>" using uf fresh_prod3 by auto
-  ultimately have "\<Phi>   \<turnstile> \<langle> \<delta> , AS_var u \<tau>' v s \<rangle> \<longrightarrow> \<langle>  (uu, v) # \<delta> , sa \<rangle>"
+  ultimately have "\<Phi> \<turnstile> \<langle>\<delta>, AS_var u \<tau>' v s\<rangle> \<longrightarrow> \<langle>(uu, v) # \<delta>, sa\<rangle>"
     using reduce_varI uf by metis
   then show ?case by auto
 next
@@ -1697,8 +1697,8 @@ next
     case True
     then obtain v where v: "s1 = AS_val v" by blast
     hence "supp v = {}" using check_seqI by auto
-    have "\<exists>z1 c1. P ; \<B> ; G \<turnstile> v \<Rightarrow> (\<lbrace> z1 : B_unit | c1 \<rbrace>)" proof - 
-      obtain t where t:"P ; \<B> ; G \<turnstile> v \<Rightarrow> t \<and> P ; \<B> ; G \<turnstile> t \<lesssim> (\<lbrace> z : B_unit | TRUE \<rbrace>)"  
+    have "\<exists>z1 c1. P; \<B>; G \<turnstile> v \<Rightarrow> (\<lbrace> z1 : B_unit | c1 \<rbrace>)" proof - 
+      obtain t where t:"P; \<B>; G \<turnstile> v \<Rightarrow> t \<and> P; \<B> ; G \<turnstile> t \<lesssim> (\<lbrace> z : B_unit | TRUE \<rbrace>)"  
         using v check_seqI(1) check_s_elims(1) by blast
       obtain z1 and b1 and c1 where teq: "t =  (\<lbrace> z1 : b1 | c1 \<rbrace>)" using obtain_fresh_z by meson
       hence "b1 = B_unit" using subtype_eq_base t by meson
@@ -1730,7 +1730,7 @@ next
   have "atom x \<sharp> c " using check_assertI by auto
   have "atom x \<sharp> \<Gamma>" using check_assertI check_s_wf wfG_elims by metis
  have "sble \<Theta> ((x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>)" proof -
-    obtain i' where i':" i' \<Turnstile> \<Gamma>  \<and>  \<Theta> ; \<Gamma> \<turnstile> i'" using check_assertI sble_def by metis
+    obtain i' where i':" i' \<Turnstile> \<Gamma>  \<and>  \<Theta>; \<Gamma> \<turnstile> i'" using check_assertI sble_def by metis
     obtain i::valuation where i:"i = i' ( x \<mapsto> SBool True)" by auto
   
     have "i \<Turnstile> (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>" proof -
@@ -1748,8 +1748,8 @@ next
    qed
    ultimately show  ?thesis using sble_def by auto
   qed
-  then consider "(\<exists>v. s = [v]\<^sup>s)" | "(\<exists>\<delta>' a.  \<Phi>  \<turnstile> \<langle> \<delta> , s \<rangle> \<longrightarrow> \<langle>  \<delta>' , a \<rangle>)" using check_assertI sps by metis
-  hence "(\<exists>\<delta>' a.  \<Phi>  \<turnstile> \<langle> \<delta> , ASSERT c IN s  \<rangle> \<longrightarrow> \<langle>  \<delta>' , a \<rangle>)" proof(cases)
+  then consider "(\<exists>v. s = [v]\<^sup>s)" | "(\<exists>\<delta>' a.  \<Phi>  \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow> \<langle> \<delta>', a\<rangle>)" using check_assertI sps by metis
+  hence "(\<exists>\<delta>' a.  \<Phi>  \<turnstile> \<langle>\<delta>, ASSERT c IN s\<rangle> \<longrightarrow> \<langle>\<delta>', a\<rangle>)" proof(cases)
     case 1
     then show ?thesis using reduce_assert1I by metis
   next
@@ -1761,10 +1761,10 @@ qed
 
 lemma progress:
   fixes s::s
-  assumes "\<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau>" 
-  shows "(\<exists>v. s =  [v]\<^sup>s) \<or> (\<exists>\<delta>' s'. \<Phi>  \<turnstile> \<langle>  \<delta> , s  \<rangle> \<longrightarrow> \<langle>  \<delta>' , s' \<rangle>)"
+  assumes "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau>" 
+  shows "(\<exists>v. s = [v]\<^sup>s) \<or> (\<exists>\<delta>' s'. \<Phi>  \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow> \<langle>\<delta>', s'\<rangle>)"
 proof -
-  have "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>   \<turnstile> s \<Leftarrow> \<tau>" and "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>"
+  have "\<Theta>; \<Phi>; {||}; GNil; \<Delta> \<turnstile> s \<Leftarrow> \<tau>" and "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>"
     using config_type_elims[OF assms(1)] by auto+
   moreover hence "supp s \<subseteq> atom ` fst ` setD \<Delta>" using check_s_wf wfS_supp by fastforce
   moreover have "sble \<Theta> GNil" using sble_def wfI_def is_satis_g.simps by simp
@@ -1774,15 +1774,15 @@ qed
 section \<open>Safety\<close>
 
 lemma  safety:
-  assumes " \<Phi>   \<turnstile> \<langle> \<delta> , s \<rangle> \<longrightarrow>\<^sup>* \<langle> \<delta>' , s' \<rangle>" and "\<Theta> ; \<Phi> ; \<Delta> \<turnstile>  \<langle> \<delta> , s \<rangle> \<Leftarrow> \<tau>"
-  shows  "(\<exists>v. s' = [v]\<^sup>s) \<or> (\<exists>\<delta>'' s''. \<Phi>  \<turnstile> \<langle>  \<delta>' , s'  \<rangle> \<longrightarrow> \<langle>  \<delta>'' , s'' \<rangle>)"  
+  assumes "\<Phi> \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow>\<^sup>* \<langle>\<delta>', s'\<rangle>" and "\<Theta>; \<Phi>; \<Delta> \<turnstile>  \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau>"
+  shows  "(\<exists>v. s' = [v]\<^sup>s) \<or> (\<exists>\<delta>'' s''. \<Phi>  \<turnstile> \<langle>\<delta>', s'\<rangle> \<longrightarrow> \<langle>\<delta>'', s''\<rangle>)"  
   using preservation_many progress assms  by meson
 
 
 lemma safety_prog:
-  assumes "\<turnstile> \<langle> AP_prog \<Theta> \<Phi> \<G> s  \<rangle> \<Leftarrow> \<tau>" and
-          "\<Phi>  \<turnstile> \<langle> \<delta>_of \<G> , s \<rangle> \<longrightarrow>\<^sup>* \<langle> \<delta>' , s' \<rangle>"
-        shows  "(\<exists>v. s' = [v]\<^sup>s) \<or> (\<exists>\<delta>'' s''. \<Phi>  \<turnstile> \<langle>  \<delta>' , s'  \<rangle> \<longrightarrow> \<langle>  \<delta>'' , s'' \<rangle>)"   
+  assumes "\<turnstile> \<langle>AP_prog \<Theta> \<Phi> \<G> s\<rangle> \<Leftarrow> \<tau>" and
+          "\<Phi>  \<turnstile> \<langle>\<delta>_of \<G>, s\<rangle> \<longrightarrow>\<^sup>* \<langle>\<delta>', s'\<rangle>"
+        shows  "(\<exists>v. s' = [v]\<^sup>s) \<or> (\<exists>\<delta>'' s''. \<Phi>  \<turnstile> \<langle>\<delta>', s'\<rangle> \<longrightarrow> \<langle>\<delta>'', s''\<rangle>)"   
   using assms config_type_prog_elims safety by metis
 
 

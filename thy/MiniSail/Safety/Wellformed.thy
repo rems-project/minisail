@@ -28,40 +28,40 @@ inductive wfV :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarro
           where
 
 (* For now, variable base-types are not wellformed *)
-  wfB_intI:  "\<turnstile>\<^sub>w\<^sub>f \<Theta> \<Longrightarrow> \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f B_int" 
-| wfB_boolI:  "\<turnstile>\<^sub>w\<^sub>f \<Theta> \<Longrightarrow> \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f B_bool" 
-| wfB_unitI:  "\<turnstile>\<^sub>w\<^sub>f \<Theta> \<Longrightarrow> \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f B_unit" 
-| wfB_bitvecI:  "\<turnstile>\<^sub>w\<^sub>f \<Theta> \<Longrightarrow> \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f B_bitvec" 
-| wfB_pairI:  "\<lbrakk> \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f b1 ; \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f b2 \<rbrakk> \<Longrightarrow> \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f B_pair b1 b2" 
+  wfB_intI:  "\<turnstile>\<^sub>w\<^sub>f \<Theta> \<Longrightarrow> \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f B_int" 
+| wfB_boolI:  "\<turnstile>\<^sub>w\<^sub>f \<Theta> \<Longrightarrow> \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f B_bool" 
+| wfB_unitI:  "\<turnstile>\<^sub>w\<^sub>f \<Theta> \<Longrightarrow> \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f B_unit" 
+| wfB_bitvecI:  "\<turnstile>\<^sub>w\<^sub>f \<Theta> \<Longrightarrow> \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f B_bitvec" 
+| wfB_pairI:  "\<lbrakk> \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f b1 ; \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f b2 \<rbrakk> \<Longrightarrow> \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f B_pair b1 b2" 
 
 | wfB_consI:  "\<lbrakk>
    \<turnstile>\<^sub>w\<^sub>f \<Theta>; 
    (AF_typedef s dclist) \<in> set \<Theta> 
 \<rbrakk> \<Longrightarrow> 
-   \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f B_id s"
+   \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f B_id s"
 
 | wfB_appI:  "\<lbrakk> 
    \<turnstile>\<^sub>w\<^sub>f \<Theta>; 
-   \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f b;
+   \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f b;
    (AF_typedef_poly s bv dclist) \<in> set \<Theta> 
 \<rbrakk> \<Longrightarrow> 
-   \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f B_app s b"
+   \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f B_app s b"
 
-| wfV_varI: "\<lbrakk> \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma> ; Some (b,c) = lookup \<Gamma> x \<rbrakk> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_var x : b"
-| wfV_litI: "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>  \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_lit l : base_for_lit l"
+| wfV_varI: "\<lbrakk> \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma> ; Some (b,c) = lookup \<Gamma> x \<rbrakk> \<Longrightarrow> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_var x : b"
+| wfV_litI: "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>  \<Longrightarrow> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_lit l : base_for_lit l"
 
 | wfV_pairI: "\<lbrakk>
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : b1 ; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : b2 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : b1 ; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : b2 
 \<rbrakk> \<Longrightarrow> 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f (V_pair v1 v2) : B_pair b1 b2"
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f (V_pair v1 v2) : B_pair b1 b2"
 
 | wfV_consI: "\<lbrakk>   
    AF_typedef s dclist \<in> set \<Theta>;
    (dc, \<lbrace> x : b'  | c \<rbrace>) \<in> set dclist ;
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b' 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b' 
 \<rbrakk> \<Longrightarrow> 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_cons s dc v : B_id s"
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_cons s dc v : B_id s"
 
 (* We have the restriction that the b is closed *)
 
@@ -70,79 +70,79 @@ inductive wfV :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarro
     (dc, \<lbrace> x : b'  | c \<rbrace>) \<in> set dclist ;
     \<Theta> ;  \<B>  \<turnstile>\<^sub>w\<^sub>f b;
     atom bv \<sharp> (\<Theta>, \<B>, \<Gamma>, b , v);
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b'[bv::=b]\<^sub>b\<^sub>b 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b'[bv::=b]\<^sub>b\<^sub>b 
 \<rbrakk> \<Longrightarrow>
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_consp s dc b v : B_app s b"
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_consp s dc b v : B_app s b"
 
 | wfCE_valI : "\<lbrakk>             
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v  : b 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v  : b 
 \<rbrakk> \<Longrightarrow> 
-    \<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_val v  : b"
+    \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_val v  : b"
 
 | wfCE_plusI: "\<lbrakk>               
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_int; 
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_int; 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int 
 \<rbrakk> \<Longrightarrow> 
-    \<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_op Plus v1 v2 : B_int"
+    \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_op Plus v1 v2 : B_int"
 
 | wfCE_leqI:"\<lbrakk>
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_int; 
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_int; 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int 
 \<rbrakk> \<Longrightarrow>
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op LEq v1 v2 : B_bool"
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op LEq v1 v2 : B_bool"
 
 | wfCE_fstI: "\<lbrakk>               
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_pair b1 b2  
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_pair b1 b2  
 \<rbrakk> \<Longrightarrow> 
-    \<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_fst v1 : b1"
+    \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_fst v1 : b1"
 
 | wfCE_sndI: "\<lbrakk>             
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_pair b1 b2  
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_pair b1 b2  
 \<rbrakk> \<Longrightarrow>  
-    \<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_snd v1 : b2"
+    \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_snd v1 : b2"
 
 | wfCE_concatI: "\<lbrakk> 
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_bitvec ; 
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_bitvec 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_bitvec ; 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_bitvec 
 \<rbrakk> \<Longrightarrow> 
-    \<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_concat v1 v2 : B_bitvec"
+    \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_concat v1 v2 : B_bitvec"
 
 | wfCE_lenI: "\<lbrakk>                
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_bitvec 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_bitvec 
 \<rbrakk> \<Longrightarrow> 
-    \<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_len v1 : B_int"
+    \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_len v1 : B_int"
 
 | wfTI : "\<lbrakk> 
     atom z \<sharp>  (\<Theta>, \<B>, \<Gamma>) ; 
-    \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f b;
-    \<Theta> ; \<B> ; (z,b,C_true) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f c 
+    \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f b;
+    \<Theta>; \<B> ; (z,b,C_true) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f c 
 \<rbrakk> \<Longrightarrow> 
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b | c \<rbrace>"
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b | c \<rbrace>"
 
 | wfC_eqI: "\<lbrakk>  
-                \<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f e1  : b ; 
-                 \<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f e2  : b  \<rbrakk> \<Longrightarrow> 
-                \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_eq e1 e2" 
-| wfC_trueI: " \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>  \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f C_true "
-| wfC_falseI: " \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>  \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_false "
+                \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f e1  : b ; 
+                 \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f e2  : b  \<rbrakk> \<Longrightarrow> 
+                \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_eq e1 e2" 
+| wfC_trueI: " \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>  \<Longrightarrow> \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f C_true "
+| wfC_falseI: " \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>  \<Longrightarrow> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_false "
 
-| wfC_conjI: "\<lbrakk> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c1 ; \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c2 \<rbrakk> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_conj c1 c2"
-| wfC_disjI: "\<lbrakk> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c1 ; \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c2 \<rbrakk> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_disj c1 c2"
-| wfC_notI: "\<lbrakk>  \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c1  \<rbrakk> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_not c1"
-| wfC_impI: "\<lbrakk>  \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c1 ; 
-                \<Theta> ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c2 \<rbrakk> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_imp c1 c2"
+| wfC_conjI: "\<lbrakk> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c1 ; \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c2 \<rbrakk> \<Longrightarrow> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_conj c1 c2"
+| wfC_disjI: "\<lbrakk> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c1 ; \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c2 \<rbrakk> \<Longrightarrow> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_disj c1 c2"
+| wfC_notI: "\<lbrakk>  \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c1  \<rbrakk> \<Longrightarrow> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_not c1"
+| wfC_impI: "\<lbrakk>  \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c1 ; 
+                \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c2 \<rbrakk> \<Longrightarrow> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_imp c1 c2"
 
-| wfG_nilI: " \<turnstile>\<^sub>w\<^sub>f \<Theta>  \<Longrightarrow> \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f GNil"
+| wfG_nilI: " \<turnstile>\<^sub>w\<^sub>f \<Theta>  \<Longrightarrow> \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f GNil"
 | wfG_cons1I: "\<lbrakk>  c \<notin> { TRUE, FALSE } ; 
-                  \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma> ; 
+                  \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma> ; 
                   atom x \<sharp> \<Gamma> ; 
                   \<Theta>  ; \<B> ; (x,b,C_true)#\<^sub>\<Gamma>\<Gamma> \<turnstile>\<^sub>w\<^sub>f c ; wfB \<Theta> \<B> b  
-               \<rbrakk> \<Longrightarrow>  \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f ((x,b,c)#\<^sub>\<Gamma>\<Gamma>)"
+               \<rbrakk> \<Longrightarrow>  \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f ((x,b,c)#\<^sub>\<Gamma>\<Gamma>)"
 | wfG_cons2I: "\<lbrakk>  c \<in> { TRUE, FALSE } ; 
-                  \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma> ; 
+                  \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma> ; 
                   atom x \<sharp> \<Gamma> ;  
                   wfB \<Theta> \<B> b   
-                \<rbrakk> \<Longrightarrow>  \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f ((x,b,c)#\<^sub>\<Gamma>\<Gamma>)"
+                \<rbrakk> \<Longrightarrow>  \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f ((x,b,c)#\<^sub>\<Gamma>\<Gamma>)"
 
 
 | wfTh_emptyI: " \<turnstile>\<^sub>w\<^sub>f []"
@@ -162,37 +162,37 @@ inductive wfV :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarro
        \<rbrakk> \<Longrightarrow>
       \<Theta> \<turnstile>\<^sub>w\<^sub>f (AF_typedef_poly s bv lst)
 "
-| wfTs_nil: "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f []::(string*\<tau>) list"
-| wfTs_cons: "\<lbrakk> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau> ; 
+| wfTs_nil: "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma> \<Longrightarrow> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f []::(string*\<tau>) list"
+| wfTs_cons: "\<lbrakk> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau> ; 
                 dc \<notin> fst ` set ts;
-                \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f ts::(string*\<tau>) list \<rbrakk> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f ((dc,\<tau>)#ts)"
+                \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f ts::(string*\<tau>) list \<rbrakk> \<Longrightarrow> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f ((dc,\<tau>)#ts)"
 
 
 inductive_cases wfC_elims:
-  "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_true"
-  "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_false"
-  "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_eq e1 e2"
-  "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_conj c1 c2"
-  "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_disj c1 c2"
-  "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_not c1"
-  "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_imp c1 c2"
+  "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_true"
+  "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_false"
+  "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_eq e1 e2"
+  "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_conj c1 c2"
+  "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_disj c1 c2"
+  "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_not c1"
+  "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f C_imp c1 c2"
 
 inductive_cases wfV_elims:
- "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_var x : b"
- "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_lit l : b"
- "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_pair v1 v2 : b"
- "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_cons tyid dc v : b"
- "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_consp tyid dc b v : b'"
+ "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_var x : b"
+ "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_lit l : b"
+ "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_pair v1 v2 : b"
+ "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_cons tyid dc v : b"
+ "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f V_consp tyid dc b v : b'"
 
 inductive_cases wfCE_elims:
- " \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_val v : b"
- " \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op Plus v1 v2 : b"
- " \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op LEq v1 v2 : b"
- " \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_fst v1 : b"
- " \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_snd v1 : b"
- " \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_concat v1 v2 : b"
- " \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_len v1 : b"
- " \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op opp v1 v2 : b"
+ " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_val v : b"
+ " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op Plus v1 v2 : b"
+ " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op LEq v1 v2 : b"
+ " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_fst v1 : b"
+ " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_snd v1 : b"
+ " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_concat v1 v2 : b"
+ " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_len v1 : b"
+ " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op opp v1 v2 : b"
 
 inductive_cases wfT_elims:
  "\<Theta>; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau>::\<tau>"
@@ -213,14 +213,14 @@ inductive_cases wfTD_elims:
  "\<Theta> \<turnstile>\<^sub>w\<^sub>f (AF_typedef_poly s bv lst )" 
 
 inductive_cases wfTs_elims:
-  "\<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f ([]::((string*\<tau>) list))"
-  "\<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f ((t#ts)::((string*\<tau>) list))"
+  "\<Theta>; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f ([]::((string*\<tau>) list))"
+  "\<Theta>; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f ((t#ts)::((string*\<tau>) list))"
 
 
 inductive_cases wfB_elims:
- " \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f B_pair b1 b2" 
- " \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f B_id s"
- " \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f B_app s b"
+ " \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f B_pair b1 b2" 
+ " \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f B_id s"
+ " \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f B_app s b"
 
 
 
@@ -249,9 +249,6 @@ next
 qed
 
 
-text \<open>The wf check for \<Phi> deliberately omits a wf check for the body of the function s. This is done in the definition of
-      \<Theta> ; \<Phi> ; \<Delta> \<turnstile> \<langle> \<delta>  , s \<rangle> \<Leftarrow>  \<tau> \<close>
-
 inductive 
           wfE :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta> \<Rightarrow> e \<Rightarrow> b \<Rightarrow> bool" (" _ ; _ ; _ ; _ ; _ \<turnstile>\<^sub>w\<^sub>f _ : _ " [50,50,50] 50)  and
           wfS :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta> \<Rightarrow> s \<Rightarrow> b \<Rightarrow> bool" (" _ ; _ ; _ ; _ ; _ \<turnstile>\<^sub>w\<^sub>f _ : _ " [50,50,50] 50)  and
@@ -264,170 +261,170 @@ inductive
 
   wfE_valI : "\<lbrakk> (
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>) ; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>;
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v  : b 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>;
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v  : b 
 \<rbrakk> \<Longrightarrow> 
-    \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_val v  : b"
+    \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_val v  : b"
 
 | wfE_plusI: "\<lbrakk> 
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>;
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_int; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>;
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_int; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int 
 \<rbrakk> \<Longrightarrow> 
-   \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_op Plus v1 v2 : B_int"
+   \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_op Plus v1 v2 : B_int"
 
 | wfE_leqI:"\<lbrakk>   
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ;
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_int; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_int; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int
 \<rbrakk> \<Longrightarrow> 
-   \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_op LEq v1 v2 : B_bool"
+   \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_op LEq v1 v2 : B_bool"
 
 | wfE_fstI: "\<lbrakk>  
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_pair b1 b2 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_pair b1 b2 
  \<rbrakk> \<Longrightarrow> 
-   \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_fst v1 : b1"
+   \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_fst v1 : b1"
 
 | wfE_sndI: "\<lbrakk>  
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>;
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_pair b1 b2  
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>;
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_pair b1 b2  
 \<rbrakk> \<Longrightarrow>  
-   \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_snd v1 : b2"
+   \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_snd v1 : b2"
 
 | wfE_concatI: "\<lbrakk>
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ;
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_bitvec; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_bitvec 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_bitvec; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_bitvec 
 \<rbrakk> \<Longrightarrow> 
    \<Theta> ; \<Phi> ; \<B> ; \<Gamma>; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_concat v1 v2 : B_bitvec"
 
 | wfE_splitI: "\<lbrakk>
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ;
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_bitvec; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_bitvec; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int 
 \<rbrakk> \<Longrightarrow> 
    \<Theta> ; \<Phi> ; \<B> ; \<Gamma>; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_split v1 v2 : B_pair B_bitvec B_bitvec"
 
 | wfE_lenI: "\<lbrakk>
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_bitvec 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_bitvec 
 \<rbrakk> \<Longrightarrow> 
-   \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_len v1 : B_int"
+   \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_len v1 : B_int"
 
 | wfE_appI:  "\<lbrakk>
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
    Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f ;  
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b
 \<rbrakk> \<Longrightarrow>   
-   \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_app f v : b_of \<tau>"
+   \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_app f v : b_of \<tau>"
 
 | wfE_appPI:  "\<lbrakk>
     \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ; 
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
-    \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f b'; 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
+    \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f b'; 
     atom bv \<sharp>  (\<Phi>, \<Theta>, \<B>, \<Gamma>, \<Delta>, b', v, (b_of \<tau>)[bv::=b']\<^sub>b);
     Some (AF_fundef f (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f;  
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : (b[bv::=b']\<^sub>b)
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : (b[bv::=b']\<^sub>b)
 \<rbrakk> \<Longrightarrow>   
-    \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f (AE_appP f b' v) : ((b_of \<tau>)[bv::=b']\<^sub>b)"
+    \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f (AE_appP f b' v) : ((b_of \<tau>)[bv::=b']\<^sub>b)"
 
 | wfE_mvarI: "\<lbrakk>  
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ; 
-   \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
    (u,\<tau>) \<in> setD \<Delta> 
 \<rbrakk> \<Longrightarrow> 
-   \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_mvar u : b_of \<tau>" 
+   \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_mvar u : b_of \<tau>" 
 
 | wfS_valI: "\<lbrakk> 
     \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ;  
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b ; 
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b ; 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> 
 \<rbrakk>  \<Longrightarrow> 
-    \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f (AS_val v) : b"
+    \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f (AS_val v) : b"
 
 | wfS_letI: "\<lbrakk> 
     wfE \<Theta> \<Phi> \<B> \<Gamma> \<Delta>  e b'  ;
     \<Theta> ; \<Phi> ; \<B> ; (x,b',C_true) #\<^sub>\<Gamma> \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s : b;
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;
     atom x \<sharp> (\<Phi>, \<Theta>, \<B>, \<Gamma>, \<Delta>, e, b)
 \<rbrakk> \<Longrightarrow> 
-    \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f LET x = e IN s : b"
+    \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f LET x = e IN s : b"
 
 | wfS_assertI: "\<lbrakk> 
     \<Theta> ; \<Phi> ; \<B> ; (x,B_bool,c) #\<^sub>\<Gamma> \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s : b;
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c ;
-    \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c ;
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;
     atom x \<sharp> (\<Phi>, \<Theta>, \<B>, \<Gamma>, \<Delta>, c, b, s)
 \<rbrakk> \<Longrightarrow> 
-    \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f ASSERT c IN  s : b"
+    \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f ASSERT c IN  s : b"
 
-| wfS_let2I: "\<lbrakk> \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta>  \<turnstile>\<^sub>w\<^sub>f s1 : b_of \<tau>  ; 
-              \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau>;
+| wfS_let2I: "\<lbrakk> \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>  \<turnstile>\<^sub>w\<^sub>f s1 : b_of \<tau>  ; 
+              \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau>;
                \<Theta> ; \<Phi> ; \<B> ; (x,b_of \<tau>,C_true) #\<^sub>\<Gamma> \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s2 : b ;
               atom x \<sharp> (\<Phi>, \<Theta>, \<B>, \<Gamma>, \<Delta>, s1, b,\<tau>)            
 \<rbrakk> \<Longrightarrow> 
-            \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f LET x : \<tau> = s1 IN s2 : b"
-| wfS_ifI: "\<lbrakk>  \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v  : B_bool; 
-                \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s1 : b ; 
-                \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s2 : b \<rbrakk> \<Longrightarrow>
-               \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f IF v THEN s1 ELSE s2 : b"
+            \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f LET x : \<tau> = s1 IN s2 : b"
+| wfS_ifI: "\<lbrakk>  \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v  : B_bool; 
+                \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f s1 : b ; 
+                \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f s2 : b \<rbrakk> \<Longrightarrow>
+               \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f IF v THEN s1 ELSE s2 : b"
 
 | wfS_varI : "\<lbrakk> wfT \<Theta> \<B> \<Gamma>  \<tau> ;  
-                \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v  : b_of \<tau>; 
+                \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v  : b_of \<tau>; 
                 atom u \<sharp> (\<Phi>, \<Theta>, \<B>, \<Gamma>, \<Delta>, \<tau>, v, b);
                  \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ;  (u,\<tau>)#\<^sub>\<Delta>\<Delta> \<turnstile>\<^sub>w\<^sub>f s : b \<rbrakk> \<Longrightarrow> 
-                 \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f VAR u : \<tau> = v IN s : b "
+                 \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f VAR u : \<tau> = v IN s : b "
 
 | wfS_assignI: "\<lbrakk> (u,\<tau>) \<in> setD \<Delta> ;   
-                  \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;  
+                  \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;  
                   \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ;
-                  \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v  : b_of \<tau> \<rbrakk> \<Longrightarrow>
-                   \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f u ::= v : B_unit"
+                  \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v  : b_of \<tau> \<rbrakk> \<Longrightarrow>
+                   \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f u ::= v : B_unit"
 
-| wfS_whileI: "\<lbrakk> \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s1 : B_bool ; 
-                 \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s2 : b\<rbrakk> \<Longrightarrow>  
-                \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f WHILE s1 DO { s2 } : b"
+| wfS_whileI: "\<lbrakk> \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f s1 : B_bool ; 
+                 \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f s2 : b\<rbrakk> \<Longrightarrow>  
+                \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f WHILE s1 DO { s2 } : b"
 
-| wfS_seqI: "\<lbrakk>  \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s1 : B_unit ; 
-   \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s2 : b \<rbrakk> \<Longrightarrow> 
-               \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s1 ;; s2 : b"
+| wfS_seqI: "\<lbrakk>  \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f s1 : B_unit ; 
+   \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f s2 : b \<rbrakk> \<Longrightarrow> 
+               \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f s1 ;; s2 : b"
 
 | wfS_matchI: "\<lbrakk> wfV \<Theta>  \<B> \<Gamma>  v  (B_id tid) ;
                  (AF_typedef tid dclist ) \<in> set \<Theta>;
                    wfD \<Theta>  \<B> \<Gamma>  \<Delta> ;  
                   \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ;
-                   \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ;  \<Delta> ; tid ; dclist \<turnstile>\<^sub>w\<^sub>f cs : b \<rbrakk> \<Longrightarrow> \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AS_match v cs : b "
+                   \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ;  \<Delta> ; tid ; dclist \<turnstile>\<^sub>w\<^sub>f cs : b \<rbrakk> \<Longrightarrow> \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AS_match v cs : b "
 
 | wfS_branchI: "\<lbrakk> \<Theta> ; \<Phi> ; \<B> ; (x,b_of \<tau>,C_true) #\<^sub>\<Gamma> \<Gamma> ;  \<Delta> \<turnstile>\<^sub>w\<^sub>f s : b ;
                 atom x \<sharp> (\<Phi>, \<Theta>, \<B>, \<Gamma>, \<Delta>, \<Gamma>,\<tau>);
-               \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> 
+               \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> 
                \<rbrakk>  \<Longrightarrow> 
               \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ;  \<Delta> ; tid ; dc ;  \<tau>  \<turnstile>\<^sub>w\<^sub>f  dc x \<Rightarrow> s : b"
 
 | wfS_finalI: "\<lbrakk>       
-       \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> ; tid ; dc ; t  \<turnstile>\<^sub>w\<^sub>f cs : b    
+       \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> ; tid ; dc ; t  \<turnstile>\<^sub>w\<^sub>f cs : b    
  \<rbrakk> \<Longrightarrow>  
        \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ;  \<Delta> ; tid ; [(dc,t)] \<turnstile>\<^sub>w\<^sub>f AS_final cs  : b "
 
 | wfS_cons: "\<lbrakk>           
-       \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> ; tid ; dc ; t  \<turnstile>\<^sub>w\<^sub>f cs : b;
-       \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> ; tid ; dclist \<turnstile>\<^sub>w\<^sub>f css : b
+       \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> ; tid ; dc ; t  \<turnstile>\<^sub>w\<^sub>f cs : b;
+       \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> ; tid ; dclist \<turnstile>\<^sub>w\<^sub>f css : b
  \<rbrakk> \<Longrightarrow>  
        \<Theta> ; \<Phi> ; \<B> ; \<Gamma> ;  \<Delta> ; tid ; (dc,t)#dclist \<turnstile>\<^sub>w\<^sub>f AS_cons cs css : b "
 
-| wfD_emptyI: "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma> \<Longrightarrow> \<Theta>  ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f []\<^sub>\<Delta>"
+| wfD_emptyI: "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma> \<Longrightarrow> \<Theta>  ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f []\<^sub>\<Delta>"
 | wfD_cons: "\<lbrakk> \<Theta>  ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta>::\<Delta> ; 
                \<Theta>  ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau>; 
-               u \<notin> fst ` setD \<Delta> \<rbrakk> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f ((u,\<tau>) #\<^sub>\<Delta> \<Delta>)"
+               u \<notin> fst ` setD \<Delta> \<rbrakk> \<Longrightarrow> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f ((u,\<tau>) #\<^sub>\<Delta> \<Delta>)"
 
 | wfPhi_emptyI: " \<turnstile>\<^sub>w\<^sub>f \<Theta> \<Longrightarrow> \<Theta> \<turnstile>\<^sub>w\<^sub>f []"
 | wfPhi_consI: "\<lbrakk> 
@@ -450,22 +447,22 @@ inductive
 
 
 inductive_cases wfE_elims:
- "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_val v : b"
- "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_op Plus v1 v2 : b"
- "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_op LEq v1 v2 : b"
- "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_fst v1 : b"
- "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_snd v1 : b"
- "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_concat v1 v2 : b"
- "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_len v1 : b"
- "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_op opp v1 v2 : b"
- "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_app f v: b"
- "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_appP f b' v: b"
- "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_mvar u : b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_val v : b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_op Plus v1 v2 : b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_op LEq v1 v2 : b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_fst v1 : b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_snd v1 : b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_concat v1 v2 : b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_len v1 : b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_op opp v1 v2 : b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_app f v: b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_appP f b' v: b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_mvar u : b"
 
 
 inductive_cases wfCS_elims:
-  "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> ; tid ; dc ; t \<turnstile>\<^sub>w\<^sub>f (cs::branch_s) : b"
-  "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> ; tid ; dc  \<turnstile>\<^sub>w\<^sub>f (cs::branch_list) : b"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> ; tid ; dc ; t \<turnstile>\<^sub>w\<^sub>f (cs::branch_s) : b"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> ; tid ; dc  \<turnstile>\<^sub>w\<^sub>f (cs::branch_list) : b"
 
 
 inductive_cases wfPhi_elims:

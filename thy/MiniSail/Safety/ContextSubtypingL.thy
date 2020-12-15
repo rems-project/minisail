@@ -24,24 +24,24 @@ by(auto,simp add: eqvt_def replace_in_g_many_graph_aux_def)
 nominal_termination (eqvt)  by lexicographic_order
 
 inductive replace_in_g_subtyped :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> (x*c) list \<Rightarrow> \<Gamma> \<Rightarrow> bool" (" _ ; _  \<turnstile> _ \<langle> _ \<rangle> \<leadsto> _" [100,50,50] 50) where
-  replace_in_g_subtyped_nilI: "\<Theta> ; \<B> \<turnstile> G \<langle> [] \<rangle> \<leadsto> G"
+  replace_in_g_subtyped_nilI: "\<Theta>; \<B> \<turnstile> G \<langle> [] \<rangle> \<leadsto> G"
 | replace_in_g_subtyped_consI:  "\<lbrakk> 
        Some (b,c') = lookup G x ; 
-        \<Theta> ; \<B> ; G \<turnstile>\<^sub>w\<^sub>f c ;
-       \<Theta> ; \<B> ; G[x\<longmapsto>c] \<Turnstile> c' ; 
-       \<Theta> ; \<B> \<turnstile> G[x\<longmapsto>c] \<langle> xcs \<rangle> \<leadsto> G'; x \<notin> fst ` set xcs \<rbrakk>  \<Longrightarrow> 
-       \<Theta> ; \<B> \<turnstile> G \<langle> (x,c)#xcs \<rangle> \<leadsto> G'" 
+        \<Theta>; \<B>; G \<turnstile>\<^sub>w\<^sub>f c ;
+       \<Theta>; \<B>; G[x\<longmapsto>c] \<Turnstile> c' ; 
+       \<Theta>; \<B> \<turnstile> G[x\<longmapsto>c] \<langle> xcs \<rangle> \<leadsto> G'; x \<notin> fst ` set xcs \<rbrakk>  \<Longrightarrow> 
+       \<Theta>; \<B> \<turnstile> G \<langle> (x,c)#xcs \<rangle> \<leadsto> G'" 
 equivariance replace_in_g_subtyped
 nominal_inductive replace_in_g_subtyped .
 
 inductive_cases replace_in_g_subtyped_elims[elim!]:
-  "\<Theta> ; \<B> \<turnstile> G \<langle> [] \<rangle> \<leadsto> G'"
-  "\<Theta> ; \<B> \<turnstile> ((x,b,c)#\<^sub>\<Gamma>\<Gamma> G) \<langle> acs \<rangle> \<leadsto> ((x,b,c)#\<^sub>\<Gamma>G')"
-  "\<Theta> ; \<B> \<turnstile> G' \<langle> (x,c)# acs \<rangle> \<leadsto> G"
+  "\<Theta>; \<B> \<turnstile> G \<langle> [] \<rangle> \<leadsto> G'"
+  "\<Theta>; \<B> \<turnstile> ((x,b,c)#\<^sub>\<Gamma>\<Gamma> G) \<langle> acs \<rangle> \<leadsto> ((x,b,c)#\<^sub>\<Gamma>G')"
+  "\<Theta>; \<B> \<turnstile> G' \<langle> (x,c)# acs \<rangle> \<leadsto> G"
 
 
 lemma rigs_atom_dom_eq:
-  assumes "\<Theta> ; \<B> \<turnstile> G \<langle> xcs \<rangle> \<leadsto> G'"
+  assumes "\<Theta>; \<B> \<turnstile> G \<langle> xcs \<rangle> \<leadsto> G'"
   shows "atom_dom G = atom_dom G'"
 using assms proof(induct rule: replace_in_g_subtyped.induct)
   case (replace_in_g_subtyped_nilI G)
@@ -52,7 +52,7 @@ next
 qed
 
 lemma replace_in_g_wfG:
-  assumes "\<Theta> ; \<B> \<turnstile> G \<langle> xcs \<rangle> \<leadsto> G'" and  "wfG \<Theta> \<B> G "
+  assumes "\<Theta>; \<B> \<turnstile> G \<langle> xcs \<rangle> \<leadsto> G'" and  "wfG \<Theta> \<B> G "
   shows "wfG \<Theta> \<B> G'"
   using assms proof(induct rule: replace_in_g_subtyped.induct)
   case (replace_in_g_subtyped_nilI \<Theta> G)
@@ -65,8 +65,8 @@ qed
 
 lemma wfD_rig_single:
   fixes \<Delta>::\<Delta> and x::x and c::c and G::\<Gamma>
-  assumes "\<Theta> ; \<B> ; G \<turnstile>\<^sub>w\<^sub>f \<Delta> " and  "wfG \<Theta> \<B> (G[x\<longmapsto>c])"
-  shows "\<Theta> ; \<B> ; G[x\<longmapsto>c]  \<turnstile>\<^sub>w\<^sub>f \<Delta>" 
+  assumes "\<Theta>; \<B>; G \<turnstile>\<^sub>w\<^sub>f \<Delta> " and  "wfG \<Theta> \<B> (G[x\<longmapsto>c])"
+  shows "\<Theta>; \<B>; G[x\<longmapsto>c]  \<turnstile>\<^sub>w\<^sub>f \<Delta>" 
 proof(cases "atom x \<in> atom_dom G")
   case False
   hence "(G[x\<longmapsto>c]) = G" using assms replace_in_g_forget wfX_wfY by metis
@@ -77,14 +77,14 @@ next
   hence **: "(G[x\<longmapsto>c]) = G1@(x,b,c)#\<^sub>\<Gamma>G2" using replace_in_g_inside wfD_wf  assms wfD_wf by metis
 
   hence "wfG \<Theta> \<B> ((x,b,c)#\<^sub>\<Gamma>G2)" using wfG_suffix assms by auto
-  hence "\<Theta> ; \<B> ; (x, b, TRUE) #\<^sub>\<Gamma> G2  \<turnstile>\<^sub>w\<^sub>f c" using wfG_elim2 by auto
+  hence "\<Theta>; \<B>; (x, b, TRUE) #\<^sub>\<Gamma> G2  \<turnstile>\<^sub>w\<^sub>f c" using wfG_elim2 by auto
 
   thus ?thesis using wf_replace_inside1 assms * ** 
     by (simp add: wf_replace_inside2(6))
 qed
 
 lemma wfD_rig:
-  assumes  "\<Theta> ; \<B> \<turnstile> G \<langle> xcs \<rangle> \<leadsto> G'" and "wfD \<Theta> \<B> G \<Delta>" 
+  assumes  "\<Theta>; \<B> \<turnstile> G \<langle> xcs \<rangle> \<leadsto> G'" and "wfD \<Theta> \<B> G \<Delta>" 
   shows "wfD \<Theta> \<B> G' \<Delta>" 
 using assms proof(induct rule: replace_in_g_subtyped.induct)
   case (replace_in_g_subtyped_nilI \<Theta> G)
@@ -96,13 +96,13 @@ qed
 
 lemma replace_in_g_fresh:
   fixes x::x
-  assumes "\<Theta> ; \<B> \<turnstile> \<Gamma> \<langle> xcs \<rangle> \<leadsto> \<Gamma>'" and  "wfG \<Theta> \<B> \<Gamma>" and "wfG \<Theta> \<B> \<Gamma>'" and "atom x \<sharp> \<Gamma>"
+  assumes "\<Theta>; \<B> \<turnstile> \<Gamma> \<langle> xcs \<rangle> \<leadsto> \<Gamma>'" and  "wfG \<Theta> \<B> \<Gamma>" and "wfG \<Theta> \<B> \<Gamma>'" and "atom x \<sharp> \<Gamma>"
   shows "atom x \<sharp> \<Gamma>'"
 using  wfG_dom_supp assms fresh_def rigs_atom_dom_eq by metis
 
 lemma replace_in_g_fresh1:
   fixes x::x
-  assumes "\<Theta> ; \<B> \<turnstile> \<Gamma> \<langle> xcs \<rangle> \<leadsto> \<Gamma>'" and  "wfG \<Theta> \<B> \<Gamma>" and "atom x \<sharp> \<Gamma>"
+  assumes "\<Theta>; \<B> \<turnstile> \<Gamma> \<langle> xcs \<rangle> \<leadsto> \<Gamma>'" and  "wfG \<Theta> \<B> \<Gamma>" and "atom x \<sharp> \<Gamma>"
   shows "atom x \<sharp> \<Gamma>'"
 proof -
   have  "wfG \<Theta> \<B> \<Gamma>'" using  replace_in_g_wfG assms by auto
@@ -208,16 +208,16 @@ lemma replace_in_g_dist:
 
 lemma wfG_replace_inside_rig:
   fixes c''::c
-  assumes \<open>\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f G[x'\<longmapsto>c'']\<close> \<open>\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> G \<close>
-  shows "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> G[x'\<longmapsto>c'']"
+  assumes \<open>\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f G[x'\<longmapsto>c'']\<close> \<open>\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> G \<close>
+  shows "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> G[x'\<longmapsto>c'']"
 proof(rule wfG_consI)
 
   have "wfG \<Theta> \<B> G " using wfG_cons assms by auto
 
-  show *:"\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f G[x'\<longmapsto>c'']" using assms by auto
+  show *:"\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f G[x'\<longmapsto>c'']" using assms by auto
   show "atom x \<sharp> G[x'\<longmapsto>c'']" using replace_in_g_fresh_single[OF *] assms wfG_elims assms by metis
-  show **:"\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f b " using wfG_elim2 assms by auto
-  show "\<Theta> ; \<B> ; (x, b, TRUE) #\<^sub>\<Gamma> G[x'\<longmapsto>c'']  \<turnstile>\<^sub>w\<^sub>f c "
+  show **:"\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f b " using wfG_elim2 assms by auto
+  show "\<Theta>; \<B>; (x, b, TRUE) #\<^sub>\<Gamma> G[x'\<longmapsto>c'']  \<turnstile>\<^sub>w\<^sub>f c "
   proof(cases "atom x' \<notin> atom_dom G")
     case True
     hence "G = G[x'\<longmapsto>c'']" using replace_in_g_forget \<open>wfG \<Theta> \<B> G\<close>  by auto
@@ -228,16 +228,16 @@ proof(rule wfG_consI)
       using split_G by fastforce
     hence ***: "(G[x'\<longmapsto>c'']) = G1@(x',b',c'')#\<^sub>\<Gamma>G2"
       using replace_in_g_inside \<open>wfG \<Theta> \<B> G \<close>  by metis
-    hence "\<Theta> ; \<B> ; (x, b, TRUE) #\<^sub>\<Gamma> G1@(x',b',c')#\<^sub>\<Gamma>G2  \<turnstile>\<^sub>w\<^sub>f c" using * ** assms wfG_wfC by auto
-    hence  "\<Theta> ; \<B> ; (x, b, TRUE) #\<^sub>\<Gamma> G1@(x',b',c'')#\<^sub>\<Gamma>G2  \<turnstile>\<^sub>w\<^sub>f c" using * *** wf_replace_inside assms
+    hence "\<Theta>; \<B>; (x, b, TRUE) #\<^sub>\<Gamma> G1@(x',b',c')#\<^sub>\<Gamma>G2  \<turnstile>\<^sub>w\<^sub>f c" using * ** assms wfG_wfC by auto
+    hence  "\<Theta>; \<B>; (x, b, TRUE) #\<^sub>\<Gamma> G1@(x',b',c'')#\<^sub>\<Gamma>G2  \<turnstile>\<^sub>w\<^sub>f c" using * *** wf_replace_inside assms
       by (metis "**" append_g.simps(2) wfG_elim2 wfG_suffix)
     thus ?thesis using ** * *** by auto
   qed
 qed
 
 lemma replace_in_g_valid_weakening:
-  assumes "\<Theta> ; \<B> ; \<Gamma>[x'\<longmapsto>c''] \<Turnstile> c'" and "x' \<noteq> x" and  "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> \<Gamma>[x'\<longmapsto>c'']"
-  shows "\<Theta> ; \<B> ; ((x, b,c) #\<^sub>\<Gamma> \<Gamma>)[x'\<longmapsto> c'']  \<Turnstile> c'"
+  assumes "\<Theta>; \<B>; \<Gamma>[x'\<longmapsto>c''] \<Turnstile> c'" and "x' \<noteq> x" and  "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> \<Gamma>[x'\<longmapsto>c'']"
+  shows "\<Theta>; \<B>; ((x, b,c) #\<^sub>\<Gamma> \<Gamma>)[x'\<longmapsto> c'']  \<Turnstile> c'"
   apply(subst replace_in_g_dist,simp add: assms,rule valid_weakening)
   using assms by auto+
 
@@ -250,21 +250,21 @@ using assms proof(induct  rule: replace_in_g_subtyped.induct)
     by (simp add: replace_in_g_subtyped.replace_in_g_subtyped_nilI)
 next
   case (replace_in_g_subtyped_consI b' c' G x' \<Theta> \<B> c'' xcs' G')
-  hence "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f G[x'\<longmapsto>c'']" using valid.simps wfC_wf by auto
+  hence "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f G[x'\<longmapsto>c'']" using valid.simps wfC_wf by auto
 
 
   show ?case proof(rule replace_in_g_subtyped.replace_in_g_subtyped_consI)
     show  " Some (b', c') = lookup ((x, b,c) #\<^sub>\<Gamma> G) x'" using lookup.simps 
        fst_conv image_iff \<Gamma>_set_intros surj_pair replace_in_g_subtyped_consI by force
-    show wbc: " \<Theta> ; \<B> ; (x, b, c) #\<^sub>\<Gamma> G  \<turnstile>\<^sub>w\<^sub>f c'' "  using wf_weakening \<open> \<Theta> ; \<B> ; G \<turnstile>\<^sub>w\<^sub>f c''\<close> \<open>\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> G \<close> by fastforce
+    show wbc: " \<Theta>; \<B>; (x, b, c) #\<^sub>\<Gamma> G  \<turnstile>\<^sub>w\<^sub>f c'' "  using wf_weakening \<open> \<Theta>; \<B>; G \<turnstile>\<^sub>w\<^sub>f c''\<close> \<open>\<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> G \<close> by fastforce
     have  "x' \<noteq> x"  using replace_in_g_subtyped_consI by auto
-    have wbc1: "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> G[x'\<longmapsto>c'']" proof -
+    have wbc1: "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> G[x'\<longmapsto>c'']" proof -
       have "(x, b, c) #\<^sub>\<Gamma> G[x'\<longmapsto>c''] = ((x, b, c) #\<^sub>\<Gamma> G)[x'\<longmapsto>c'']" using \<open>x' \<noteq> x\<close> using replace_in_g.simps by auto
-      thus  ?thesis using wfG_replace_inside_rig \<open>\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f G[x'\<longmapsto>c'']\<close>  \<open>\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> G \<close> by fastforce   
+      thus  ?thesis using wfG_replace_inside_rig \<open>\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f G[x'\<longmapsto>c'']\<close>  \<open>\<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, b, c) #\<^sub>\<Gamma> G \<close> by fastforce   
     qed
-    show  *: "\<Theta> ; \<B> ; replace_in_g ((x, b,c) #\<^sub>\<Gamma> G) x' c''  \<Turnstile> c'" 
+    show  *: "\<Theta>; \<B>; replace_in_g ((x, b,c) #\<^sub>\<Gamma> G) x' c''  \<Turnstile> c'" 
     proof - 
-      have "\<Theta> ; \<B> ; G[x'\<longmapsto>c'']  \<Turnstile> c'" using replace_in_g_subtyped_consI by auto
+      have "\<Theta>; \<B>; G[x'\<longmapsto>c'']  \<Turnstile> c'" using replace_in_g_subtyped_consI by auto
       thus ?thesis using replace_in_g_valid_weakening wbc1 \<open>x'\<noteq>x\<close> by auto     
     qed
 
@@ -287,7 +287,7 @@ next
   hence "x1 \<noteq> x"
     using wfG_cons_fresh2[of \<Theta> \<B> x1 b1 c1 \<Gamma>1 x b ] 
     using GCons.prems(2) GCons.prems(3) append_g.simps(2) by auto
-  moreover hence *: "\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f  (\<Gamma>1 @ (x, b, c') #\<^sub>\<Gamma> G)" using GCons append_g.simps wfG_elims by metis
+  moreover hence *: "\<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f  (\<Gamma>1 @ (x, b, c') #\<^sub>\<Gamma> G)" using GCons append_g.simps wfG_elims by metis
   moreover hence "replace_in_g (\<Gamma>1 @ (x, b, c') #\<^sub>\<Gamma> G) x c = \<Gamma>1 @ (x, b, c) #\<^sub>\<Gamma> G" using GCons replace_in_g_inside[OF *, of c] by auto
   
   ultimately  show ?case using replace_in_g.simps(2)[of x1 b1 c1 " \<Gamma>1 @ (x, b, c') #\<^sub>\<Gamma> G" x c] GCons
@@ -305,8 +305,8 @@ proof -
 qed
 
 lemma replace_in_g_subtyped_split:
-  assumes "Some (b, c') = lookup G x" and "\<Theta> ; \<B> ; replace_in_g G x c  \<Turnstile> c'" and "wfG \<Theta> \<B> G "
-  shows "\<exists> \<Gamma> \<Gamma>'. G = \<Gamma>'@(x,b,c')#\<^sub>\<Gamma>\<Gamma> \<and> \<Theta> ; \<B> ; \<Gamma>'@(x,b,c)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c'"
+  assumes "Some (b, c') = lookup G x" and "\<Theta>; \<B>; replace_in_g G x c  \<Turnstile> c'" and "wfG \<Theta> \<B> G "
+  shows "\<exists> \<Gamma> \<Gamma>'. G = \<Gamma>'@(x,b,c')#\<^sub>\<Gamma>\<Gamma> \<and> \<Theta>; \<B>; \<Gamma>'@(x,b,c)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c'"
 proof -
   obtain \<Gamma> and \<Gamma>' where "G = \<Gamma>'@(x,b,c')#\<^sub>\<Gamma>\<Gamma>" using assms lookup_split by blast
   moreover hence  "replace_in_g G x c =  \<Gamma>'@(x,b,c)#\<^sub>\<Gamma>\<Gamma>" using replace_in_g_split assms by blast
@@ -318,19 +318,19 @@ section \<open>Validity and Subtyping\<close>
 
 lemma wfC_replace_in_g:
   fixes c::c and c0::c
-  assumes "\<Theta> ; \<B> ; \<Gamma>'@(x,b,c0')#\<^sub>\<Gamma>\<Gamma> \<turnstile>\<^sub>w\<^sub>f c" and "\<Theta> ; \<B> ; (x,b,TRUE)#\<^sub>\<Gamma>\<Gamma> \<turnstile>\<^sub>w\<^sub>f c0"
-  shows "\<Theta> ; \<B> ; \<Gamma>' @ (x, b, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f c"
+  assumes "\<Theta>; \<B>; \<Gamma>'@(x,b,c0')#\<^sub>\<Gamma>\<Gamma> \<turnstile>\<^sub>w\<^sub>f c" and "\<Theta>; \<B>; (x,b,TRUE)#\<^sub>\<Gamma>\<Gamma> \<turnstile>\<^sub>w\<^sub>f c0"
+  shows "\<Theta>; \<B>; \<Gamma>' @ (x, b, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f c"
 using wf_replace_inside1(2) assms by auto 
 
 
 lemma ctx_subtype_valid:
-  assumes "\<Theta> ; \<B> ; \<Gamma>'@(x,b,c0')#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c" and 
-          "\<Theta> ; \<B> ; \<Gamma>'@(x,b,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'"
-  shows "\<Theta> ; \<B> ; \<Gamma>'@(x,b,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c"
+  assumes "\<Theta>; \<B>; \<Gamma>'@(x,b,c0')#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c" and 
+          "\<Theta>; \<B>; \<Gamma>'@(x,b,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'"
+  shows "\<Theta>; \<B>; \<Gamma>'@(x,b,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c"
 proof(rule validI)
-  show "\<Theta> ; \<B> ; \<Gamma>' @ (x, b, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f c" proof - 
-    have  "\<Theta> ; \<B> ; \<Gamma>'@(x,b,c0')#\<^sub>\<Gamma>\<Gamma> \<turnstile>\<^sub>w\<^sub>f c" using valid.simps assms by auto
-    moreover have "\<Theta> ; \<B> ; (x,b,TRUE)#\<^sub>\<Gamma>\<Gamma> \<turnstile>\<^sub>w\<^sub>f c0" proof -
+  show "\<Theta>; \<B>; \<Gamma>' @ (x, b, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f c" proof - 
+    have  "\<Theta>; \<B>; \<Gamma>'@(x,b,c0')#\<^sub>\<Gamma>\<Gamma> \<turnstile>\<^sub>w\<^sub>f c" using valid.simps assms by auto
+    moreover have "\<Theta>; \<B>; (x,b,TRUE)#\<^sub>\<Gamma>\<Gamma> \<turnstile>\<^sub>w\<^sub>f c0" proof -
       have "wfG \<Theta> \<B> (\<Gamma>'@(x,b,c0)#\<^sub>\<Gamma>\<Gamma>)" using assms valid.simps wfC_wf by auto
       hence "wfG \<Theta> \<B> ((x,b,c0)#\<^sub>\<Gamma>\<Gamma>)" using wfG_suffix by auto
       thus ?thesis using wfG_wfC by auto
@@ -354,43 +354,43 @@ qed
 
 lemma ctx_subtype_subtype:
   fixes \<Gamma>::\<Gamma>
-  shows "\<Theta> ; \<B> ; G \<turnstile> t1 \<lesssim> t2 \<Longrightarrow> G = \<Gamma>'@(x,b0,c0')#\<^sub>\<Gamma>\<Gamma> \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0' \<Longrightarrow> \<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<turnstile> t1 \<lesssim> t2"
+  shows "\<Theta>; \<B>; G \<turnstile> t1 \<lesssim> t2 \<Longrightarrow> G = \<Gamma>'@(x,b0,c0')#\<^sub>\<Gamma>\<Gamma> \<Longrightarrow> \<Theta>; \<B>; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0' \<Longrightarrow> \<Theta>; \<B>; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<turnstile> t1 \<lesssim> t2"
 proof(nominal_induct avoiding: c0 rule: subtype.strong_induct)
 
   case (subtype_baseI x' \<Theta> \<B> \<Gamma>'' z c z' c' b)
   let ?\<Gamma>c0 = "\<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma>" 
   have wb1:  "wfG \<Theta> \<B> ?\<Gamma>c0" using valid.simps wfC_wf   subtype_baseI by metis
   show ?case proof
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b  | c \<rbrace> \<close> using  wfT_replace_inside2[OF _ wb1] subtype_baseI by metis
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z' : b  | c' \<rbrace> \<close> using  wfT_replace_inside2[OF _ wb1] subtype_baseI by metis
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b  | c \<rbrace> \<close> using  wfT_replace_inside2[OF _ wb1] subtype_baseI by metis
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z' : b  | c' \<rbrace> \<close> using  wfT_replace_inside2[OF _ wb1] subtype_baseI by metis
     have "atom x' \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using fresh_prodN subtype_baseI fresh_replace_inside wb1 subtype_wf wfX_wfY by metis
     thus  \<open>atom x' \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>,  z,  c , z' , c' )\<close>  using subtype_baseI fresh_prodN by metis
-    have "\<Theta> ; \<B> ; ((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c'[z'::=V_var x']\<^sub>v " proof(rule ctx_subtype_valid)
-      show 1: \<open>\<Theta> ; \<B> ; ((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c'[z'::=V_var x']\<^sub>v \<close> 
+    have "\<Theta>; \<B>; ((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c'[z'::=V_var x']\<^sub>v " proof(rule ctx_subtype_valid)
+      show 1: \<open>\<Theta>; \<B>; ((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c'[z'::=V_var x']\<^sub>v \<close> 
         using  subtype_baseI append_g.simps subst_defs by metis
-      have *:"\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f ((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> " proof(rule wfG_replace_inside2)
-        show "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f ((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>" 
+      have *:"\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f ((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> " proof(rule wfG_replace_inside2)
+        show "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f ((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>" 
           using * valid_wf_all wfC_wf 1 append_g.simps by metis
-         show "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using wfG_suffix wb1 by auto
+         show "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using wfG_suffix wb1 by auto
        qed
       moreover have "toSet (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> toSet (((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)" using toSet.simps append_g.simps by auto
-      ultimately show  \<open>\<Theta> ; \<B> ; ((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c0' \<close> using   valid_weakening subtype_baseI * by blast
+      ultimately show  \<open>\<Theta>; \<B>; ((x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>') @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c0' \<close> using   valid_weakening subtype_baseI * by blast
     qed
-    thus  \<open>\<Theta> ; \<B> ;  (x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>'  @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c'[z'::=V_var x']\<^sub>v \<close> using append_g.simps subst_defs by simp     
+    thus  \<open>\<Theta>; \<B>;  (x', b, c[z::=V_var x']\<^sub>v) #\<^sub>\<Gamma> \<Gamma>'  @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c'[z'::=V_var x']\<^sub>v \<close> using append_g.simps subst_defs by simp     
   qed
 qed
 
 
 lemma ctx_subtype_subtype_rig:
-  assumes   "replace_in_g_subtyped \<Theta>  \<B> \<Gamma>' [(x,c0)] \<Gamma>" and  "\<Theta> ; \<B> ; \<Gamma>' \<turnstile> t1 \<lesssim> t2"  
-  shows "\<Theta> ; \<B> ; \<Gamma> \<turnstile> t1 \<lesssim> t2"
+  assumes   "replace_in_g_subtyped \<Theta>  \<B> \<Gamma>' [(x,c0)] \<Gamma>" and  "\<Theta>; \<B>; \<Gamma>' \<turnstile> t1 \<lesssim> t2"  
+  shows "\<Theta>; \<B>; \<Gamma> \<turnstile> t1 \<lesssim> t2"
 proof -
   have wf: "wfG \<Theta> \<B> \<Gamma>'" using subtype_g_wf assms by auto
-  obtain b and c0' where  "Some (b, c0') = lookup \<Gamma>' x \<and> (\<Theta> ; \<B> ; replace_in_g \<Gamma>' x c0  \<Turnstile> c0')" using 
+  obtain b and c0' where  "Some (b, c0') = lookup \<Gamma>' x \<and> (\<Theta>; \<B>; replace_in_g \<Gamma>' x c0  \<Turnstile> c0')" using 
      replace_in_g_subtyped.simps[of  \<Theta> \<B> \<Gamma>' "[(x, c0)]" \<Gamma>] assms(1) 
     
    by (metis fst_conv list.inject list.set_intros(1) list.simps(15) not_Cons_self2 old.prod.exhaust prod.inject set_ConsD surj_pair)
-  moreover then obtain G and G' where *: "\<Gamma>' = G'@(x,b,c0')#\<^sub>\<Gamma>G \<and> \<Theta> ; \<B> ; G'@(x,b,c0)#\<^sub>\<Gamma>G \<Turnstile> c0'" 
+  moreover then obtain G and G' where *: "\<Gamma>' = G'@(x,b,c0')#\<^sub>\<Gamma>G \<and> \<Theta>; \<B>; G'@(x,b,c0)#\<^sub>\<Gamma>G \<Turnstile> c0'" 
     using replace_in_g_subtyped_split[of b  c0' \<Gamma>' x \<Theta> \<B> c0] wf by metis
 
   ultimately show ?thesis using ctx_subtype_subtype 
@@ -404,8 +404,8 @@ the replace is just for a single variable (indicated by suffix rig) and then the
 multiple replacements (indicated by suffix rigs)\<close>
 
 lemma ctx_subtype_subtype_rigs:
-  assumes "replace_in_g_subtyped \<Theta> \<B> \<Gamma>' xcs \<Gamma>" and  "\<Theta> ; \<B> ; \<Gamma>' \<turnstile> t1 \<lesssim> t2"  
-  shows "\<Theta> ; \<B> ; \<Gamma> \<turnstile> t1 \<lesssim> t2"
+  assumes "replace_in_g_subtyped \<Theta> \<B> \<Gamma>' xcs \<Gamma>" and  "\<Theta>; \<B>; \<Gamma>' \<turnstile> t1 \<lesssim> t2"  
+  shows "\<Theta>; \<B>; \<Gamma> \<turnstile> t1 \<lesssim> t2"
 using assms proof(induct xcs arbitrary: \<Gamma> \<Gamma>'  )
   case Nil  
   moreover have "\<Gamma>' = \<Gamma>" using replace_in_g_subtyped_nilI 
@@ -416,14 +416,14 @@ next
 
   then obtain x and c where "a=(x,c)" by fastforce
   then obtain b and c' where bc: "Some (b, c') = lookup \<Gamma>' x \<and>
-         replace_in_g_subtyped \<Theta>  \<B> (replace_in_g \<Gamma>' x c) xcs \<Gamma> \<and>   \<Theta> ; \<B> ; \<Gamma>'  \<turnstile>\<^sub>w\<^sub>f c  \<and>
-         x \<notin> fst ` set xcs \<and>  \<Theta> ; \<B> ; (replace_in_g \<Gamma>' x c)  \<Turnstile> c' " using replace_in_g_subtyped_elims(3)[of \<Theta> \<B> \<Gamma>' x c xcs \<Gamma>] Cons
+         replace_in_g_subtyped \<Theta>  \<B> (replace_in_g \<Gamma>' x c) xcs \<Gamma> \<and>   \<Theta>; \<B>; \<Gamma>'  \<turnstile>\<^sub>w\<^sub>f c  \<and>
+         x \<notin> fst ` set xcs \<and>  \<Theta>; \<B>; (replace_in_g \<Gamma>' x c)  \<Turnstile> c' " using replace_in_g_subtyped_elims(3)[of \<Theta> \<B> \<Gamma>' x c xcs \<Gamma>] Cons
     by (metis valid.simps)
 
   hence *: "replace_in_g_subtyped \<Theta> \<B> \<Gamma>' [(x,c)] (replace_in_g \<Gamma>' x c)" using replace_in_g_subtyped_consI 
     by (meson image_iff list.distinct(1) list.set_cases replace_in_g_subtyped_nilI)
 
-  hence "\<Theta> ; \<B> ; (replace_in_g \<Gamma>' x c) \<turnstile>  t1 \<lesssim> t2"
+  hence "\<Theta>; \<B>; (replace_in_g \<Gamma>' x c) \<turnstile>  t1 \<lesssim> t2"
     using  ctx_subtype_subtype_rig * assms Cons.prems(2) by auto
 
   moreover have "replace_in_g_subtyped \<Theta> \<B> (replace_in_g \<Gamma>' x c) xcs \<Gamma>" using Cons
@@ -434,26 +434,26 @@ qed
 
 lemma replace_in_g_inside_valid:
   assumes "replace_in_g_subtyped \<Theta> \<B> \<Gamma>' [(x,c0)] \<Gamma>" and "wfG \<Theta> \<B> \<Gamma>'"
-  shows "\<exists>b c0' G G'. \<Gamma>' = G' @ (x,b,c0')#\<^sub>\<Gamma>G \<and>  \<Gamma> = G' @ (x,b,c0)#\<^sub>\<Gamma>G \<and> \<Theta> ; \<B> ; G'@ (x,b,c0)#\<^sub>\<Gamma>G  \<Turnstile> c0'"
+  shows "\<exists>b c0' G G'. \<Gamma>' = G' @ (x,b,c0')#\<^sub>\<Gamma>G \<and>  \<Gamma> = G' @ (x,b,c0)#\<^sub>\<Gamma>G \<and> \<Theta>; \<B>; G'@ (x,b,c0)#\<^sub>\<Gamma>G  \<Turnstile> c0'"
  proof - 
-  obtain b and c0' where  bc: "Some (b, c0') = lookup \<Gamma>' x \<and> \<Theta> ; \<B> ; replace_in_g \<Gamma>' x c0  \<Turnstile> c0'" using 
+  obtain b and c0' where  bc: "Some (b, c0') = lookup \<Gamma>' x \<and> \<Theta>; \<B>; replace_in_g \<Gamma>' x c0  \<Turnstile> c0'" using 
      replace_in_g_subtyped.simps[of  \<Theta> \<B> \<Gamma>' "[(x, c0)]" \<Gamma>] assms(1) 
     by (metis fst_conv list.inject list.set_intros(1) list.simps(15) not_Cons_self2 old.prod.exhaust prod.inject set_ConsD surj_pair)
-  then obtain G and G' where *: "\<Gamma>' = G'@(x,b,c0')#\<^sub>\<Gamma>G \<and> \<Theta> ; \<B> ; G'@(x,b,c0)#\<^sub>\<Gamma>G \<Turnstile> c0'" using replace_in_g_subtyped_split[of b c0' \<Gamma>' x \<Theta> \<B> c0] assms
+  then obtain G and G' where *: "\<Gamma>' = G'@(x,b,c0')#\<^sub>\<Gamma>G \<and> \<Theta>; \<B>; G'@(x,b,c0)#\<^sub>\<Gamma>G \<Turnstile> c0'" using replace_in_g_subtyped_split[of b c0' \<Gamma>' x \<Theta> \<B> c0] assms
     by metis
   thus ?thesis using replace_in_g_inside bc
     using assms(1) assms(2) by blast
 qed
 
 lemma replace_in_g_valid:
-  assumes "\<Theta> ; \<B>  \<turnstile> G \<langle> xcs \<rangle> \<leadsto> G'" and  "\<Theta> ; \<B> ; G  \<Turnstile> c "
-  shows  \<open>\<Theta> ; \<B> ; G'  \<Turnstile> c \<close>
+  assumes "\<Theta>; \<B>  \<turnstile> G \<langle> xcs \<rangle> \<leadsto> G'" and  "\<Theta>; \<B>; G  \<Turnstile> c "
+  shows  \<open>\<Theta>; \<B>; G'  \<Turnstile> c \<close>
 using assms proof(induct rule: replace_in_g_subtyped.inducts)
   case (replace_in_g_subtyped_nilI \<Theta> \<B> G)
   then show ?case by auto
 next
   case (replace_in_g_subtyped_consI b c1 G x \<Theta> \<B> c2 xcs G')
-  hence "\<Theta> ; \<B> ; G[x\<longmapsto>c2]  \<Turnstile> c" 
+  hence "\<Theta>; \<B>; G[x\<longmapsto>c2]  \<Turnstile> c" 
     by (metis ctx_subtype_valid replace_in_g_split replace_in_g_subtyped_split valid_g_wf)
   then show ?case using replace_in_g_subtyped_consI by auto
 qed
@@ -473,11 +473,11 @@ thm infer_v_form2
 
 lemma ctx_subtype_v_aux:
   fixes v::v
-  assumes  "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1" and   "\<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
-  shows "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1"
+  assumes  "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1" and   "\<Theta>; \<B>; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
+  shows "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1"
 using assms proof(nominal_induct "\<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>)" v t1 avoiding: c0    rule: infer_v.strong_induct)
   case (infer_v_varI \<Theta> \<B> b c xa z)
-  have  wf:\<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<close> using wfG_inside_valid2 infer_v_varI by metis
+  have  wf:\<open> \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<close> using wfG_inside_valid2 infer_v_varI by metis
   have  xf1:\<open>atom z \<sharp> xa\<close> using  infer_v_varI by metis
   have  xf2: \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)\<close> apply( fresh_mth add:  infer_v_varI )
     using fresh_def infer_v_varI wfG_supp fresh_append_g fresh_GCons fresh_prodN by metis+
@@ -500,16 +500,16 @@ next
     show "atom z \<sharp> (v1, v2)" using infer_v_pairI fresh_Pair by simp
     show "atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)"  apply( fresh_mth add:  infer_v_pairI )
     using fresh_def infer_v_pairI wfG_supp fresh_append_g fresh_GCons fresh_prodN by metis+
-    show "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v1 \<Rightarrow> t1'" using infer_v_pairI  by simp
-    show "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v2 \<Rightarrow> t2'" using infer_v_pairI  by simp
+    show "\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v1 \<Rightarrow> t1'" using infer_v_pairI  by simp
+    show "\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v2 \<Rightarrow> t2'" using infer_v_pairI  by simp
   qed   
 next
   case (infer_v_consI s dclist \<Theta> dc tc \<B> v tv z)
   show ?case proof
     show \<open>AF_typedef s dclist \<in> set \<Theta>\<close> using infer_v_consI by auto
     show \<open>(dc, tc) \<in> set dclist\<close> using infer_v_consI by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v \<Rightarrow> tv\<close> using infer_v_consI by auto
-    show \<open>\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc\<close> using infer_v_consI ctx_subtype_subtype by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v \<Rightarrow> tv\<close> using infer_v_consI by auto
+    show \<open>\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc\<close> using infer_v_consI ctx_subtype_subtype by auto
     show \<open>atom z \<sharp> v\<close> using infer_v_consI by auto
     show \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)\<close> apply( fresh_mth add:  infer_v_consI )
       using fresh_def infer_v_consI wfG_supp fresh_append_g fresh_GCons fresh_prodN by metis+
@@ -519,24 +519,24 @@ next
   show ?case proof
     show \<open>AF_typedef_poly s bv dclist \<in> set \<Theta>\<close> using infer_v_conspI by auto
     show \<open>(dc, tc) \<in> set dclist\<close>  using infer_v_conspI by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v \<Rightarrow> tv\<close>  using infer_v_conspI by auto
-    show \<open>\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc[bv::=b]\<^sub>\<tau>\<^sub>b\<close>  using infer_v_conspI ctx_subtype_subtype by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v \<Rightarrow> tv\<close>  using infer_v_conspI by auto
+    show \<open>\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc[bv::=b]\<^sub>\<tau>\<^sub>b\<close>  using infer_v_conspI ctx_subtype_subtype by auto
     show \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>, v, b)\<close>  apply( fresh_mth add:  infer_v_conspI )
       using fresh_def infer_v_conspI wfG_supp fresh_append_g fresh_GCons fresh_prodN by metis+
     show \<open>atom bv \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>, v, b)\<close> apply( fresh_mth add:  infer_v_conspI )
       using fresh_def infer_v_conspI wfG_supp fresh_append_g fresh_GCons fresh_prodN by metis+
-    show \<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f b \<close>  using infer_v_conspI by auto
+    show \<open> \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f b \<close>  using infer_v_conspI by auto
   qed
 qed
 
 lemma ctx_subtype_v:
   fixes v::v
-  assumes  "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1" and   "\<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
-  shows "\<exists>t2.  \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t2 \<and>  \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> t1"
+  assumes  "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1" and   "\<Theta>; \<B>; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
+  shows "\<exists>t2.  \<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t2 \<and>  \<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> t1"
 proof -
  
-  have "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1 " using ctx_subtype_v_aux assms by auto
-  moreover hence "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t1 \<lesssim> t1" using subtype_reflI2 infer_v_wf by simp
+  have "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1 " using ctx_subtype_v_aux assms by auto
+  moreover hence "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t1 \<lesssim> t1" using subtype_reflI2 infer_v_wf by simp
   ultimately show ?thesis by auto
 qed
 
@@ -546,14 +546,14 @@ from doing the elimination step\<close>
 lemma ctx_subtype_v:
   fixes v::v
   assumes
-          "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1" and   "\<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
-  shows "\<exists>t2.  \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t2 \<and>  \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> t1"
+          "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1" and   "\<Theta>; \<B>; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
+  shows "\<exists>t2.  \<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t2 \<and>  \<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> t1"
 using assms proof(nominal_induct "v" arbitrary: t1   rule: v.strong_induct)
   case (V_lit l)
   have "  \<turnstile> l \<Rightarrow> t1" using V_lit infer_v_elims by force
-  hence "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_lit l \<Rightarrow> t1"
+  hence "\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_lit l \<Rightarrow> t1"
     using infer_v_litI  V_lit valid.simps wfC_wf by metis
-  moreover hence "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t1 \<lesssim> t1" using  infer_v_wf 
+  moreover hence "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t1 \<lesssim> t1" using  infer_v_wf 
     by (meson subtype_reflI2)
   ultimately show ?case using * by metis
 next
@@ -573,7 +573,7 @@ next
       using \<open>wfG \<Theta> \<B> (\<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>)\<close> wfg1  by metis
     moreover have "atom z \<sharp> x" using True zb by simp
     moreover have "atom z \<sharp>   (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)" using zb fresh_replace_inside fresh_prodN wfg0 wfg1 by metis
-    ultimately have  "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> (V_var x) \<Rightarrow> (\<lbrace> z : b | C_eq (CE_val (V_var z)) (CE_val (V_var x)) \<rbrace>)"
+    ultimately have  "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> (V_var x) \<Rightarrow> (\<lbrace> z : b | C_eq (CE_val (V_var z)) (CE_val (V_var x)) \<rbrace>)"
       using infer_v_varI  wfg1 by metis
     thus ?thesis 
       using True infer_v_t_wf subtype_reflI2 zb by metis
@@ -582,8 +582,8 @@ next
     then obtain b1 and c1 where bc: "Some (b1,c1) = lookup (\<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>)) y" 
       using infer_v_elims V_var by meson
 
-    have  "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> (V_var y) \<Rightarrow> (\<lbrace> z : b1 | C_eq (CE_val (V_var z)) (CE_val (V_var y)) \<rbrace>)" proof
-      show "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using  wfg1  by auto      
+    have  "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> (V_var y) \<Rightarrow> (\<lbrace> z : b1 | C_eq (CE_val (V_var z)) (CE_val (V_var y)) \<rbrace>)" proof
+      show "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using  wfg1  by auto      
       show "Some (b1, c1) = lookup (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) y"  using lookup_inside2 False bc by blast
       show "atom z \<sharp> y" using zb by auto
       show "atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)" using fresh_replace_inside fresh_prodN wfg0 wfg1  zb by metis
@@ -596,13 +596,13 @@ next
 next
   case (V_pair v1 v2)
 
-  then obtain tv1 and tv2  and  z where  tt1: "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v1 \<Rightarrow> tv1 \<and>  
+  then obtain tv1 and tv2  and  z where  tt1: "\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v1 \<Rightarrow> tv1 \<and>  
         \<Theta> ;  \<B> ; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v2 \<Rightarrow> tv2 \<and> t1 = (\<lbrace> z : B_pair (b_of tv1) (b_of tv2)  | 
                           CE_val (V_var z)  ==  CE_val (V_pair v1 v2)  \<rbrace>) \<and> atom z \<sharp> (v1,v2)"
     using infer_v_pair2E by presburger
-  obtain tv1' where t1: "\<Theta> ;  \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v1 \<Rightarrow> tv1' \<and>   \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv1' \<lesssim> tv1" using tt1 V_pair by fast
-  moreover obtain tv2' where t2: "\<Theta> ;  \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v2 \<Rightarrow> tv2' \<and>   \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv2' \<lesssim> tv2" using tt1 V_pair by fast
-  ultimately obtain t' and z' where tt2: "\<Theta> ; \<B> ;  \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_pair v1 v2 \<Rightarrow> t' \<and> 
+  obtain tv1' where t1: "\<Theta> ;  \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v1 \<Rightarrow> tv1' \<and>   \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv1' \<lesssim> tv1" using tt1 V_pair by fast
+  moreover obtain tv2' where t2: "\<Theta> ;  \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v2 \<Rightarrow> tv2' \<and>   \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv2' \<lesssim> tv2" using tt1 V_pair by fast
+  ultimately obtain t' and z' where tt2: "\<Theta>; \<B>;  \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_pair v1 v2 \<Rightarrow> t' \<and> 
              t' = (\<lbrace> z' : B_pair (b_of tv1') (b_of tv2')  | CE_val (V_var z')  ==  CE_val (V_pair v1 v2)  \<rbrace>) \<and> atom z' \<sharp> (v1,v2)"
     using  infer_v_pair2I_zbc  t1 t2 by metis
   
@@ -616,7 +616,7 @@ next
   qed
 
   moreover have "wfT \<Theta> \<B> (\<Gamma>' @ (x, b0, c0)#\<^sub>\<Gamma>\<Gamma>) t'" using t1 infer_v_t_wf tt2 by metis
-  ultimately have " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0)#\<^sub>\<Gamma>\<Gamma> \<turnstile> t' \<lesssim> t1" using subtype_reflI
+  ultimately have " \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0)#\<^sub>\<Gamma>\<Gamma> \<turnstile> t' \<lesssim> t1" using subtype_reflI
     using subtype_reflI2 by blast
 
   then show ?case using tt2 by meson
@@ -626,22 +626,22 @@ next
 
   obtain z::x where zf: "atom z \<sharp>  (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>, v', b',V_consp s dc b' v')" using obtain_fresh by metis
   
-  from V_consp(2) V_consp(1)  V_consp(3) zf have t2:"\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> V_consp s dc b' v' \<Rightarrow> \<lbrace> z : B_app s b' |  [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ V_consp s dc b' v' ]\<^sup>c\<^sup>e  \<rbrace>"
+  from V_consp(2) V_consp(1)  V_consp(3) zf have t2:"\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> V_consp s dc b' v' \<Rightarrow> \<lbrace> z : B_app s b' |  [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ V_consp s dc b' v' ]\<^sup>c\<^sup>e  \<rbrace>"
   proof(nominal_induct " \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>"  "V_consp s dc b' v'" t1 avoiding: c0 arbitrary: t1   rule: infer_v.strong_induct)
     case (infer_v_conspI bv dclist \<Theta> tc \<B> tv zz)
-   obtain tv2 where *:" \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v' \<Rightarrow> tv2 \<and> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv2 \<lesssim> tv" 
+   obtain tv2 where *:" \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v' \<Rightarrow> tv2 \<and> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv2 \<lesssim> tv" 
        using infer_v_conspI(17) infer_v_conspI by metis
      thm ctx_subtype_subtype infer_v_conspI(18)
     show ?case proof
      show \<open>AF_typedef_poly s bv dclist \<in> set \<Theta>\<close> using infer_v_conspI by auto
      show \<open>(dc, tc) \<in> set dclist\<close> using infer_v_conspI by auto
-     show \<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f b' \<close> using infer_v_conspI by auto
-     show iv: \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v' \<Rightarrow> tv2\<close> using * by auto
+     show \<open> \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f b' \<close> using infer_v_conspI by auto
+     show iv: \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v' \<Rightarrow> tv2\<close> using * by auto
 
-     have "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc[bv::=b']\<^sub>\<tau>\<^sub>b"
+     have "\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc[bv::=b']\<^sub>\<tau>\<^sub>b"
        using infer_v_conspI infer_v_conspI(18) ctx_subtype_subtype by metis
 
-     thus \<open>\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv2 \<lesssim> tc[bv::=b']\<^sub>\<tau>\<^sub>b\<close> using * subtype_trans by metis
+     thus \<open>\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv2 \<lesssim> tc[bv::=b']\<^sub>\<tau>\<^sub>b\<close> using * subtype_trans by metis
       
      show \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>, v', b')\<close> using fresh_prodN infer_v_conspI by metis
      
@@ -663,9 +663,9 @@ next
 
   have "?t1 = ?t2" using type_e_eq zf t1 ce.fresh fresh_prodN by metis
 
-  moreover have " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : B_app s b'  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ V_consp s dc b' v' ]\<^sup>c\<^sup>e  \<rbrace> " 
+  moreover have " \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : B_app s b'  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ V_consp s dc b' v' ]\<^sup>c\<^sup>e  \<rbrace> " 
     using t2 using infer_v_wf by auto
-  ultimately have " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> ?t2 \<lesssim> ?t1" using subtype_reflI by metis
+  ultimately have " \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> ?t2 \<lesssim> ?t1" using subtype_reflI by metis
 
   moreover have "?t1 = t1" using t1 b1 by auto
   ultimately show ?case using t2 by metis
@@ -677,38 +677,38 @@ next
     t1 = (\<lbrace> z : B_id s  | CE_val (V_var z)  ==  CE_val (V_cons s dc v')  \<rbrace>) \<and>
     AF_typedef s dclist \<in> set \<Theta> \<and>
       (dc, tc) \<in> set dclist \<and> atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>) \<and>
-     \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow>tv \<and>  
-         \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv  \<lesssim> tc \<and> atom z \<sharp> v' "
+     \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow>tv \<and>  
+         \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv  \<lesssim> tc \<and> atom z \<sharp> v' "
     using infer_v_elims(4)[OF V_cons(2)] by metis
 
-  hence "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> tv" by linarith
-  then obtain t2 where *:" \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> t2 \<and>   \<Theta> ; \<B> ; \<Gamma>' @ ((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> tv" 
+  hence "\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> tv" by linarith
+  then obtain t2 where *:" \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v' \<Rightarrow> t2 \<and>   \<Theta>; \<B>; \<Gamma>' @ ((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> tv" 
     using V_cons by presburger
   obtain z3 and b3 and c3 where t2: "t2 = (\<lbrace> z3 : b3 |c3 \<rbrace>)" using obtain_fresh_z by meson
   hence beq: "b_of tv = b3" using subtype_eq_base2 * b_of.simps by metis
 
  
 (*
-  hence tsub: " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> t2 \<lesssim> tc" 
+  hence tsub: " \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> t2 \<lesssim> tc" 
     using subtype_trans * by blast
 *)
 
   have "wfTh \<Theta>" using tt infer_v_wf by auto
-  have "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_cons s dc v' \<Rightarrow> 
+  have "\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_cons s dc v' \<Rightarrow> 
             \<lbrace> z : B_id s  | CE_val (V_var z)  ==  CE_val (V_cons s dc v')  \<rbrace>" 
   proof
     show \<open>AF_typedef s dclist \<in> set \<Theta>\<close> using tt by auto
     show \<open>(dc, tc) \<in> set dclist\<close> using tt by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v' \<Rightarrow> tv\<close> using tt srry
-    show \<open>\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc\<close> using tt ctx_subtype_subtype V_cons by metis
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v' \<Rightarrow> tv\<close> using tt srry
+    show \<open>\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> tv \<lesssim> tc\<close> using tt ctx_subtype_subtype V_cons by metis
     show \<open>atom z \<sharp> v'\<close> using tt by auto
     show \<open>atom z \<sharp> (\<Theta>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>)\<close> using tt fresh_replace_inside infer_v_wf * srry
   qed
   
-  hence **: " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_cons s dc v' \<Rightarrow> t1" 
+  hence **: " \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> V_cons s dc v' \<Rightarrow> t1" 
     using tt by argo
 
-  moreover have " \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> t1 \<lesssim> t1" proof - 
+  moreover have " \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> t1 \<lesssim> t1" proof - 
     have "wfT \<Theta> \<B> (\<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>) t1" using ** infer_v_wf by metis
     thus ?thesis using subtype_reflI2 by presburger
   qed
@@ -719,29 +719,29 @@ qed
 lemma ctx_subtype_v_eq:
   fixes v::v
   assumes
-          "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1" and 
-          " \<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
-        shows "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1"
+          "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1" and 
+          " \<Theta>; \<B>; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
+        shows "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1"
 proof - 
-  obtain t1' where "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1'" using ctx_subtype_v assms by metis
+  obtain t1' where "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t1'" using ctx_subtype_v assms by metis
   moreover have "replace_in_g (\<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>)) x c0 =  \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>)" using replace_in_g_inside infer_v_wf assms by metis
   ultimately show ?thesis using infer_v_uniqueness_rig assms by metis
 qed
 
 
 lemma ctx_subtype_check_v_eq:
-  assumes  "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Leftarrow> t1" and " \<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'"
-  shows "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Leftarrow> t1"
+  assumes  "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Leftarrow> t1" and " \<Theta>; \<B>; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'"
+  shows "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Leftarrow> t1"
 proof - 
-  obtain t2 where t2: "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t2 \<and>   \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> t1" 
+  obtain t2 where t2: "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> v \<Rightarrow> t2 \<and>   \<Theta>; \<B>; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> t1" 
     using check_v_elims assms by blast
-  hence t3: "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>)  \<turnstile> v \<Rightarrow> t2"
+  hence t3: "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>)  \<turnstile> v \<Rightarrow> t2"
     using assms ctx_subtype_v_eq by blast
 
-  have "\<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>)  \<turnstile> v \<Rightarrow> t2" using t3 by auto
-  moreover have " \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>)  \<turnstile> t2 \<lesssim> t1" proof -
+  have "\<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>)  \<turnstile> v \<Rightarrow> t2" using t3 by auto
+  moreover have " \<Theta>; \<B>; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>)  \<turnstile> t2 \<lesssim> t1" proof -
 
-    have " \<Theta> ; \<B> ; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> t1" using t2 by auto
+    have " \<Theta>; \<B>; \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>) \<turnstile> t2 \<lesssim> t1" using t2 by auto
     thus  ?thesis using subtype_trans
       using assms(2) ctx_subtype_subtype by blast
   qed
@@ -752,10 +752,10 @@ text \<open> Basically the same as @{text "ctx_subtype_v_eq"} but in a different
 lemma ctx_subtype_v_rig_eq:
   fixes v::v
   assumes "replace_in_g_subtyped  \<Theta> \<B> \<Gamma>' [(x,c0)] \<Gamma>" and  
-          "\<Theta> ; \<B> ; \<Gamma>'  \<turnstile> v \<Rightarrow> t1" 
-        shows "\<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> t1"
+          "\<Theta>; \<B>; \<Gamma>'  \<turnstile> v \<Rightarrow> t1" 
+        shows "\<Theta>; \<B>; \<Gamma> \<turnstile> v \<Rightarrow> t1"
 proof - 
-  obtain b and c0' and G and G' where "\<Gamma>' = G' @ (x,b,c0')#\<^sub>\<Gamma>G \<and>  \<Gamma> = G' @ (x,b,c0)#\<^sub>\<Gamma>G \<and>  \<Theta> ; \<B> ; G'@ (x,b,c0)#\<^sub>\<Gamma>G  \<Turnstile> c0'"
+  obtain b and c0' and G and G' where "\<Gamma>' = G' @ (x,b,c0')#\<^sub>\<Gamma>G \<and>  \<Gamma> = G' @ (x,b,c0)#\<^sub>\<Gamma>G \<and>  \<Theta>; \<B>; G'@ (x,b,c0)#\<^sub>\<Gamma>G  \<Turnstile> c0'"
     using assms replace_in_g_inside_valid  infer_v_wf by metis
   thus ?thesis using ctx_subtype_v_eq[of \<Theta> \<B> G' x b c0' G v t1 c0] assms by simp
 qed
@@ -763,8 +763,8 @@ qed
 lemma ctx_subtype_v_rigs_eq:
   fixes v::v
   assumes "replace_in_g_subtyped \<Theta> \<B> \<Gamma>' xcs \<Gamma>" and  
-          "\<Theta> ; \<B> ; \<Gamma>'  \<turnstile> v \<Rightarrow> t1" 
-        shows "\<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> t1"
+          "\<Theta>; \<B>; \<Gamma>'  \<turnstile> v \<Rightarrow> t1" 
+        shows "\<Theta>; \<B>; \<Gamma> \<turnstile> v \<Rightarrow> t1"
 using assms proof(induct xcs arbitrary: \<Gamma> \<Gamma>' t1 )
 case Nil
   then show ?case by auto
@@ -773,26 +773,26 @@ next
   then obtain x and c where "a=(x,c)" by fastforce
 
   then obtain b and c' where bc: "Some (b, c') = lookup \<Gamma>' x \<and>
-         replace_in_g_subtyped  \<Theta> \<B> (replace_in_g \<Gamma>' x c) xcs \<Gamma> \<and>  \<Theta> ; \<B> ; \<Gamma>'  \<turnstile>\<^sub>w\<^sub>f c \<and>
-         x \<notin> fst ` set xcs \<and>   \<Theta> ; \<B> ; (replace_in_g \<Gamma>' x c)  \<Turnstile> c' "   
+         replace_in_g_subtyped  \<Theta> \<B> (replace_in_g \<Gamma>' x c) xcs \<Gamma> \<and>  \<Theta>; \<B>; \<Gamma>'  \<turnstile>\<^sub>w\<^sub>f c \<and>
+         x \<notin> fst ` set xcs \<and>   \<Theta>; \<B>; (replace_in_g \<Gamma>' x c)  \<Turnstile> c' "   
     using replace_in_g_subtyped_elims(3)[of  \<Theta> \<B> \<Gamma>' x c xcs \<Gamma>] Cons  by (metis valid.simps)
 
   hence *: "replace_in_g_subtyped  \<Theta> \<B> \<Gamma>' [(x,c)] (replace_in_g \<Gamma>' x c)" using replace_in_g_subtyped_consI 
     by (meson image_iff list.distinct(1) list.set_cases replace_in_g_subtyped_nilI)
-  hence   t2: "\<Theta> ; \<B> ; (replace_in_g \<Gamma>' x c) \<turnstile> v \<Rightarrow> t1 " using ctx_subtype_v_rig_eq[OF * Cons(3)] by blast
+  hence   t2: "\<Theta>; \<B>; (replace_in_g \<Gamma>' x c) \<turnstile> v \<Rightarrow> t1 " using ctx_subtype_v_rig_eq[OF * Cons(3)] by blast
   moreover have **: "replace_in_g_subtyped  \<Theta> \<B> (replace_in_g \<Gamma>' x c) xcs \<Gamma>" using bc by auto
-  ultimately have  t2': "\<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Rightarrow> t1" using Cons by blast
+  ultimately have  t2': "\<Theta>; \<B>; \<Gamma> \<turnstile> v \<Rightarrow> t1" using Cons by blast
   thus ?case by blast
 qed
 
 
 lemma ctx_subtype_check_v_rigs_eq:
   assumes "replace_in_g_subtyped \<Theta> \<B> \<Gamma>' xcs \<Gamma>" and  
-          "\<Theta> ; \<B> ; \<Gamma>'  \<turnstile> v \<Leftarrow> t1" 
-        shows "\<Theta> ; \<B> ; \<Gamma> \<turnstile> v \<Leftarrow> t1"
+          "\<Theta>; \<B>; \<Gamma>'  \<turnstile> v \<Leftarrow> t1" 
+        shows "\<Theta>; \<B>; \<Gamma> \<turnstile> v \<Leftarrow> t1"
 proof - 
-  obtain t2 where  "\<Theta> ; \<B> ; \<Gamma>'  \<turnstile> v \<Rightarrow> t2 \<and>  \<Theta> ; \<B> ; \<Gamma>' \<turnstile> t2 \<lesssim> t1" using check_v_elims assms by fast
-  hence "\<Theta> ; \<B> ; \<Gamma>  \<turnstile> v \<Rightarrow> t2 \<and>  \<Theta> ; \<B> ; \<Gamma> \<turnstile> t2 \<lesssim> t1" using ctx_subtype_v_rigs_eq ctx_subtype_subtype_rigs 
+  obtain t2 where  "\<Theta>; \<B>; \<Gamma>'  \<turnstile> v \<Rightarrow> t2 \<and>  \<Theta>; \<B>; \<Gamma>' \<turnstile> t2 \<lesssim> t1" using check_v_elims assms by fast
+  hence "\<Theta>; \<B>; \<Gamma>  \<turnstile> v \<Rightarrow> t2 \<and>  \<Theta>; \<B>; \<Gamma> \<turnstile> t2 \<lesssim> t1" using ctx_subtype_v_rigs_eq ctx_subtype_subtype_rigs 
     using assms(1) by blast
   thus ?thesis 
     using check_v_subtypeI by blast
@@ -803,8 +803,8 @@ section \<open>Expressions\<close>
 
 lemma valid_wfC:
   fixes c0::c
-  assumes  "\<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
-  shows "\<Theta> ; \<B> ; (x, b0, TRUE) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c0"
+  assumes  "\<Theta>; \<B>; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
+  shows "\<Theta>; \<B>; (x, b0, TRUE) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c0"
   using  wfG_elim2 valid.simps wfG_suffix 
   using assms valid_g_wf by metis
 
@@ -812,42 +812,42 @@ lemma ctx_subtype_e_eq:
   fixes G::\<Gamma>
   assumes
           "\<Theta> ; \<Phi> ; \<B> ; G ; \<Delta> \<turnstile> e \<Rightarrow> t1" and "G =  \<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>)"
-          "\<Theta> ; \<B> ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
+          "\<Theta>; \<B>; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'" 
         shows "\<Theta> ; \<Phi> ; \<B> ; \<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>) ; \<Delta> \<turnstile> e \<Rightarrow> t1"
 using assms proof(nominal_induct t1 avoiding: c0 rule: infer_e.strong_induct)
   case (infer_e_valI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v \<tau>)
   show ?case proof
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_valI by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_valI by auto
     show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using infer_e_valI by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Rightarrow> \<tau>\<close> using infer_e_valI ctx_subtype_v_eq by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Rightarrow> \<tau>\<close> using infer_e_valI ctx_subtype_v_eq by auto
   qed
 next
   case (infer_e_plusI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v1 z1 c1 v2 z2 c2 z3)
   show ?case proof 
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_plusI by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_plusI by auto
     show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close>  using infer_e_plusI by auto
-    show *:\<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_int  | c1 \<rbrace>\<close> using infer_e_plusI ctx_subtype_v_eq by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : B_int  | c2 \<rbrace>\<close> using infer_e_plusI ctx_subtype_v_eq by auto
+    show *:\<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_int  | c1 \<rbrace>\<close> using infer_e_plusI ctx_subtype_v_eq by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : B_int  | c2 \<rbrace>\<close> using infer_e_plusI ctx_subtype_v_eq by auto
     show \<open>atom z3 \<sharp> AE_op Plus v1 v2\<close> using infer_e_plusI by auto
     show   \<open>atom z3 \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>\<close> using * infer_e_plusI fresh_replace_inside  infer_v_wf  by metis
   qed
 next
   case (infer_e_leqI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v1 z1 c1 v2 z2 c2 z3)
     show ?case proof 
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_leqI by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_leqI by auto
     show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close>  using infer_e_leqI by auto
-    show *:\<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_int  | c1 \<rbrace>\<close> using infer_e_leqI ctx_subtype_v_eq by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : B_int  | c2 \<rbrace>\<close> using infer_e_leqI ctx_subtype_v_eq by auto
+    show *:\<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_int  | c1 \<rbrace>\<close> using infer_e_leqI ctx_subtype_v_eq by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : B_int  | c2 \<rbrace>\<close> using infer_e_leqI ctx_subtype_v_eq by auto
     show \<open>atom z3 \<sharp> AE_op LEq v1 v2\<close> using infer_e_leqI by auto
     show   \<open>atom z3 \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>\<close> using * infer_e_leqI fresh_replace_inside  infer_v_wf  by metis
   qed
 next
   case (infer_e_appI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> f x' b c \<tau>' s' v \<tau>)
   show ?case proof
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_appI by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_appI by auto
     show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using  infer_e_appI by auto
     show \<open>Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ x' b c \<tau>' s'))) = lookup_fun \<Phi> f\<close>  using infer_e_appI by auto
-    show \<open>\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Leftarrow> \<lbrace> x' : b  | c \<rbrace>\<close> using infer_e_appI ctx_subtype_check_v_eq by auto
+    show \<open>\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Leftarrow> \<lbrace> x' : b  | c \<rbrace>\<close> using infer_e_appI ctx_subtype_check_v_eq by auto
     thus \<open>atom x' \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>, \<Delta>, v, \<tau>)\<close> 
       using infer_e_appI fresh_replace_inside[of \<Theta> \<B> \<Gamma>' x b0 c0' \<Gamma> c0 x']  infer_v_wf by auto
     show \<open>\<tau>'[x'::=v]\<^sub>v = \<tau>\<close> using infer_e_appI by auto
@@ -855,11 +855,11 @@ next
 next
   case (infer_e_appPI \<Theta> \<B> \<Gamma>1 \<Delta> \<Phi> b' f bv x1 b c \<tau>' s' v \<tau>)
   show ?case proof
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_appPI by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_appPI by auto
     show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using infer_e_appPI by auto
-    show \<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f b' \<close> using infer_e_appPI by auto
+    show \<open> \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f b' \<close> using infer_e_appPI by auto
     show \<open>Some (AF_fundef f (AF_fun_typ_some bv (AF_fun_typ x1 b c \<tau>' s'))) = lookup_fun \<Phi> f\<close> using infer_e_appPI by auto
-    show \<open>\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Leftarrow> \<lbrace> x1 : b[bv::=b']\<^sub>b  | c[bv::=b']\<^sub>b \<rbrace>\<close> using infer_e_appPI  ctx_subtype_check_v_eq subst_defs by auto
+    show \<open>\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Leftarrow> \<lbrace> x1 : b[bv::=b']\<^sub>b  | c[bv::=b']\<^sub>b \<rbrace>\<close> using infer_e_appPI  ctx_subtype_check_v_eq subst_defs by auto
     thus  \<open>atom x1 \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>\<close> using  fresh_replace_inside[of \<Theta> \<B> \<Gamma>' x b0 c0' \<Gamma>  c0 x1 ] infer_v_wf infer_e_appPI by auto
     show \<open>\<tau>'[bv::=b']\<^sub>b[x1::=v]\<^sub>v = \<tau>\<close> using infer_e_appPI by auto
     have "atom bv \<sharp> \<Gamma>' @ (x, b0, c0') #\<^sub>\<Gamma> \<Gamma>" using infer_e_appPI by metis
@@ -870,55 +870,55 @@ next
 next
   case (infer_e_fstI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v z' b1 b2 c z)
   show ?case proof 
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_fstI by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_fstI by auto
     show \<open> \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using infer_e_fstI by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Rightarrow> \<lbrace> z' : B_pair b1 b2  | c \<rbrace>\<close> using infer_e_fstI ctx_subtype_v_eq by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Rightarrow> \<lbrace> z' : B_pair b1 b2  | c \<rbrace>\<close> using infer_e_fstI ctx_subtype_v_eq by auto
     thus \<open>atom z \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>\<close> using infer_e_fstI fresh_replace_inside[of \<Theta> \<B> \<Gamma>' x b0 c0' \<Gamma> c0 z]  infer_v_wf by auto
     show \<open>atom z \<sharp> AE_fst v\<close> using infer_e_fstI by auto
   qed
 next
   case (infer_e_sndI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v z' b1 b2 c z)
   show ?case proof 
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_sndI by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_sndI by auto
     show \<open> \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using infer_e_sndI by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Rightarrow> \<lbrace> z' : B_pair b1 b2  | c \<rbrace>\<close> using infer_e_sndI ctx_subtype_v_eq by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Rightarrow> \<lbrace> z' : B_pair b1 b2  | c \<rbrace>\<close> using infer_e_sndI ctx_subtype_v_eq by auto
     thus \<open>atom z \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>\<close> using infer_e_sndI fresh_replace_inside[of \<Theta> \<B> \<Gamma>' x b0 c0' \<Gamma> c0 z]  infer_v_wf by auto
     show \<open>atom z \<sharp> AE_snd v\<close> using infer_e_sndI by auto
   qed
 next
   case (infer_e_lenI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v z' c z)
   show ?case proof 
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_lenI by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_lenI by auto
     show \<open> \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using infer_e_lenI by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Rightarrow> \<lbrace> z' : B_bitvec  | c \<rbrace>\<close> using infer_e_lenI ctx_subtype_v_eq by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v \<Rightarrow> \<lbrace> z' : B_bitvec  | c \<rbrace>\<close> using infer_e_lenI ctx_subtype_v_eq by auto
     thus \<open>atom z \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>\<close> using infer_e_lenI fresh_replace_inside[of \<Theta> \<B> \<Gamma>' x b0 c0' \<Gamma> c0 z]  infer_v_wf by auto
     show \<open>atom z \<sharp> AE_len v\<close> using infer_e_lenI by auto
   qed
 next
   case (infer_e_mvarI \<Theta> \<B> \<Gamma>'' \<Phi> \<Delta> u \<tau>)
   show ?case proof 
-    show "\<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta>"   using wf_replace_inside2(6) valid_wfC infer_e_mvarI by auto
-    thus "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using infer_e_mvarI fresh_replace_inside  wfD_wf   by blast 
+    show "\<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta>"   using wf_replace_inside2(6) valid_wfC infer_e_mvarI by auto
+    thus "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>" using infer_e_mvarI fresh_replace_inside  wfD_wf   by blast 
     show "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> "  using infer_e_mvarI by auto
     show "(u, \<tau>) \<in> setD \<Delta>" using infer_e_mvarI by auto
   qed
 next
   case (infer_e_concatI \<Theta>  \<B> \<Gamma>'' \<Delta> \<Phi> v1 z1 c1 v2 z2 c2 z3)
   show ?case proof 
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_concatI by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_concatI by auto
     thus  \<open>atom z3 \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>\<close> using infer_e_concatI fresh_replace_inside[of \<Theta> \<B> \<Gamma>' x b0 c0' \<Gamma> c0 z3]  infer_v_wf wfX_wfY by metis
     show \<open> \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using infer_e_concatI by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_bitvec  | c1 \<rbrace>\<close> using infer_e_concatI ctx_subtype_v_eq by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : B_bitvec  | c2 \<rbrace>\<close> using infer_e_concatI ctx_subtype_v_eq by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_bitvec  | c1 \<rbrace>\<close> using infer_e_concatI ctx_subtype_v_eq by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : B_bitvec  | c2 \<rbrace>\<close> using infer_e_concatI ctx_subtype_v_eq by auto
     show \<open>atom z3 \<sharp> AE_concat v1 v2\<close> using infer_e_concatI by auto  
   qed
 next
   case (infer_e_splitI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v1 z1 c1 v2 z2 z3)
   show ?case proof
-    show *:\<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_splitI by auto  
+    show *:\<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_splitI by auto  
     show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using infer_e_splitI by auto
-    show \<open> \<Theta> ; \<B> ; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_bitvec  | c1 \<rbrace>\<close> using infer_e_splitI  ctx_subtype_v_eq by auto
-    show \<open>\<Theta> ; \<B> ; \<Gamma>' @
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma> \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_bitvec  | c1 \<rbrace>\<close> using infer_e_splitI  ctx_subtype_v_eq by auto
+    show \<open>\<Theta>; \<B>; \<Gamma>' @
                  (x, b0, c0) #\<^sub>\<Gamma>
                  \<Gamma>  \<turnstile> v2 \<Leftarrow> \<lbrace> z2 : B_int  | [ leq [ [ L_num 0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ z2 ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e AND
                                  [ leq [ [ z2 ]\<^sup>v ]\<^sup>c\<^sup>e [| [ v1 ]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  ==  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e   \<rbrace>\<close> 
@@ -938,7 +938,7 @@ lemma ctx_subtype_e_rig_eq:
           "\<Theta> ; \<Phi> ; \<B> ; \<Gamma>' ; \<Delta> \<turnstile> e \<Rightarrow> t1" 
         shows "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> e \<Rightarrow> t1"
 proof - 
-  obtain b and c0' and G and G' where "\<Gamma>' = G' @ (x,b,c0')#\<^sub>\<Gamma>G \<and>  \<Gamma> = G' @ (x,b,c0)#\<^sub>\<Gamma>G \<and>  \<Theta> ; \<B> ; G'@ (x,b,c0)#\<^sub>\<Gamma>G  \<Turnstile> c0'"
+  obtain b and c0' and G and G' where "\<Gamma>' = G' @ (x,b,c0')#\<^sub>\<Gamma>G \<and>  \<Gamma> = G' @ (x,b,c0)#\<^sub>\<Gamma>G \<and>  \<Theta>; \<B>; G'@ (x,b,c0)#\<^sub>\<Gamma>G  \<Turnstile> c0'"
     using assms replace_in_g_inside_valid infer_e_wf by meson
   thus  ?thesis 
     using assms ctx_subtype_e_eq by presburger
@@ -960,8 +960,8 @@ next
 
   then obtain x and c where "a=(x,c)" by fastforce
   then obtain b and c' where bc: "Some (b, c') = lookup \<Gamma>' x \<and>
-         replace_in_g_subtyped \<Theta> \<B> (replace_in_g \<Gamma>' x c) xcs \<Gamma> \<and> \<Theta> ; \<B> ; \<Gamma>'  \<turnstile>\<^sub>w\<^sub>f c \<and>
-         x \<notin> fst ` set xcs \<and>   \<Theta> ; \<B> ; (replace_in_g \<Gamma>' x c)  \<Turnstile> c' " using replace_in_g_subtyped_elims(3)[of  \<Theta> \<B> \<Gamma>' x c xcs \<Gamma>] Cons
+         replace_in_g_subtyped \<Theta> \<B> (replace_in_g \<Gamma>' x c) xcs \<Gamma> \<and> \<Theta>; \<B>; \<Gamma>'  \<turnstile>\<^sub>w\<^sub>f c \<and>
+         x \<notin> fst ` set xcs \<and>   \<Theta>; \<B>; (replace_in_g \<Gamma>' x c)  \<Turnstile> c' " using replace_in_g_subtyped_elims(3)[of  \<Theta> \<B> \<Gamma>' x c xcs \<Gamma>] Cons
     by (metis valid.simps)
 
   hence *: "replace_in_g_subtyped \<Theta> \<B> \<Gamma>' [(x,c)] (replace_in_g \<Gamma>' x c)" using replace_in_g_subtyped_consI 
@@ -984,19 +984,19 @@ lemma ctx_subtype_s_rigs:
           "check_branch_list \<Theta> \<Phi> \<B> G \<Delta> tid dclist v css  t1 \<Longrightarrow>  wsX G xcs  \<Longrightarrow> replace_in_g_subtyped  \<Theta> \<B> G xcs G'  \<Longrightarrow> check_branch_list \<Theta> \<Phi> \<B> G' \<Delta> tid dclist v css t1"
 proof(induction   arbitrary:  xcs G' and xcs G' and xcs G' rule: check_s_check_branch_s_check_branch_list.inducts)
   case (check_valI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v \<tau>' \<tau>)
-  hence *:"\<Theta> ; \<B> ; G'  \<turnstile> v \<Rightarrow> \<tau>' \<and>  \<Theta> ; \<B> ; G'  \<turnstile> \<tau>' \<lesssim> \<tau>" using ctx_subtype_v_rigs_eq ctx_subtype_subtype_rigs 
+  hence *:"\<Theta>; \<B>; G'  \<turnstile> v \<Rightarrow> \<tau>' \<and>  \<Theta>; \<B>; G'  \<turnstile> \<tau>' \<lesssim> \<tau>" using ctx_subtype_v_rigs_eq ctx_subtype_subtype_rigs 
     by (meson check_v.simps)
   show ?case proof
-     show \<open>\<Theta> ; \<B> ; G' \<turnstile>\<^sub>w\<^sub>f \<Delta>\<close> using check_valI wfD_rig by auto
+     show \<open>\<Theta>; \<B>; G' \<turnstile>\<^sub>w\<^sub>f \<Delta>\<close> using check_valI wfD_rig by auto
      show \<open>\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using check_valI by auto
-     show \<open>\<Theta> ; \<B> ; G'  \<turnstile> v \<Rightarrow> \<tau>'\<close> using * by auto
-     show \<open>\<Theta> ; \<B> ; G'  \<turnstile> \<tau>' \<lesssim> \<tau>\<close> using * by auto
+     show \<open>\<Theta>; \<B>; G'  \<turnstile> v \<Rightarrow> \<tau>'\<close> using * by auto
+     show \<open>\<Theta>; \<B>; G'  \<turnstile> \<tau>' \<lesssim> \<tau>\<close> using * by auto
    qed
  next
    case (check_letI x \<Theta> \<Phi> \<B> \<Gamma> \<Delta> e \<tau> z' s b' c')
    thm replace_in_g_wfG
   show ?case proof
-    have wfG: "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma> \<and> \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f G'" using infer_e_wf check_letI replace_in_g_wfG   using infer_e_wf(2) by (auto simp add: freshers)
+    have wfG: "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma> \<and> \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f G'" using infer_e_wf check_letI replace_in_g_wfG   using infer_e_wf(2) by (auto simp add: freshers)
     hence "atom x \<sharp> G'" using check_letI replace_in_g_fresh replace_in_g_wfG  by auto
     thus  "atom x \<sharp> (\<Theta>, \<Phi>, \<B>, G', \<Delta>, e, \<tau>)" using check_letI by auto
     have "atom z' \<sharp> G'" apply(rule replace_in_g_fresh[OF check_letI(7)]) 
@@ -1022,7 +1022,7 @@ proof(induction   arbitrary:  xcs G' and xcs G' and xcs G' rule: check_s_check_b
 
         have "Some (b', c'[z'::=V_var x]\<^sub>v) =  lookup ((x, b', c'[z'::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) x" by auto
 
-        moreover have "\<Theta> ; \<B> ; replace_in_g ((x, b', c'[z'::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) x  (c'[z'::=V_var x]\<^sub>v) \<Turnstile>  c'[z'::=V_var x]\<^sub>v" proof -
+        moreover have "\<Theta>; \<B>; replace_in_g ((x, b', c'[z'::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) x  (c'[z'::=V_var x]\<^sub>v) \<Turnstile>  c'[z'::=V_var x]\<^sub>v" proof -
           have "replace_in_g ((x, b', c'[z'::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) x  (c'[z'::=V_var x]\<^sub>v) = ((x, b', c'[z'::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)" 
             using replace_in_g.simps by presburger
           thus ?thesis  using vld subst_defs by auto
@@ -1036,7 +1036,7 @@ proof(induction   arbitrary:  xcs G' and xcs G' and xcs G' rule: check_s_check_b
             using replace_in_g.simps by presburger
           ultimately show ?thesis by argo
         qed      
-        moreover  have "\<Theta> ; \<B> ; (x, b', c'[z'::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f  c'[z'::=V_var x]\<^sub>v " using vld subst_defs by auto
+        moreover  have "\<Theta>; \<B>; (x, b', c'[z'::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f  c'[z'::=V_var x]\<^sub>v " using vld subst_defs by auto
         ultimately show ?thesis using  replace_in_g_subtyped_consI xf replace_in_g.simps(2) by metis
       qed
 
@@ -1082,7 +1082,7 @@ next
    hence wf:"wfG \<Theta> \<B> \<Gamma>" using check_s_wf by presburger
    show ?case proof(rule check_s_check_branch_s_check_branch_list.check_ifI)
      show \<open>atom z \<sharp> (\<Theta>, \<Phi>, \<B>, G', \<Delta>, v, s1, s2, \<tau>)\<close> using fresh_prodN replace_in_g_fresh1 wf check_ifI by auto
-     show \<open>\<Theta> ; \<B> ; G'  \<turnstile> v \<Leftarrow> \<lbrace> z : B_bool  | TRUE \<rbrace>\<close> using ctx_subtype_check_v_rigs_eq check_ifI by presburger
+     show \<open>\<Theta>; \<B>; G'  \<turnstile> v \<Leftarrow> \<lbrace> z : B_bool  | TRUE \<rbrace>\<close> using ctx_subtype_check_v_rigs_eq check_ifI by presburger
      show \<open> \<Theta> ; \<Phi> ; \<B> ; G' ; \<Delta>  \<turnstile> s1 \<Leftarrow> \<lbrace> z : b_of \<tau>  | CE_val v  ==  CE_val (V_lit L_true)   IMP  c_of \<tau> z  \<rbrace>\<close> using  check_ifI by auto
      show \<open> \<Theta> ; \<Phi> ; \<B> ; G' ; \<Delta>  \<turnstile> s2 \<Leftarrow> \<lbrace> z : b_of \<tau>  | CE_val v  ==  CE_val (V_lit L_false)   IMP  c_of \<tau> z  \<rbrace>\<close> using  check_ifI by auto
    qed
@@ -1121,7 +1121,7 @@ next
       apply(rule  u_not_in_g , rule replace_in_g_wfG)
       using check_v_wf check_varI by simp+
     thus  \<open>atom u \<sharp> (\<Theta>, \<Phi>, \<B>, G', \<Delta>, \<tau>', v, \<tau>)\<close> unfolding fresh_prodN using check_varI by simp
-    show \<open>\<Theta> ; \<B> ; G'  \<turnstile> v \<Leftarrow> \<tau>'\<close> using ctx_subtype_check_v_rigs_eq check_varI by auto
+    show \<open>\<Theta>; \<B>; G'  \<turnstile> v \<Leftarrow> \<tau>'\<close> using ctx_subtype_check_v_rigs_eq check_varI by auto
     show \<open> \<Theta> ; \<Phi> ; \<B> ; G' ; (u, \<tau>') #\<^sub>\<Delta> \<Delta>  \<turnstile> s \<Leftarrow> \<tau>\<close> using  check_varI by auto
   qed
 next
@@ -1146,25 +1146,25 @@ next
   show ?case proof
     show " \<Theta> ;  \<Phi> ; \<B> ; G' ; \<Delta> ; tid ; dclist ; v \<turnstile> cs \<Leftarrow> \<tau>" using check_caseI ctx_subtype_check_v_rigs_eq by auto
     show "AF_typedef tid dclist \<in> set  \<Theta>" using check_caseI by auto
-    show "\<Theta> ; \<B> ; G'  \<turnstile> v \<Leftarrow> \<lbrace> z : B_id tid  | TRUE \<rbrace>" using check_caseI ctx_subtype_check_v_rigs_eq by auto
+    show "\<Theta>; \<B>; G'  \<turnstile> v \<Leftarrow> \<lbrace> z : B_id tid  | TRUE \<rbrace>" using check_caseI ctx_subtype_check_v_rigs_eq by auto
     show "\<turnstile>\<^sub>w\<^sub>f \<Theta> " using check_caseI by auto
   qed
 next
   case (check_assertI x \<Theta> \<Phi> \<B> \<Gamma> \<Delta> c \<tau> s)
   show ?case proof
-    have wfG: "\<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma> \<and> \<Theta> ; \<B> \<turnstile>\<^sub>w\<^sub>f G'" using check_s_wf check_assertI replace_in_g_wfG wfX_wfY by metis
+    have wfG: "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma> \<and> \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f G'" using check_s_wf check_assertI replace_in_g_wfG wfX_wfY by metis
     hence "atom x \<sharp> G'" using check_assertI replace_in_g_fresh replace_in_g_wfG  by auto
     thus  \<open>atom x \<sharp> (\<Theta>, \<Phi>, \<B>, G', \<Delta>, c, \<tau>, s)\<close> using check_assertI fresh_prodN by auto
     show \<open> \<Theta> ; \<Phi> ; \<B> ; (x, B_bool, c) #\<^sub>\<Gamma> G' ; \<Delta>  \<turnstile> s \<Leftarrow> \<tau>\<close> proof(rule check_assertI(5) )
       show "wsX ((x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>) xcs" using check_assertI wsX_cons3   by simp
-      show "\<Theta> ; \<B>  \<turnstile> (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> \<langle> xcs \<rangle> \<leadsto> (x, B_bool, c) #\<^sub>\<Gamma> G'" proof(rule  replace_in_g_subtyped_cons)
-        show \<open> \<Theta> ; \<B>  \<turnstile> \<Gamma> \<langle> xcs \<rangle> \<leadsto> G'\<close> using check_assertI by auto
-        show \<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> \<close> using check_assertI check_s_wf by metis
+      show "\<Theta>; \<B>  \<turnstile> (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> \<langle> xcs \<rangle> \<leadsto> (x, B_bool, c) #\<^sub>\<Gamma> G'" proof(rule  replace_in_g_subtyped_cons)
+        show \<open> \<Theta>; \<B>  \<turnstile> \<Gamma> \<langle> xcs \<rangle> \<leadsto> G'\<close> using check_assertI by auto
+        show \<open> \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> \<close> using check_assertI check_s_wf by metis
         thus \<open>x \<notin> fst ` set xcs\<close> using check_assertI wsX_fresh wfG_elims wfX_wfY by metis
       qed
     qed
-    show \<open>\<Theta> ; \<B> ; G'  \<Turnstile> c \<close> using check_assertI replace_in_g_valid by auto
-    show \<open> \<Theta> ; \<B> ; G' \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using check_assertI wfD_rig by auto
+    show \<open>\<Theta>; \<B>; G'  \<Turnstile> c \<close> using check_assertI replace_in_g_valid by auto
+    show \<open> \<Theta>; \<B>; G' \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using check_assertI wfD_rig by auto
   qed
 qed
 
@@ -1192,7 +1192,7 @@ qed
 lemma ctx_subtype_s:
   fixes  s::s
   assumes "\<Theta> ; \<Phi> ; \<B> ; \<Gamma>'@((x,b,c[z::=V_var x]\<^sub>c\<^sub>v)#\<^sub>\<Gamma>\<Gamma>) ; \<Delta> \<turnstile> s \<Leftarrow> \<tau>" and 
-          "\<Theta> ; \<B> ; \<Gamma> \<turnstile> \<lbrace> z' : b | c' \<rbrace> \<lesssim> \<lbrace> z : b | c \<rbrace>" and 
+          "\<Theta>; \<B>; \<Gamma> \<turnstile> \<lbrace> z' : b | c' \<rbrace> \<lesssim> \<lbrace> z : b | c \<rbrace>" and 
           "atom x \<sharp> (z,z',c,c')"
   shows "\<Theta> ; \<Phi> ; \<B> ; \<Gamma>'@(x,b,c'[z'::=V_var x]\<^sub>c\<^sub>v)#\<^sub>\<Gamma>\<Gamma> ; \<Delta> \<turnstile> s \<Leftarrow> \<tau>"
 proof - 
@@ -1209,7 +1209,7 @@ proof -
     hence  a1 : "atom x \<sharp> c" using assms subtype_wf   subtype_wf assms wfT_fresh_c xfg by meson
     thus ?thesis using a1 a2 \<open>atom x \<sharp> (z,z',c,c')\<close> fresh_prod4 fresh_Pair xfg by simp
   qed
-  hence wc1:" \<Theta> ; \<B> ; (x, b, c'[z'::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c[z::=V_var x]\<^sub>v"
+  hence wc1:" \<Theta>; \<B>; (x, b, c'[z'::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<Turnstile> c[z::=V_var x]\<^sub>v"
     using  subtype_valid assms fresh_prodN by metis  
 
   have vld: "\<Theta>;\<B> ; (\<Gamma>'@(x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c[z::=V_var x]\<^sub>c\<^sub>v" proof - 
@@ -1223,23 +1223,23 @@ proof -
       qed
       ultimately show ?thesis using wc1 valid_weakening subst_defs by metis
   qed
-  hence  wbc: "\<Theta> ; \<B> ; \<Gamma>' @ (x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c[z::=V_var x]\<^sub>c\<^sub>v" using valid.simps by auto
-  have wbc1: "\<Theta> ; \<B> ; (x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c[z::=V_var x]\<^sub>c\<^sub>v" using wc1 valid.simps subst_defs by auto
+  hence  wbc: "\<Theta>; \<B>; \<Gamma>' @ (x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c[z::=V_var x]\<^sub>c\<^sub>v" using valid.simps by auto
+  have wbc1: "\<Theta>; \<B>; (x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c[z::=V_var x]\<^sub>c\<^sub>v" using wc1 valid.simps subst_defs by auto
   have "wsX  (\<Gamma>'@((x,b,c[z::=V_var x]\<^sub>c\<^sub>v)#\<^sub>\<Gamma>\<Gamma>)) [(x, c'[z'::=V_var x]\<^sub>c\<^sub>v)]" proof 
-    show " wsX (\<Gamma>' @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) []" using wsX_NilI by auto
+    show "wsX (\<Gamma>' @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) []" using wsX_NilI by auto
     show "atom x \<in> atom_dom (\<Gamma>' @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)" by simp
     show "x \<notin> fst ` set []" by auto
   qed
   moreover have "replace_in_g_subtyped \<Theta> \<B> (\<Gamma>'@((x,b,c[z::=V_var x]\<^sub>c\<^sub>v)#\<^sub>\<Gamma>\<Gamma>)) [(x, c'[z'::=V_var x]\<^sub>c\<^sub>v)] (\<Gamma>'@(x,b,c'[z'::=V_var x]\<^sub>c\<^sub>v)#\<^sub>\<Gamma>\<Gamma>)" proof
     show "Some (b, c[z::=V_var x]\<^sub>c\<^sub>v) = lookup (\<Gamma>' @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) x" using lookup_inside* by auto
-    show " \<Theta> ; \<B> ; replace_in_g (\<Gamma>' @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) x (c'[z'::=V_var x]\<^sub>c\<^sub>v)  \<Turnstile> c[z::=V_var x]\<^sub>c\<^sub>v"  using vld replace_in_g_split wf by metis
+    show "\<Theta>; \<B>; replace_in_g (\<Gamma>' @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) x (c'[z'::=V_var x]\<^sub>c\<^sub>v)  \<Turnstile> c[z::=V_var x]\<^sub>c\<^sub>v"  using vld replace_in_g_split wf by metis
     show "replace_in_g_subtyped \<Theta> \<B> (replace_in_g (\<Gamma>' @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) x (c'[z'::=V_var x]\<^sub>c\<^sub>v)) [] (\<Gamma>' @ (x, b, c'[z'::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)" 
       using replace_in_g_subtyped_empty wf by presburger
     show "x \<notin> fst ` set []" by auto
-    show "\<Theta> ; \<B> ; \<Gamma>' @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c'[z'::=V_var x]\<^sub>c\<^sub>v" 
+    show "\<Theta>; \<B>; \<Gamma>' @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c'[z'::=V_var x]\<^sub>c\<^sub>v" 
     proof(rule wf_weakening)
-     show \<open> \<Theta> ; \<B> ; (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c'[z'::=[ x ]\<^sup>v]\<^sub>c\<^sub>v \<close>   using wfC_cons_switch[OF wbc1] wf_weakening(6) check_s_wf assms toSet.simps  by metis 
-     show \<open> \<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b, c[z::=[ x ]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma> \<close>   using wfC_cons_switch[OF wbc1] wf_weakening(6) check_s_wf assms toSet.simps  by metis
+     show \<open>\<Theta>; \<B>; (x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f c'[z'::=[ x ]\<^sup>v]\<^sub>c\<^sub>v \<close>   using wfC_cons_switch[OF wbc1] wf_weakening(6) check_s_wf assms toSet.simps  by metis 
+     show \<open>\<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b, c[z::=[ x ]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma> \<close>   using wfC_cons_switch[OF wbc1] wf_weakening(6) check_s_wf assms toSet.simps  by metis
      show \<open>toSet ((x, b, c[z::=V_var x]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<subseteq> toSet (\<Gamma>' @ (x, b, c[z::=[ x ]\<^sup>v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> \<Gamma>)\<close> using append_g.simps toSet.simps by auto
    qed    
   qed

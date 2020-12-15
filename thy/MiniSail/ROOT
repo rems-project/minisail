@@ -8,13 +8,11 @@ session "MiniSail" = "HOL" +
      "Show"
  directories
    "Safety"
-   "SailToMiniSail"
   theories [document = false]
     "Nominal2.Nominal2"
     "Safety/Explorer"
     "Native_Word.Uint32"
   theories
     "Safety/Safety"
-    "SailToMiniSail/CodeGen" 
   document_files
     "root.tex"
