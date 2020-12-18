@@ -145,7 +145,8 @@ nominal_datatype "var_def" =
 
 text  \<open> Programs \<close> 
 nominal_datatype "p" = 
-  AP_prog "type_def list" "fun_def list" "var_def list" "s"
+  AP_prog "type_def list" "fun_def list" "var_def list" "s" ("PROG _ _ _ _")
+
  
 declare l.supp [simp] v.supp [simp]  e.supp [simp] s_branch_s_branch_list.supp [simp]  \<tau>.supp [simp] c.supp [simp] b.supp[simp]
 

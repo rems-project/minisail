@@ -14,6 +14,10 @@ chapter \<open>Safety\<close>
 
 section \<open>Operational Semantics\<close>
 
+
+abbreviation delta_ext (" _ \<sqsubseteq> _ ") where  
+    "delta_ext \<Delta> \<Delta>' \<equiv> (setD \<Delta> \<subseteq> setD \<Delta>')" 
+
 nominal_function dc_of :: "branch_s \<Rightarrow> string" where
   "dc_of (AS_branch dc _ _) = dc"
   apply(auto,simp add: eqvt_def dc_of_graph_aux_def)
@@ -560,7 +564,7 @@ qed(auto+)
 
 lemma preservation_let_val:
   assumes "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_val v) s \<rangle> \<Leftarrow> \<tau> \<or> \<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let2 x t (AS_val v) s \<rangle> \<Leftarrow> \<tau>" (is "?A \<or> ?B")
-  shows " \<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta>'  \<turnstile> \<langle> \<delta> , s[x::=v]\<^sub>s\<^sub>v \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>'"
+  shows " \<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta>'  \<turnstile> \<langle> \<delta> , s[x::=v]\<^sub>s\<^sub>v \<rangle> \<Leftarrow> \<tau>  \<and> \<Delta> \<sqsubseteq> \<Delta>'"
 proof -
   have tt:  "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and fd: "(\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)"
     using assms by blast+
@@ -598,7 +602,7 @@ qed
 lemma preservation_fst_snd:
   assumes "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , LET x = (fst_snd (V_pair v1 v2)) IN s' \<rangle> \<Leftarrow> \<tau>" and 
           "fst_snd = AE_fst \<and> v=v1 \<or> fst_snd = AE_snd \<and> v=v2"
-  shows "\<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , LET x = (AE_val v) IN s' \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>'"
+  shows "\<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , LET x = (AE_val v) IN s' \<rangle> \<Leftarrow> \<tau>  \<and> \<Delta> \<sqsubseteq> \<Delta>'"
 proof - 
    have  tt: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (fst_snd (V_pair v1 v2)) s' \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta>" using assms by blast
    hence t2: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (fst_snd (V_pair v1 v2)) s' \<Leftarrow> \<tau>" by auto
@@ -1102,10 +1106,9 @@ lemma infer_v_pair2I:
   \<Theta> ; \<B> ; \<Gamma> \<turnstile> [ v1 , v2 ]\<^sup>v \<Rightarrow> \<lbrace> z : [ b1 , b2 ]\<^sup>b  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ v1 , v2 ]\<^sup>v ]\<^sup>c\<^sup>e  \<rbrace>"
   using infer_v_pairI by simp
 
-lemma preservation:
-  fixes s::s and s'::s
+lemma preservation: 
   assumes "\<Phi> \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow> \<langle>\<delta>', s'\<rangle>" and "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau>"
-  shows "\<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle>\<delta>', s'\<rangle> \<Leftarrow> \<tau> \<and> setD \<Delta> \<subseteq> setD \<Delta>'" 
+  shows "\<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle>\<delta>', s'\<rangle> \<Leftarrow> \<tau> \<and> \<Delta> \<sqsubseteq> \<Delta>'" 
   using assms 
 proof(induct arbitrary: \<tau> rule: reduce_stmt.induct)
   case (reduce_let_plusI \<delta> x n1 n2 s')
@@ -1230,7 +1233,7 @@ next
     using check_s_elims(4)[OF *] Abs1_eq_iff_all(3) by metis
 
   hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , s1 \<rangle> \<Leftarrow> t"  using config_typeI ** by auto
-  then obtain \<Delta>' where s1r: "\<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s1' \<rangle> \<Leftarrow> t \<and> setD \<Delta> \<subseteq> setD \<Delta>'" using reduce_let2I by presburger
+  then obtain \<Delta>' where s1r: "\<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s1' \<rangle> \<Leftarrow> t \<and> \<Delta> \<sqsubseteq> \<Delta>'" using reduce_let2I by presburger
 
   have  "\<Theta>; \<Phi>; {||}; GNil; \<Delta>'  \<turnstile> AS_let2 xa t s1' s2a  \<Leftarrow> \<tau>" 
   proof(rule check_let2I)
@@ -1290,7 +1293,7 @@ next
     using check_s_elims by blast
   hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , s1 \<rangle> \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>)" 
     using tt config_typeI tt by simp 
-  then obtain \<Delta>' where *: "\<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s1' \<rangle> \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>) \<and> setD \<Delta> \<subseteq> setD \<Delta>'" 
+  then obtain \<Delta>' where *: "\<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s1' \<rangle> \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>) \<and> \<Delta> \<sqsubseteq> \<Delta>'" 
     using reduce_seq2I by meson
   moreover hence  s't: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>'  \<turnstile> s1' \<Leftarrow> (\<lbrace> z : B_unit | TRUE \<rbrace>) \<and> \<Theta> \<turnstile> \<delta>' \<sim> \<Delta>'" 
     using config_type_elims by force
@@ -1299,7 +1302,7 @@ next
     using calculation(1) zz check_s_d_weakening * by metis
   moreover hence  "\<Theta>; \<Phi>; {||}; GNil; \<Delta>'  \<turnstile> (AS_seq s1' s2) \<Leftarrow> \<tau>" 
     using check_seqI zz s't by meson 
-  ultimately have  "\<Theta>; \<Phi>; \<Delta>'  \<turnstile> \<langle> \<delta>' , AS_seq s1' s2 \<rangle> \<Leftarrow> \<tau> \<and> setD \<Delta> \<subseteq> setD \<Delta>'"
+  ultimately have  "\<Theta>; \<Phi>; \<Delta>'  \<turnstile> \<langle> \<delta>' , AS_seq s1' s2 \<rangle> \<Leftarrow> \<tau> \<and> \<Delta> \<sqsubseteq> \<Delta>'"
     using zz config_typeI tt  by meson
   then show ?case by meson
 next
@@ -1477,7 +1480,7 @@ next
   have  cv: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>  s   \<Leftarrow> \<tau> \<and> \<Theta> ; {||} ; GNil  \<Turnstile> c " using check_assert_s *  by metis
  
   hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau>" using elim config_typeI by simp
-  then obtain \<Delta>' where D: "\<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s' \<rangle> \<Leftarrow> \<tau>  \<and> setD \<Delta> \<subseteq> setD \<Delta>'" using reduce_assert2I by metis
+  then obtain \<Delta>' where D: "\<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s' \<rangle> \<Leftarrow> \<tau>  \<and> \<Delta> \<sqsubseteq> \<Delta>'" using reduce_assert2I by metis
   hence **:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>' \<turnstile> s' \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta>' \<sim> \<Delta>'" using config_type_elims by metis
 
   obtain x::x where x:"atom x \<sharp> (\<Theta>, \<Phi>, ({||}::bv fset), GNil, \<Delta>', c, \<tau>, s')" using obtain_fresh by metis
@@ -1495,10 +1498,9 @@ next
   thus  ?case using elim config_typeI D ** by metis
 qed
 
-lemma preservation_many:
-  fixes s::s and s'::s 
+lemma preservation_many: 
   assumes " \<Phi>  \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow>\<^sup>* \<langle> \<delta>' , s' \<rangle>"
-  shows "\<Theta>; \<Phi>; \<Delta> \<turnstile>  \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau> \<Longrightarrow> \<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s' \<rangle> \<Leftarrow> \<tau> \<and> setD \<Delta> \<subseteq> setD \<Delta>'" 
+  shows "\<Theta>; \<Phi>; \<Delta> \<turnstile>  \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau> \<Longrightarrow> \<exists>\<Delta>'. \<Theta>; \<Phi>; \<Delta>' \<turnstile> \<langle> \<delta>' , s' \<rangle> \<Leftarrow> \<tau> \<and> \<Delta> \<sqsubseteq> \<Delta>'" 
   using assms proof(induct arbitrary: \<Delta> rule: reduce_stmt_many.induct)
   case (reduce_stmt_many_oneI \<Phi> \<delta> s \<delta>' s')
   then show ?case using preservation by simp
@@ -1542,7 +1544,8 @@ qed
 
 
 lemma progress_fst:
-  assumes  "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta>  \<turnstile> LET x = (AE_fst v) IN s \<Leftarrow> \<tau>" and  "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and "supp (LET x = (AE_fst v) IN s)  \<subseteq> atom`fst`setD \<Delta>"
+  assumes  "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta>  \<turnstile> LET x = (AE_fst v) IN s \<Leftarrow> \<tau>" and  "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and 
+           "supp (LET x = (AE_fst v) IN s)  \<subseteq> atom`fst`setD \<Delta>"
   shows "\<exists>\<delta>' s'. \<Phi>  \<turnstile> \<langle> \<delta> , LET x = (AE_fst v) IN s \<rangle> \<longrightarrow> \<langle>\<delta>', s'\<rangle>"
 proof -
   have *:"supp v = {}" using assms s_branch_s_branch_list.supp by auto
@@ -1556,7 +1559,8 @@ proof -
 qed
 
 lemma progress_let:
-  assumes "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta> \<turnstile> LET x = e IN s \<Leftarrow> \<tau>" and "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and "supp (LET x = e IN s) \<subseteq> atom ` fst ` setD \<Delta>" and "sble \<Theta> \<Gamma>"
+  assumes "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta> \<turnstile> LET x = e IN s \<Leftarrow> \<tau>" and "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and 
+          "supp (LET x = e IN s) \<subseteq> atom ` fst ` setD \<Delta>" and "sble \<Theta> \<Gamma>"
   shows "\<exists>\<delta>' s'. \<Phi>  \<turnstile> \<langle> \<delta> , LET x = e IN s\<rangle> \<longrightarrow> \<langle> \<delta>' , s'\<rangle>"
 proof -
   obtain z b c where *: "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta>  \<turnstile> e \<Rightarrow> \<lbrace> z : b  | c \<rbrace> " using check_s_elims(2)[OF assms(1)] by metis
@@ -1634,8 +1638,7 @@ qed(auto+)
 
 
 (* This is generalised. Rather than forcing \<Gamma> to be empty, we force s to be contain no immutable variables *)
-lemma progress_aux:
-  fixes s::s and cs::branch_s and css::branch_list
+lemma progress_aux:  
   shows    "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> s \<Leftarrow> \<tau> \<Longrightarrow> \<B> = {||} \<Longrightarrow>  sble \<Theta> \<Gamma> \<Longrightarrow> supp s \<subseteq> atom ` fst ` setD \<Delta> \<Longrightarrow> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<Longrightarrow> 
                (\<exists>v. s = [v]\<^sup>s) \<or> (\<exists>\<delta>' s'. \<Phi> \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow> \<langle>\<delta>', s'\<rangle>)" and
            "\<Theta>; \<Phi>; {||}; \<Gamma>; \<Delta>; tid; dc; const; v2 \<turnstile> cs \<Leftarrow> \<tau>  \<Longrightarrow> supp cs = {} \<Longrightarrow> True " 
@@ -1760,7 +1763,6 @@ next
 qed
 
 lemma progress:
-  fixes s::s
   assumes "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau>" 
   shows "(\<exists>v. s = [v]\<^sup>s) \<or> (\<exists>\<delta>' s'. \<Phi>  \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow> \<langle>\<delta>', s'\<rangle>)"
 proof -
@@ -1773,17 +1775,16 @@ qed
 
 section \<open>Safety\<close>
 
-lemma  safety:
+lemma  safety_stmt:
   assumes "\<Phi> \<turnstile> \<langle>\<delta>, s\<rangle> \<longrightarrow>\<^sup>* \<langle>\<delta>', s'\<rangle>" and "\<Theta>; \<Phi>; \<Delta> \<turnstile>  \<langle>\<delta>, s\<rangle> \<Leftarrow> \<tau>"
   shows  "(\<exists>v. s' = [v]\<^sup>s) \<or> (\<exists>\<delta>'' s''. \<Phi>  \<turnstile> \<langle>\<delta>', s'\<rangle> \<longrightarrow> \<langle>\<delta>'', s''\<rangle>)"  
   using preservation_many progress assms  by meson
 
 
-lemma safety_prog:
-  assumes "\<turnstile> \<langle>AP_prog \<Theta> \<Phi> \<G> s\<rangle> \<Leftarrow> \<tau>" and
-          "\<Phi>  \<turnstile> \<langle>\<delta>_of \<G>, s\<rangle> \<longrightarrow>\<^sup>* \<langle>\<delta>', s'\<rangle>"
-        shows  "(\<exists>v. s' = [v]\<^sup>s) \<or> (\<exists>\<delta>'' s''. \<Phi>  \<turnstile> \<langle>\<delta>', s'\<rangle> \<longrightarrow> \<langle>\<delta>'', s''\<rangle>)"   
-  using assms config_type_prog_elims safety by metis
+lemma safety:
+  assumes "\<turnstile> \<langle>PROG \<Theta> \<Phi> \<G> s\<rangle> \<Leftarrow> \<tau>" and  "\<Phi>  \<turnstile> \<langle>\<delta>_of \<G>, s\<rangle> \<longrightarrow>\<^sup>* \<langle>\<delta>', s'\<rangle>"
+  shows  "(\<exists>v. s' = [v]\<^sup>s) \<or> (\<exists>\<delta>'' s''. \<Phi>  \<turnstile> \<langle>\<delta>', s'\<rangle> \<longrightarrow> \<langle>\<delta>'', s''\<rangle>)"   
+  using assms config_type_prog_elims safety_stmt by metis
 
 
 unused_thms "Eisbach_Tools" "Nominal2" "AList" "Nominal-Utils" RCLogic-
