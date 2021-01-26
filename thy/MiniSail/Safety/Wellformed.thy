@@ -91,6 +91,13 @@ inductive wfV :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarro
 \<rbrakk> \<Longrightarrow>
     \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op LEq v1 v2 : B_bool"
 
+| wfCE_eqI:"\<lbrakk>
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : b; 
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : b 
+\<rbrakk> \<Longrightarrow>
+    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op Eq v1 v2 : B_bool"
+
+
 | wfCE_fstI: "\<lbrakk>               
     \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_pair b1 b2  
 \<rbrakk> \<Longrightarrow> 
@@ -193,6 +200,7 @@ inductive_cases wfCE_elims:
  " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_concat v1 v2 : b"
  " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_len v1 : b"
  " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op opp v1 v2 : b"
+ " \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op Eq v1 v2 : b"
 
 inductive_cases wfT_elims:
  "\<Theta>; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau>::\<tau>"
@@ -281,6 +289,14 @@ inductive
    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int
 \<rbrakk> \<Longrightarrow> 
    \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_op LEq v1 v2 : B_bool"
+
+| wfE_eqI:"\<lbrakk>   
+   \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ;
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : b; 
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : b
+\<rbrakk> \<Longrightarrow> 
+   \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_op Eq v1 v2 : B_bool"
 
 | wfE_fstI: "\<lbrakk>  
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>; 

@@ -591,8 +591,8 @@ proof  -
   ultimately show ?thesis using subtype_baseI assms \<tau>.fresh fresh_Pair by metis
 qed
 
-lemma subtype_bop:
-  assumes "wfG \<Theta> \<B>  \<Gamma>" and "opp = Plus \<and> ll = (L_num (n1+n2)) \<or> (opp = LEq \<and> ll = ( if n1\<le>n2 then L_true else L_false))"  
+lemma subtype_bop_arith:
+  assumes "wfG \<Theta> \<B>  \<Gamma>" and "(opp = Plus \<and> ll = (L_num (n1+n2))) \<or> (opp = LEq \<and> ll = ( if n1\<le>n2 then L_true else L_false))"  
   and "(opp = Plus \<longrightarrow> b = B_int) \<and> (opp = LEq \<longrightarrow> b = B_bool)"
   shows "\<Theta>; \<B>; \<Gamma>  \<turnstile> (\<lbrace> z : b | C_eq (CE_val (V_var z))  (CE_val (V_lit (ll))) \<rbrace>) \<lesssim>  
                            \<lbrace> z : b | C_eq (CE_val (V_var z)) (CE_op opp [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e) \<rbrace>" (is "\<Theta>; \<B>; \<Gamma>  \<turnstile> ?T1 \<lesssim> ?T2")   
@@ -613,7 +613,8 @@ proof -
       show "atom x \<sharp> \<Gamma>" using xf fresh_Pair by auto
     qed
 
-    show  "wfT \<Theta>  \<B>  \<Gamma> (\<lbrace> x : b  | CE_val (V_var x)  ==  CE_op opp [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e  \<rbrace>)" (is "wfT \<Theta> \<B>  ?A ?C")   
+    show  "wfT \<Theta>  \<B>  \<Gamma> (\<lbrace> x : b  | CE_val (V_var x)  ==  CE_op opp [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e  \<rbrace>)" (is "wfT \<Theta> \<B>  ?A ?C")    sorry
+(*
     proof(rule wfT_e_eq,rule opp.exhaust[of opp])
       { assume "opp = Plus"
         thus  "\<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f  CE_op opp [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e : b"  using wfCE_valI  wfCE_plusI  assms wfV_litI base_for_lit.simps assms by metis
@@ -623,12 +624,17 @@ proof -
         thus  "\<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f  CE_op opp [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e : b"  using wfCE_valI  wfCE_leqI  assms wfV_litI base_for_lit.simps assms by metis
       }
       show "atom x \<sharp> \<Gamma>" using xf fresh_Pair by auto
+    next
+     { assume "opp = Eq"
+        thus  False
+      }
+     
     qed
 
-
+*)
     show   "\<Theta>; \<B> ; (x, b, (CE_val (V_var x)  ==  CE_val (V_lit (ll)) )) #\<^sub>\<Gamma> \<Gamma>  
                           \<Turnstile> (CE_val (V_var x)  ==  CE_op opp [V_lit (L_num n1)]\<^sup>c\<^sup>e [V_lit (L_num n2)]\<^sup>c\<^sup>e)" (is "\<Theta>; \<B>; ?G \<Turnstile> ?c")
-      using valid_bop assms xf by simp
+      using valid_arith_bop assms xf by simp
 
   qed
   moreover have "?S1 = ?T1 " using type_l_eq by auto
@@ -637,6 +643,12 @@ proof -
   ultimately show ?thesis by auto 
  
 qed
+
+lemma subtype_bop_eq:
+  assumes "wfG \<Theta> \<B>  \<Gamma>" 
+  shows "\<Theta>; \<B>; \<Gamma>  \<turnstile> (\<lbrace> z : B_bool | C_eq (CE_val (V_var z)) (CE_val (V_lit (if l1 = l2 then L_true else L_false))) \<rbrace>) \<lesssim>  
+                      \<lbrace> z : B_bool | C_eq (CE_val (V_var z)) (CE_op Eq [(V_lit l1)]\<^sup>c\<^sup>e [(V_lit l2)]\<^sup>c\<^sup>e) \<rbrace>" (is "\<Theta>; \<B>; \<Gamma>  \<turnstile> ?T1 \<lesssim> ?T2")   
+  sorry
 
 lemma subtype_top:
   assumes "wfT \<Theta> \<B> G  (\<lbrace> z : b | c  \<rbrace>)"
@@ -1278,7 +1290,12 @@ lemma infer_e_plus[elim]:
 lemma infer_e_leq[elim]:
   assumes "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> AE_op LEq v1 v2 \<Rightarrow> \<tau>"
   shows "\<exists>z . (\<lbrace> z : B_bool |  C_eq (CE_val (V_var z)) (CE_op LEq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e) \<rbrace> = \<tau>)"
- using infer_e_elims assms by metis
+  using infer_e_elims assms by metis
+
+lemma infer_e_eq[elim]:
+  assumes "\<Theta> ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile> AE_op Eq v1 v2 \<Rightarrow> \<tau>"
+  shows "\<exists>z . (\<lbrace> z : B_bool |  C_eq (CE_val (V_var z)) (CE_op Eq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e) \<rbrace> = \<tau>)"
+ using infer_e_elims(25)[OF assms] by metis
 
 lemmas subst_defs = subst_b_b_def subst_b_c_def subst_b_\<tau>_def subst_v_v_def subst_v_c_def subst_v_\<tau>_def
 
@@ -1294,6 +1311,9 @@ next
   then show ?case using  b_of.simps infer_v_v_wf wf_intros by metis
 next
   case (infer_e_leqI \<Theta> \<B> \<Gamma> \<Delta>' v1 z1 c1 v2 z2 c2 z3)
+  then show ?case using  b_of.simps infer_v_v_wf wf_intros by metis
+next
+  case (infer_e_eqI \<Theta> \<B> \<Gamma> \<Delta>' v1 z1 c1 v2 z2 c2 z3)
   then show ?case using  b_of.simps infer_v_v_wf wf_intros by metis
 next
   case (infer_e_appI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> f x b c \<tau>' s' v \<tau>'')
@@ -1364,6 +1384,11 @@ next
   hence " \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_op LEq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e : B_bool" using wfCE_leqI wfD_emptyI wfPhi_emptyI infer_v_v_wf wfCE_valI
     by (metis b_of.simps infer_v_wf)
   then show ?case  using wfT_e_eq infer_e_leqI by auto
+next
+  case (infer_e_eqI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 b c1 v2 z2 c2 z3)
+  hence " \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_op Eq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e : B_bool" using wfCE_eqI wfD_emptyI wfPhi_emptyI infer_v_v_wf wfCE_valI
+    by (metis b_of.simps infer_v_wf)
+  then show ?case  using wfT_e_eq infer_e_eqI by auto
 next
   case (infer_e_appI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> f x b c \<tau> s' v \<tau>')
   show ?case proof
@@ -1487,7 +1512,7 @@ lemma infer_e_fst_pair:
 proof -
   obtain z' and b1 and b2 and c and z where ** : "\<tau> = (\<lbrace> z : b1  | C_eq (CE_val (V_var z))  (CE_fst [(V_pair v1 v2)]\<^sup>c\<^sup>e)  \<rbrace>) \<and> 
           wfD \<Theta> {||} GNil \<Delta> \<and> wfPhi \<Theta> \<Phi> \<and>
-              \<Theta> ; {||} ; GNil  \<turnstile> V_pair v1 v2 \<Rightarrow> \<lbrace> z' : B_pair b1 b2  | c \<rbrace> \<and> atom z \<sharp> V_pair v1 v2 "
+              (\<Theta> ; {||} ; GNil  \<turnstile> V_pair v1 v2 \<Rightarrow> \<lbrace> z' : B_pair b1 b2  | c \<rbrace>) \<and> atom z \<sharp> V_pair v1 v2 "
     using infer_e_elims assms  by metis
   hence *:" \<Theta> ; {||} ; GNil  \<turnstile> V_pair v1 v2 \<Rightarrow> \<lbrace> z' : B_pair b1 b2  | c \<rbrace>" by auto
 
@@ -1731,6 +1756,9 @@ next
   case (wfCE_leqI \<Theta> \<B> \<Gamma> v1 v2)
   then show ?case using wf_intros by metis
 next
+  case (wfCE_eqI \<Theta> \<B> \<Gamma> v1 v2)
+  then show ?case using wf_intros by metis
+next
   case (wfCE_fstI \<Theta> \<B> \<Gamma> v1 b1 b2)
   then show ?case using wf_intros by metis
 next
@@ -1827,6 +1855,9 @@ next
   then show ?case using wf_intros wf_replace_true1 by metis
 next
   case (wfE_leqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
+  then show ?case using wf_intros wf_replace_true1 by metis
+next
+  case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b v2)
   then show ?case using wf_intros wf_replace_true1 by metis
 next
   case (wfE_fstI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
@@ -2113,7 +2144,7 @@ subsection  \<open>Values\<close>
 
 nominal_function b_for :: "opp \<Rightarrow> b" where
   "b_for Plus = B_int"
-| "b_for LEq = B_bool"
+| "b_for LEq = B_bool" | "b_for Eq = B_bool"
 apply(auto,simp add: eqvt_def b_for_graph_aux_def )
 by (meson opp.exhaust)
 nominal_termination (eqvt)  by lexicographic_order
@@ -2396,6 +2427,22 @@ next
     show \<open> \<Theta> ;  \<B> ; \<Gamma>'  \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_int  | c1 \<rbrace>\<close> using infer_v_g_weakening infer_e_leqI by auto
     show \<open> \<Theta> ;  \<B> ; \<Gamma>'  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : B_int  | c2 \<rbrace>\<close> using infer_v_g_weakening infer_e_leqI by auto
     show \<open>atom z' \<sharp> AE_op LEq v1 v2\<close> using z'  by auto
+    show \<open>atom z' \<sharp> \<Gamma>'\<close> using z' by auto
+  qed
+  thus ?case using * by metis
+next
+  case (infer_e_eqI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 bb c1 v2 z2 c2 z3)
+  obtain z'::x where z': "atom z' \<sharp> v1 \<and> atom z' \<sharp> v2 \<and> atom z' \<sharp> \<Gamma>'" using obtain_fresh fresh_prod3 by metis
+
+  moreover hence  *:"\<lbrace> z3 : B_bool  | CE_val (V_var z3)  ==  CE_op Eq  [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e  \<rbrace> = (\<lbrace> z' : B_bool  | CE_val (V_var z')  ==  CE_op Eq  [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e  \<rbrace>)" 
+    using infer_e_eqI type_e_eq ce.fresh fresh_e_opp by auto
+
+  have "\<Theta> ; \<Phi> ;  \<B> ; \<Gamma>' ; \<Delta>  \<turnstile> AE_op Eq v1 v2 \<Rightarrow> \<lbrace> z' : B_bool  | CE_val (V_var z')  ==  CE_op Eq  [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e  \<rbrace>" proof
+    show \<open> \<Theta> ;  \<B> ; \<Gamma>'  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_weakening infer_e_eqI by auto
+    show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using infer_e_eqI by auto
+    show \<open> \<Theta> ;  \<B> ; \<Gamma>'  \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : bb  | c1 \<rbrace>\<close> using infer_v_g_weakening infer_e_eqI by auto
+    show \<open> \<Theta> ;  \<B> ; \<Gamma>'  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : bb  | c2 \<rbrace>\<close> using infer_v_g_weakening infer_e_eqI by auto
+    show \<open>atom z' \<sharp> AE_op Eq v1 v2\<close> using z'  by auto
     show \<open>atom z' \<sharp> \<Gamma>'\<close> using z' by auto
   qed
   thus ?case using * by metis

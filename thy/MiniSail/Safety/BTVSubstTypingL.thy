@@ -301,6 +301,17 @@ next
     show "atom z3 \<sharp> \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b" using subst_g_b_x_fresh infer_e_leqI by auto
   qed
 next
+  case (infer_e_eqI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 bb c1 v2 z2 c2 z3)
+  show ?case unfolding subst_b_simps proof(rule Typing.infer_e_eqI)
+    show "\<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f \<Delta>[bv::=b]\<^sub>\<Delta>\<^sub>b  " using wf_b_subst(10) subst_db.simps infer_e_eqI wfX_wfY 
+      by (metis wf_b_subst(15))
+    show "\<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> " using infer_e_eqI by auto
+    show "\<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile> v1[bv::=b]\<^sub>v\<^sub>b \<Rightarrow> \<lbrace> z1 : bb[bv::=b]\<^sub>b\<^sub>b  | c1[bv::=b]\<^sub>c\<^sub>b \<rbrace>" using subst_b_infer_v  infer_e_eqI subst_b_simps by force
+    show "\<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile> v2[bv::=b]\<^sub>v\<^sub>b \<Rightarrow> \<lbrace> z2 : bb[bv::=b]\<^sub>b\<^sub>b  | c2[bv::=b]\<^sub>c\<^sub>b \<rbrace>" using subst_b_infer_v  infer_e_eqI subst_b_simps by force
+    show "atom z3 \<sharp> AE_op Eq (v1[bv::=b]\<^sub>v\<^sub>b) (v2[bv::=b]\<^sub>v\<^sub>b)" using  subst_b_simps infer_e_eqI subst_b_fresh_x subst_b_e_def by metis
+    show "atom z3 \<sharp> \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b" using subst_g_b_x_fresh infer_e_eqI by auto
+  qed
+next
   case (infer_e_appI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> f x b' c \<tau>' s' v \<tau>)
   show ?case proof(subst subst_eb.simps, rule Typing.infer_e_appI)
     show "\<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f \<Delta>[bv::=b]\<^sub>\<Delta>\<^sub>b"  using wf_b_subst(10) subst_db.simps infer_e_appI wfX_wfY by (metis wf_b_subst(15))

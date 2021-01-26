@@ -10,7 +10,7 @@ all:	docs
 
 
 docs:
-	$(ISA_ROOT)/Isabelle2020/bin/isabelle build -D . -o browser_info -v MiniSail
+	$(ISA_ROOT)/Isabelle2020/bin/isabelle build -c -D . -o browser_info -v MiniSail
 
 
 snippets:

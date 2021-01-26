@@ -842,6 +842,16 @@ next
     show   \<open>atom z3 \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>\<close> using * infer_e_leqI fresh_replace_inside  infer_v_wf  by metis
   qed
 next
+  case (infer_e_eqI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v1 z1 bb c1 v2 z2 c2 z3)
+    show ?case proof 
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_eqI by auto
+    show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close>  using infer_e_eqI by auto
+    show *:\<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : bb  | c1 \<rbrace>\<close> using infer_e_eqI ctx_subtype_v_eq by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : bb  | c2 \<rbrace>\<close> using infer_e_eqI ctx_subtype_v_eq by auto
+    show \<open>atom z3 \<sharp> AE_op Eq v1 v2\<close> using infer_e_eqI by auto
+    show   \<open>atom z3 \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>\<close> using * infer_e_eqI fresh_replace_inside  infer_v_wf  by metis
+  qed
+next
   case (infer_e_appI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> f x' b c \<tau>' s' v \<tau>)
   show ?case proof
     show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wf_replace_inside2(6) valid_wfC infer_e_appI by auto

@@ -417,7 +417,7 @@ qed(auto+)
 lemma check_s_plus:
   assumes "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> LET x = (AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2))) IN s'  \<Leftarrow> \<tau>" 
   shows   "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> LET x = (AE_val (V_lit (L_num (n1+n2)))) IN s' \<Leftarrow> \<tau>"   
-proof -
+proof  -
    obtain t1 where 1: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2)) \<Rightarrow> t1"
      using assms check_s_elims by metis
    then obtain z1 where 2: "t1 =  \<lbrace> z1 : B_int  | CE_val (V_var z1)  ==  CE_op Plus  ([V_lit (L_num n1)]\<^sup>c\<^sup>e) ([V_lit (L_num n2)]\<^sup>c\<^sup>e)  \<rbrace>"
@@ -427,9 +427,18 @@ proof -
      using infer_v_form infer_e_valI infer_v_litI   infer_l.intros infer_e_wf 1 
      by (simp add: fresh_GNil)
 
-   thus ?thesis using subtype_let 1 2 subtype_bop infer_e_wf type_for_lit.simps 
-     by (metis assms opp.distinct(1) type_l_eq)
- qed
+   let ?e = " (AE_op Plus (V_lit (L_num n1)) (V_lit (L_num n2)))"
+
+   show ?thesis proof(rule  subtype_let)
+     show "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> LET x = ?e IN s' \<Leftarrow> \<tau>" using assms by auto
+     show "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> ?e \<Rightarrow> t1" using 1 by auto
+     show "\<Theta> ; \<Phi> ; {||} ; GNil ; \<Delta>  \<turnstile> [ [ L_num (n1 + n2) ]\<^sup>v ]\<^sup>e \<Rightarrow> \<lbrace> z2 : B_int  | CE_val (V_var z2)  ==  CE_val (V_lit (L_num (n1+n2))) \<rbrace>" using 3 by auto
+     show "\<Theta> ; {||} ; GNil  \<turnstile>  \<lbrace> z2 : B_int  | CE_val (V_var z2)  ==  CE_val (V_lit (L_num (n1+n2))) \<rbrace>  \<lesssim> t1" using subtype_bop_arith 
+       by (metis "1" \<open>\<And>thesis. (\<And>z1. t1 = \<lbrace> z1 : B_int | [ [ z1 ]\<^sup>v ]\<^sup>c\<^sup>e == [ plus [ [ L_num n1 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ L_num n2 ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e \<rbrace> \<Longrightarrow> thesis) \<Longrightarrow> thesis\<close> infer_e_wf(2) opp.distinct(1) type_for_lit.simps(3))
+   qed
+
+  (* thus ?thesis using subtype_let 1 2 subtype_bop infer_e_wf type_for_lit.simps  assms opp.distinct type_l_eq sorry*)
+qed
 
 lemma check_s_leq:
   assumes "\<Theta> ; \<Phi> ;  {||} ; GNil ; \<Delta>  \<turnstile> LET x = (AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2))) IN s'  \<Leftarrow> \<tau>" 
@@ -450,11 +459,16 @@ proof -
      show \<open>\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AE_op LEq [ L_num n1 ]\<^sup>v [ L_num n2 ]\<^sup>v \<Rightarrow> t1\<close> using 1 by auto
      show \<open>\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> [ [ if n1 \<le> n2 then L_true else L_false ]\<^sup>v ]\<^sup>e \<Rightarrow> \<lbrace> z2 : B_bool  | CE_val (V_var z2)  ==  CE_val (V_lit ((if (n1 \<le> n2) then L_true else L_false))) \<rbrace>\<close> using 3 by auto
      show \<open>\<Theta> ; {||} ; GNil  \<turnstile> \<lbrace> z2 : B_bool  | CE_val (V_var z2)  ==  CE_val (V_lit ((if (n1 \<le> n2) then L_true else L_false))) \<rbrace> \<lesssim> t1\<close> 
-       using subtype_bop[where opp=LEq] check_s_wf assms 2 
-       by (metis opp.distinct(1) subtype_bop type_l_eq)
+       using subtype_bop_arith[where opp=LEq] check_s_wf assms 2  
+                by (metis opp.distinct(1) subtype_bop_arith type_l_eq)
    qed
 
  qed
+
+lemma check_s_eq:
+  assumes "\<Theta> ; \<Phi> ;  {||} ; GNil ; \<Delta>  \<turnstile> LET x = (AE_op Eq (V_lit (n1)) (V_lit ( n2))) IN s'  \<Leftarrow> \<tau>" 
+  shows "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> LET x = (AE_val (V_lit (if (n1 = n2) then L_true else L_false))) IN s' \<Leftarrow> \<tau>"   
+  sorry
 
 subsection \<open>Operators\<close>
 
@@ -484,6 +498,21 @@ proof -
   hence "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>AS_let x (AE_val (V_lit  ( ((if (n1 \<le> n2) then L_true else L_false))))) s' \<Leftarrow> \<tau>" using check_s_leq assms by auto  
 
   hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_val (V_lit ( (((if (n1 \<le> n2) then L_true else L_false)))))) s' \<rangle> \<Leftarrow> \<tau>" using dsim config_typeI fd by presburger
+  then show ?thesis using dsim config_typeI 
+    by (meson order_refl)
+qed
+
+lemma preservation_eq:
+  assumes "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_op Eq (V_lit (n1)) (V_lit (n2))) s' \<rangle> \<Leftarrow> \<tau>"        
+  shows "\<Theta>; \<Phi>; \<Delta>  \<turnstile> \<langle> \<delta> , AS_let x (AE_val (V_lit (((if (n1 = n2) then L_true else L_false))))) s' \<rangle> \<Leftarrow> \<tau>"
+proof -
+
+  have tt: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_op Eq (V_lit (n1)) (V_lit (n2))) s' \<Leftarrow> \<tau>" and dsim: "\<Theta> \<turnstile> \<delta> \<sim> \<Delta>" and fd:"(\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)"
+    using assms config_type_elims by blast+
+
+  hence "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile>AS_let x (AE_val (V_lit  ( ((if (n1 = n2) then L_true else L_false))))) s' \<Leftarrow> \<tau>" using check_s_eq assms by auto  
+
+  hence "\<Theta>; \<Phi>; \<Delta> \<turnstile> \<langle> \<delta> , AS_let x (AE_val (V_lit ( (((if (n1 = n2) then L_true else L_false)))))) s' \<rangle> \<Leftarrow> \<tau>" using dsim config_typeI fd by presburger
   then show ?thesis using dsim config_typeI 
     by (meson order_refl)
 qed
@@ -1118,6 +1147,9 @@ next
   case (reduce_let_leqI b n1 n2 \<delta> x s) 
   then show ?case using preservation_leq  by (metis order_refl)  
 next
+  case (reduce_let_eqI b n1 n2 \<delta> x s) 
+  then show ?case using preservation_eq  sorry (* by (metis order_refl)  *)
+next
   case (reduce_let_appI f z b c \<tau>' s' \<Phi> \<delta> x v s)
   hence tt: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_app f v) s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" using config_type_elims[OF reduce_let_appI(2)] by metis 
   hence *:"\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_app f v) s \<Leftarrow> \<tau>" by auto
@@ -1578,6 +1610,11 @@ proof -
     hence vf: "supp v1 = {} \<and> supp v2 = {}"  by force
     then obtain n1 and n2 where *: "v1 = V_lit (L_num n1)  \<and> v2 = (V_lit (L_num n2))" using infer_int infer_e_leqI by metis
     then show ?case using reduce_let_leqI * by metis
+  next
+    case (infer_e_eqI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 bb c1 v2 z2 c2 z3)
+    hence vf: "supp v1 = {} \<and> supp v2 = {}"  by force
+    then obtain n1 and n2 where *: "v1 = V_lit n1  \<and> v2 = (V_lit n2)" using infer_int infer_e_eqI sorry
+    then show ?case using reduce_let_eqI * sorry
   next
     case (infer_e_appI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> f x b c \<tau>' s' v)
     then show ?case using reduce_let_appI by metis

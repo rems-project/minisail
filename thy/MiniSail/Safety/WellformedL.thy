@@ -484,6 +484,11 @@ next
     by (simp add: wfCE_plusI opp.supp)  
   then show ?case using  ce.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
 next
+  case (wfCE_eqI \<Theta> \<B> \<Gamma> v1 b v2 )
+  hence "supp (CE_op Eq v1 v2) \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using ce.supp pure_supp 
+    by (simp add: wfCE_eqI opp.supp)  
+  then show ?case using  ce.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
+next
   case (wfCE_fstI \<Theta> \<B> \<Gamma> v1 b1 b2)
   thus ?case using ce.supp wfCE_elims by simp
 next
@@ -530,6 +535,11 @@ next
 next
   case (wfE_leqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
   hence "supp (AE_op LEq v1 v2) \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using e.supp pure_supp Un_least 
+    sup_bot.left_neutral  using opp.supp wf_supp1 by auto
+  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
+next
+  case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b v2)
+  hence "supp (AE_op Eq v1 v2) \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using e.supp pure_supp Un_least 
     sup_bot.left_neutral  using opp.supp wf_supp1 by auto
   then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
 next
@@ -1238,6 +1248,9 @@ next
   case (wfCE_leqI \<Theta> \<B> \<Gamma> v1 v2)
   then show ?case using ce.fresh wf_intros by metis
 next
+  case (wfCE_eqI \<Theta> \<B> \<Gamma> v1 v2)
+  then show ?case using ce.fresh wf_intros by metis
+next
   case (wfCE_fstI \<Theta> \<B> \<Gamma> v1 b1 b2)
    then show ?case using ce.fresh wf_intros by metis
 next
@@ -1355,6 +1368,9 @@ next
   then show ?case using e.fresh wf_intros wf_restrict1 by metis
 next
   case (wfE_leqI \<Theta> \<Phi> \<Gamma> \<Delta> v1 v2)
+  then show ?case using e.fresh wf_intros wf_restrict1 by metis
+next
+  case (wfE_eqI \<Theta> \<Phi> \<Gamma> \<Delta> v1 b v2)
   then show ?case using e.fresh wf_intros wf_restrict1 by metis
 next
   case (wfE_fstI \<Theta> \<Phi> \<Gamma> \<Delta> v1 b1 b2)
@@ -1525,7 +1541,7 @@ next
     show \<open>AF_typedef tid dclist \<in> set \<Theta>'\<close> using wfS_matchI by auto
     show \<open> \<Theta>' ; \<B> ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wfS_matchI by auto
     show \<open> \<Theta>'  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using wfS_matchI by auto
-    show \<open> \<Theta>' ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> ; tid ; dclist  \<turnstile>\<^sub>w\<^sub>f cs : b \<close> using wfS_matchI by auto
+    show \<open>\<Theta>'; \<Phi>; \<B>; \<Gamma>; \<Delta>; tid; dclist \<turnstile>\<^sub>w\<^sub>f cs : b \<close> using wfS_matchI by auto
   qed
 next
    case (wfS_varI \<Theta> \<B> \<Gamma> \<tau> v u \<Phi> \<Delta> b s)
@@ -2184,6 +2200,9 @@ next
   then show ?case using wf_intros  wb_b_weakening1 by metis
 next
   case (wfE_leqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
+  then show ?case using wf_intros  wb_b_weakening1 by metis
+next
+  case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b v2)
   then show ?case using wf_intros  wb_b_weakening1 by metis
 next
   case (wfE_fstI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
@@ -2958,6 +2977,9 @@ next
   case (wfCE_leqI \<Theta> \<B> \<Gamma> v1 v2)
   then show ?case using  wfV_wf wfG_wf  wf_intros wfX_wfY by metis
 next
+  case (wfCE_eqI \<Theta> \<B> \<Gamma> v1 b v2)
+  then show ?case using  wfV_wf wfG_wf  wf_intros wfX_wfY by metis
+next
   case (wfCE_fstI \<Theta> \<B> \<Gamma> v1 b1 b2)
   then show ?case using  wfB_elims by metis
 next
@@ -2989,6 +3011,9 @@ proof(induct   rule:wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.inducts)
 next
   case (wfE_plusI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
   then show ?case using wfB_elims wfX_wfB1 by metis
+next
+  case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b v2)
+  then show ?case using wfB_boolI  wfX_wfY by metis
 next
   case (wfE_fstI \<Theta> \<Phi> \<Gamma> \<Delta> v1 b1 b2)
   then show ?case using wfB_elims wfX_wfB1 by metis
@@ -3337,6 +3362,9 @@ next
   then show ?case using wf_intros by metis
 next
   case (wfE_leqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
+  then show ?case using wf_intros by metis
+next
+  case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b v2)
   then show ?case using wf_intros by metis
 next
   case (wfE_fstI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
@@ -3739,6 +3767,9 @@ next
 next
   case (wfE_leqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
   then show ?case using wf_replace_inside1 Wellformed.wfE_leqI by auto
+next
+  case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b v2)
+  then show ?case using wf_replace_inside1 Wellformed.wfE_eqI by metis
 next
   case (wfE_fstI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
   then show ?case using wf_replace_inside1 Wellformed.wfE_fstI by metis
@@ -4190,7 +4221,11 @@ next
   then show ?case using subst_vv.simps  wf_intros by auto
 next
   case (wfCE_leqI \<Theta> \<B> \<Gamma> v1 v2)
-   then show ?case using subst_vv.simps  wf_intros by auto
+  then show ?case using subst_vv.simps  wf_intros by auto
+next
+  case (wfCE_eqI \<Theta> \<B> \<Gamma> v1 b v2)
+  then show ?case unfolding subst_cev.simps
+    using  Wellformed.wfCE_eqI by metis
 next
   case (wfCE_fstI \<Theta> \<B> \<Gamma> v1 b1 b2)
   then show ?case using Wellformed.wfCE_fstI subst_cev.simps by metis
@@ -4231,6 +4266,17 @@ next
   then show ?case 
     using subst_vv.simps  subst_ev.simps subst_ev.simps wf_subst1 Wellformed.wfE_leqI 
     by auto
+next
+  case (wfE_eqI \<Theta> \<Phi> \<Gamma> \<Delta> v1 b v2)
+  then show ?case 
+    using subst_vv.simps  subst_ev.simps subst_ev.simps wf_subst1 Wellformed.wfE_eqI 
+    
+  proof -
+    have "\<And>ts f v va b. \<not> (ts ; f ; \<Gamma>\<^sub>2 \<turnstile>\<^sub>w\<^sub>f v : b') \<or> \<not> (ts ; f ; \<Delta> \<turnstile>\<^sub>w\<^sub>f va : b) \<or> (ts ; f ; \<Delta>[x::=v]\<^sub>\<Gamma>\<^sub>v \<turnstile>\<^sub>w\<^sub>f va[x::=v]\<^sub>v\<^sub>v : b)"
+      using wfE_eqI.prems(1) wfV_subst by presburger (* 0.0 ms *)
+    then show ?thesis
+      by (metis (no_types) subst_ev.simps(4) wfE_eqI.hyps(1) wfE_eqI.hyps(4) wfE_eqI.hyps(5) wfE_eqI.hyps(6) wfE_eqI.prems(1) wfE_eqI.prems(2) wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.wfE_eqI) (* 93 ms *)
+  qed
 next
   case (wfE_fstI \<Theta> \<Gamma> v1 b1 b2)
   then show ?case using subst_vv.simps subst_ev.simps wf_subst1 Wellformed.wfE_fstI 
@@ -4602,6 +4648,12 @@ next
   then show ?case using  subst_bb.simps subst_ceb.simps wf_intros wfX_wfY   
     by metis
 
+
+next
+  case (wfCE_eqI \<Theta> \<B> \<Gamma> v1 b v2)
+  then show ?case using  subst_bb.simps subst_ceb.simps wf_intros wfX_wfY   
+    by metis
+
 next
   case (wfCE_fstI \<Theta> \<B> \<Gamma> v1 b1 b2)
    then show ?case 
@@ -4651,38 +4703,51 @@ next
       have "\<forall>b ba v g f ts. (( ts ; f ; g[bv::=ba]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f v[bv::=ba]\<^sub>v\<^sub>b : b[bv::=ba]\<^sub>b\<^sub>b) \<or> \<not> ts ; \<B> ; g \<turnstile>\<^sub>w\<^sub>f v : b ) \<or> \<not> ts ; f \<turnstile>\<^sub>w\<^sub>f ba"
         using wfE_plusI.prems(1) wf_b_subst1(1) by force (* 0.0 ms *)
       then show "\<Theta> ; \<Phi> ; B ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b ; \<Delta>[bv::=b]\<^sub>\<Delta>\<^sub>b \<turnstile>\<^sub>w\<^sub>f [ plus v1[bv::=b]\<^sub>v\<^sub>b v2[bv::=b]\<^sub>v\<^sub>b ]\<^sup>e : B_int[bv::=b]\<^sub>b\<^sub>b"
-        by (metis (full_types) wfE_plusI.hyps(1) wfE_plusI.hyps(4) wfE_plusI.hyps(5) wfE_plusI.hyps(6) wfE_plusI.prems(1) wfE_plusI.prems(2) wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.wfE_plusI wf_b_subst_lemmas(84)) (* 78 ms *)
+   
+        by (metis wfE_plusI.hyps(1) wfE_plusI.hyps(4) wfE_plusI.hyps(5) wfE_plusI.hyps(6) wfE_plusI.prems(1) wfE_plusI.prems(2) wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.wfE_plusI wf_b_subst_lemmas(86))
     qed
 next
   case (wfE_leqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
    then show ?case unfolding subst_eb.simps  
-      using wf_b_subst_lemmas(81) wf_b_subst1(1)  Wellformed.wfE_leqI       
-      by (metis wf_b_subst_lemmas(84) wf_b_subst_lemmas(85))
+     using wf_b_subst_lemmas wf_b_subst1  Wellformed.wfE_leqI       
+
+   proof -
+     have "\<And>ts f b ba g v. \<not> (ts ; f \<turnstile>\<^sub>w\<^sub>f b) \<or> \<not> (ts ; {|ba|} ; g \<turnstile>\<^sub>w\<^sub>f v : B_int) \<or> (ts ; f ; g[ba::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f v[ba::=b]\<^sub>v\<^sub>b : B_int)"
+       by (metis wf_b_subst1(1) wf_b_subst_lemmas(86)) (* 46 ms *)
+     then show "\<Theta> ; \<Phi> ; B ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b ; \<Delta>[bv::=b]\<^sub>\<Delta>\<^sub>b \<turnstile>\<^sub>w\<^sub>f [ leq v1[bv::=b]\<^sub>v\<^sub>b v2[bv::=b]\<^sub>v\<^sub>b ]\<^sup>e : B_bool[bv::=b]\<^sub>b\<^sub>b"
+       by (metis (no_types) wfE_leqI.hyps(1) wfE_leqI.hyps(4) wfE_leqI.hyps(5) wfE_leqI.hyps(6) wfE_leqI.prems(1) wfE_leqI.prems(2) wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.wfE_leqI wf_b_subst_lemmas(87)) (* 46 ms *)
+   qed
+   
+next
+  case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b v2)
+   then show ?case unfolding subst_eb.simps  
+      using wf_b_subst_lemmas(81) wf_b_subst1(1)  Wellformed.wfE_eqI       
+      
+      by (metis wf_b_subst_lemmas(87))
 next
   case (wfE_fstI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
-  then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(84) wf_b_subst1(1)  Wellformed.wfE_fstI 
-    
-    by (metis wf_b_subst_lemmas(87))
-
+  then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(84) wf_b_subst1(1)  Wellformed.wfE_fstI         
+    by (metis wf_b_subst_lemmas(89))
 next
   case (wfE_sndI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
-then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(86) wf_b_subst1(1)  Wellformed.wfE_sndI 
-  by (metis wf_b_subst_lemmas(87))
+  then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(86) wf_b_subst1(1)  Wellformed.wfE_sndI 
+  by (metis wf_b_subst_lemmas(89))
 next
   case (wfE_concatI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
 then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(86) wf_b_subst1(1)  Wellformed.wfE_concatI  
-  by (metis wf_b_subst_lemmas(89))
+  by (metis wf_b_subst_lemmas(91))
 
 next
   case (wfE_splitI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
-then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(86) wf_b_subst1(1)  Wellformed.wfE_splitI  
-  by (metis wf_b_subst_lemmas(84) wf_b_subst_lemmas(87) wf_b_subst_lemmas(89))
+  thm  wf_b_subst_lemmas(91)
+then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(86) wf_b_subst1(1)  Wellformed.wfE_splitI    
+  by (metis wf_b_subst_lemmas(89) wf_b_subst_lemmas(91))
   
 (*  by (metis wf_b_subst_lemmas(84) wf_b_subst_lemmas(89))*)
 next
   case (wfE_lenI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1)
   then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(86) wf_b_subst1(1)  Wellformed.wfE_lenI  
-    by (metis wf_b_subst_lemmas(84) wf_b_subst_lemmas(89))
+    by (metis wf_b_subst_lemmas(91) wf_b_subst_lemmas(89))
 (* by (metis wf_b_subst_lemmas wf_b_subst_lemmas)*)
 next
   case (wfE_appI \<Theta> \<Phi> \<B>' \<Gamma> \<Delta> f x b' c \<tau> s v)
@@ -4770,7 +4835,7 @@ lemma wfT_subst_wfT:
 proof - 
   have  "\<Theta> ;  B ; ((x,b,c) #\<^sub>\<Gamma>GNil)[bv::=b']\<^sub>\<Gamma>\<^sub>b  \<turnstile>\<^sub>w\<^sub>f  (\<tau>[bv::=b']\<^sub>\<tau>\<^sub>b)"
     using wf_b_subst assms by metis
-  thus ?thesis using subst_gb.simps wf_b_subst_lemmas wfCE_b_fresh  by simp
+  thus ?thesis using subst_gb.simps wf_b_subst_lemmas wfCE_b_fresh  by metis
 qed
 
 lemma wf_trans:

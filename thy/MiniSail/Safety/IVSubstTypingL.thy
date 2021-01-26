@@ -965,6 +965,33 @@ next
     using subst_tv.simps subst_ev.simps * by auto
   ultimately show ?case using subst_ev.simps * ** by metis
 next
+  case (infer_e_eqI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> v1 z1 bb c1 v2 z2 c2 z3)
+
+  hence z3f: "atom z3 \<sharp> CE_op Eq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e" using e.fresh ce.fresh opp.fresh by metis
+
+  obtain z3'::x where *:"atom z3' \<sharp> (x,v,AE_op Eq v1 v2, CE_op Eq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e , CE_op Eq [v1[x::=v]\<^sub>v\<^sub>v]\<^sup>c\<^sup>e [v2[x::=v]\<^sub>v\<^sub>v]\<^sup>c\<^sup>e , AE_op Eq v1[x::=v]\<^sub>v\<^sub>v v2[x::=v]\<^sub>v\<^sub>v,\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma> )"  
+    using obtain_fresh by metis
+  hence  **:"(\<lbrace> z3 : B_bool  | CE_val (V_var z3)  ==  CE_op Eq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e  \<rbrace>) = \<lbrace> z3' : B_bool  | CE_val (V_var z3')  ==  CE_op Eq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e  \<rbrace>" 
+    using type_e_eq  infer_e_eqI fresh_Pair z3f by metis
+
+  obtain z1' b1' c1' where  z1:"atom z1' \<sharp> (x,v) \<and> \<lbrace> z1 : bb | c1 \<rbrace> = \<lbrace> z1' : b1' | c1' \<rbrace>" using obtain_fresh_z by metis
+  obtain z2' b2'  c2' where z2:"atom z2' \<sharp> (x,v) \<and> \<lbrace> z2 : bb | c2 \<rbrace> = \<lbrace> z2' : b2' | c2' \<rbrace>" using obtain_fresh_z by metis
+
+  have bb:"b1' = bb \<and> b2' = bb" using z1 z2 \<tau>.eq_iff by metis
+
+  have "\<Theta> ; \<Phi> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma> ; \<Delta>[x::=v]\<^sub>\<Delta>\<^sub>v  \<turnstile> (AE_op Eq (v1[x::=v]\<^sub>v\<^sub>v) (v2[x::=v]\<^sub>v\<^sub>v)) \<Rightarrow> \<lbrace> z3' : B_bool  | CE_val (V_var z3')  ==  CE_op Eq ([v1[x::=v]\<^sub>v\<^sub>v]\<^sup>c\<^sup>e) ([v2[x::=v]\<^sub>v\<^sub>v]\<^sup>c\<^sup>e)  \<rbrace>"
+  proof 
+    show \<open> \<Theta> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>[x::=v]\<^sub>\<Delta>\<^sub>v \<close> using wfD_subst infer_e_eqI subtype_eq_base2 b_of.simps by metis
+    show \<open> \<Theta>\<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using  infer_e_eqI(2) by auto 
+    show \<open> \<Theta> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>  \<turnstile> v1[x::=v]\<^sub>v\<^sub>v \<Rightarrow> \<lbrace> z1' : bb  | c1'[x::=v]\<^sub>c\<^sub>v \<rbrace>\<close> using subst_tv.simps subst_infer_v infer_e_eqI z1 bb by metis
+    show \<open> \<Theta> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>  \<turnstile> v2[x::=v]\<^sub>v\<^sub>v \<Rightarrow> \<lbrace> z2' : bb  | c2'[x::=v]\<^sub>c\<^sub>v \<rbrace>\<close> using subst_tv.simps subst_infer_v infer_e_eqI z2 bb by metis
+    show \<open>atom z3' \<sharp> AE_op Eq v1[x::=v]\<^sub>v\<^sub>v v2[x::=v]\<^sub>v\<^sub>v\<close> using fresh_Pair * by metis
+    show \<open>atom z3' \<sharp> \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>\<close> using * by auto
+  qed
+  moreover have "\<lbrace> z3' : B_bool  | CE_val (V_var z3')  ==  CE_op Eq ([v1[x::=v]\<^sub>v\<^sub>v]\<^sup>c\<^sup>e) ([v2[x::=v]\<^sub>v\<^sub>v]\<^sup>c\<^sup>e)  \<rbrace> = \<lbrace> z3' : B_bool  | CE_val (V_var z3')  ==  CE_op Eq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e  \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v"
+    using subst_tv.simps subst_ev.simps * by auto
+  ultimately show ?case using subst_ev.simps * ** by metis
+next
   case (infer_e_appI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> f x' b c \<tau>' s' v' \<tau>)
 
   hence "x \<noteq> x'" using \<open>atom x' \<sharp> \<Gamma>''\<close> using wfG_inside_x_neq wfX_wfY by metis
@@ -1232,18 +1259,26 @@ next
   thus ?thesis using t1 t2 by auto
 next
   case (AE_op opp v1 v2)
-  show ?case proof(cases "opp=Plus")
-    case True
+  show ?case proof(rule opp.exhaust)
+    assume "opp = plus"
     hence "\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op Plus v1 v2 \<Rightarrow> \<tau>\<^sub>1" and  "\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op Plus v1 v2 \<Rightarrow> \<tau>\<^sub>2" using AE_op by auto
     thm infer_e_elims(3)
     thus ?thesis using infer_e_elims(11)[OF \<open>\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op Plus v1 v2 \<Rightarrow> \<tau>\<^sub>1\<close> ] infer_e_elims(11)[OF \<open>\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op Plus v1 v2 \<Rightarrow> \<tau>\<^sub>2\<close> ]
       by force
   next
-    case False
+    assume "opp = leq"
     hence "opp = LEq" using opp.strong_exhaust by auto
     hence "\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op LEq v1 v2 \<Rightarrow> \<tau>\<^sub>1" and  "\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op LEq v1 v2 \<Rightarrow> \<tau>\<^sub>2" using AE_op by auto
     thm infer_e_elims(3)
     thus ?thesis using infer_e_elims(12)[OF \<open>\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op LEq v1 v2 \<Rightarrow> \<tau>\<^sub>1\<close> ] infer_e_elims(12)[OF \<open>\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op LEq v1 v2 \<Rightarrow> \<tau>\<^sub>2\<close> ]
+      by force
+  next
+    assume "opp = eq"
+    hence "opp = Eq" using opp.strong_exhaust by auto
+    hence "\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op Eq v1 v2 \<Rightarrow> \<tau>\<^sub>1" and  "\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op Eq v1 v2 \<Rightarrow> \<tau>\<^sub>2" using AE_op by auto
+    thm infer_e_elims(25)
+   
+    thus ?thesis using infer_e_elims(25)[OF \<open>\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op Eq v1 v2 \<Rightarrow> \<tau>\<^sub>1\<close> ] infer_e_elims(25)[OF \<open>\<Theta> ; \<Phi> ; \<B> ; GNil ; \<Delta>   \<turnstile> AE_op Eq v1 v2 \<Rightarrow> \<tau>\<^sub>2\<close> ]
       by force
   qed
 next

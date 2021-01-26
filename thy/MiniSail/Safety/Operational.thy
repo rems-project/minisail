@@ -67,6 +67,9 @@ inductive reduce_stmt :: "\<Phi> \<Rightarrow> \<delta> \<Rightarrow> s \<Righta
 | reduce_let_leqI:  "b = (if (n1 \<le> n2) then L_true else L_false) \<Longrightarrow> 
              \<Phi>  \<turnstile>  \<langle>\<delta>,  AS_let x  ((AE_op LEq (V_lit (L_num n1)) (V_lit (L_num n2)))) s\<rangle> \<longrightarrow> 
                                                           \<langle>\<delta>, AS_let x  (AE_val (V_lit b)) s\<rangle>"  
+| reduce_let_eqI:  "b = (if (n1 = n2) then L_true else L_false) \<Longrightarrow> 
+             \<Phi>  \<turnstile>  \<langle>\<delta>,  AS_let x  ((AE_op LEq (V_lit n1) (V_lit n2))) s\<rangle> \<longrightarrow> 
+                                                          \<langle>\<delta>, AS_let x  (AE_val (V_lit b)) s\<rangle>"  
 | reduce_let_appI:  "Some (AF_fundef f (AF_fun_typ_none (AF_fun_typ z b c \<tau> s'))) = lookup_fun \<Phi> f \<Longrightarrow>  
              \<Phi>  \<turnstile>  \<langle>\<delta>, AS_let x  ((AE_app f v)) s\<rangle> \<longrightarrow> \<langle>\<delta>,  AS_let2 x \<tau>[z::=v]\<^sub>\<tau>\<^sub>v s'[z::=v]\<^sub>s\<^sub>v s\<rangle> "     
 | reduce_let_appPI:  "Some (AF_fundef f (AF_fun_typ_some bv (AF_fun_typ z b c \<tau> s'))) = lookup_fun \<Phi> f \<Longrightarrow>  
@@ -111,7 +114,8 @@ inductive_cases reduce_stmt_elims[elim!]:
   "\<Phi> \<turnstile> \<langle>\<delta>, AS_seq s1 s2\<rangle> \<longrightarrow> \<langle> \<delta>' ,s'\<rangle>"
   "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x  ((AE_appP  f b v)) s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let2 x \<tau> (subst_sv s' z v) s\<rangle> "  
   "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x  ((AE_split v1 v2)) s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let x  v' s\<rangle> " 
-  "\<Phi> \<turnstile> \<langle>\<delta>, AS_assert c s \<rangle> \<longrightarrow> \<langle>\<delta>, s'\<rangle> " 
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_assert c s \<rangle> \<longrightarrow> \<langle>\<delta>, s'\<rangle> "
+  "\<Phi> \<turnstile> \<langle>\<delta>, AS_let x  ((AE_op LEq (V_lit n1) (V_lit n2))) s\<rangle> \<longrightarrow> \<langle>\<delta>, AS_let x  (AE_val (V_lit b)) s\<rangle>"
 
 
 

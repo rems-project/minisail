@@ -194,7 +194,7 @@ using assms proof(nominal_induct e arbitrary: s s' rule:ce.strong_induct)
   then show ?case using eval_v_uniqueness eval_e_elims by metis
 next
   case (CE_op opp x1 x2)
-  consider "opp = Plus" | "opp = LEq" using opp.exhaust by metis
+  consider "opp = Plus" | "opp = LEq" | "opp = Eq" using opp.exhaust by metis
   thus  ?case proof(cases)
     case 1
     hence a1:"eval_e i (CE_op Plus x1 x2) s" and a2:"eval_e i (CE_op Plus x1 x2) s'" using CE_op by auto
@@ -208,11 +208,18 @@ next
     then show ?thesis using eval_v_uniqueness  eval_e_elims(3)[OF a1] eval_e_elims(3)[OF a2]
       CE_op eval_e_plusI 
       by (metis rcl_val.eq_iff(2))
+  next
+    case 3
+    hence a1:"eval_e i (CE_op Eq x1 x2) s" and a2:"eval_e i (CE_op Eq x1 x2) s'" using CE_op by auto
+    thm eval_e_elims(2)
+    then show ?thesis using eval_v_uniqueness  eval_e_elims(4)[OF a1] eval_e_elims(4)[OF a2]
+      CE_op eval_e_plusI 
+      by (metis rcl_val.eq_iff(2))
   qed
 next
   case (CE_concat x1 x2)
   hence a1:"eval_e i (CE_concat x1 x2) s" and a2:"eval_e i (CE_concat x1 x2) s'" using CE_concat by auto
-  show ?case using  eval_e_elims(6)[OF a1] eval_e_elims(6)[OF a2] CE_concat eval_e_concatI rcl_val.eq_iff 
+  show ?case using  eval_e_elims(7)[OF a1] eval_e_elims(7)[OF a2] CE_concat eval_e_concatI rcl_val.eq_iff 
   (* Why is this harder than the CE_op case *)
   proof -
     assume "\<And>P. (\<And>bv1 bv2. \<lbrakk>s' = SBitvec (bv1 @ bv2); i \<lbrakk> x1 \<rbrakk> ~ SBitvec bv1 ; i \<lbrakk> x2 \<rbrakk> ~ SBitvec bv2 \<rbrakk> \<Longrightarrow> P) \<Longrightarrow> P"
@@ -238,7 +245,7 @@ next
       "\<forall>x0 x1 x2. (\<exists>v3. x0 = SNum (int (length v3)) \<and> x2 \<lbrakk> x1 \<rbrakk> ~ SBitvec v3 ) = (x0 = SNum (int (length (bbs x0 x1 x2))) \<and> x2 \<lbrakk> x1 \<rbrakk> ~ SBitvec (bbs x0 x1 x2) )"
       by moura (* 0.0 ms *)
     then have "\<forall>f c r. \<not> f \<lbrakk> [| c |]\<^sup>c\<^sup>e \<rbrakk> ~ r \<or> r = SNum (int (length (bbs r c f))) \<and> f \<lbrakk> c \<rbrakk> ~ SBitvec (bbs r c f)"
-      by (meson eval_e_elims(7)) (* 46 ms *)
+      by (meson eval_e_elims(8)) (* 46 ms *)
     then show ?thesis
       by (metis (no_types) CE_len.hyps CE_len.prems(1) CE_len.prems(2) rcl_val.eq_iff(1)) (* 31 ms *)
   qed
@@ -293,24 +300,43 @@ using assms proof(nominal_induct e arbitrary:  b  rule: ce.strong_induct)
   then show ?case using CE_val   eval_e.intros(1)[of i v s ] by auto
 next
   case (CE_op opp v1 v2)
-  hence  "wfCE P  B G v1 B_int \<and> wfCE P  B G v2 B_int" using wfCE_elims
-    by (metis (full_types) opp.strong_exhaust)
-  then obtain s1 and s2 where *: "eval_e i v1 s1 \<and> wfRCV P s1 B_int \<and> eval_e i v2 s2 \<and> wfRCV P s2 B_int"
-    using wfI_wfV_eval_v  CE_op by metis
-  then obtain n1 and n2 where **:"s2=SNum n2 \<and> s1 = SNum n1"  using wfRCV_elims  by meson
-  consider "opp =Plus" | "opp=LEq" using opp.exhaust by auto
+ 
+  consider "opp =Plus" | "opp=LEq" | "opp=Eq" using opp.exhaust by auto
 
   thus ?case proof(cases)
     case 1
+    hence  "wfCE P  B G v1 B_int \<and> wfCE P  B G v2 B_int" using wfCE_elims(2) CE_op
+      
+      by blast
+  then obtain s1 and s2 where *: "eval_e i v1 s1 \<and> wfRCV P s1 B_int \<and> eval_e i v2 s2 \<and> wfRCV P s2 B_int"
+    using wfI_wfV_eval_v  CE_op by metis
+  then obtain n1 and n2 where **:"s2=SNum n2 \<and> s1 = SNum n1"  using wfRCV_elims  by meson
     hence "eval_e i (CE_op Plus v1 v2) (SNum (n1+n2))" using eval_e_plusI * ** by simp
     moreover have "wfRCV P (SNum (n1+n2)) B_int" using wfRCV.intros by auto
     ultimately show ?thesis using 1
       using CE_op.prems(1) wfCE_elims(2) by blast
   next
     case 2
+ hence  "wfCE P  B G v1 B_int \<and> wfCE P  B G v2 B_int" using wfCE_elims(3) CE_op
+   by blast
+  then obtain s1 and s2 where *: "eval_e i v1 s1 \<and> wfRCV P s1 B_int \<and> eval_e i v2 s2 \<and> wfRCV P s2 B_int"
+    using wfI_wfV_eval_v  CE_op by metis
+  then obtain n1 and n2 where **:"s2=SNum n2 \<and> s1 = SNum n1"  using wfRCV_elims  by meson
     hence "eval_e i (CE_op LEq v1 v2) (SBool (n1 \<le> n2))" using eval_e_leqI * ** by simp
     moreover have "wfRCV P (SBool (n1\<le>n2)) B_bool" using wfRCV.intros by auto
     ultimately show ?thesis using 2
+      using CE_op.prems wfCE_elims    by metis
+  next
+    case 3
+    then  obtain b2 where   "wfCE P  B G v1 b2 \<and> wfCE P  B G v2 b2" using wfCE_elims(9) CE_op
+   by blast
+  then obtain s1 and s2 where *: "eval_e i v1 s1 \<and> wfRCV P s1 b2 \<and> eval_e i v2 s2 \<and> wfRCV P s2 b2"
+    using wfI_wfV_eval_v  CE_op by metis
+(*  then obtain n1 and n2 where **:"s2=SNum n2 \<and> s1 = SNum n1"  using wfRCV_elims  by meson*)
+  hence "eval_e i (CE_op Eq v1 v2) (SBool (s1 = s2))" using eval_e_leqI *  
+    by (simp add: eval_e_eqI)
+    moreover have "wfRCV P (SBool (s1 = s2)) B_bool" using wfRCV.intros by auto
+    ultimately show ?thesis using 3
       using CE_op.prems wfCE_elims    by metis
   qed
 next
@@ -362,13 +388,19 @@ next
     hence "P ;  B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_int \<and> P ;  B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int \<and> b = B_bool" using wfCE_elims CE_op by metis
     then obtain n1 and n2 where "eval_e i v1 (SNum n1) \<and> eval_e i v2 (SNum n2)" using CE_op eval_v_exist wfV_eval_int 
      by (metis wfI_wfCE_eval_e wfRCV_elims(3))
-    then show \<open>\<exists>a. eval_e i (CE_op op v1 v2) a\<close> using eval_e_leqI[of i v1 _ v2] eval_v_exist \<open>op=LEq\<close> CE_op by auto
+   then show \<open>\<exists>a. eval_e i (CE_op op v1 v2) a\<close> using eval_e_leqI[of i v1 _ v2] eval_v_exist \<open>op=LEq\<close> CE_op by auto
+ next
+    assume \<open>op = Eq\<close>
+    then obtain b1 where  "P ;  B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : b1 \<and> P ;  B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : b1 \<and> b = B_bool" using wfCE_elims CE_op by metis
+    then obtain s1 and s2 where "eval_e i v1 s1 \<and> eval_e i v2 s2" using CE_op eval_v_exist wfV_eval_int 
+     by (metis wfI_wfCE_eval_e wfRCV_elims(3))
+    then show \<open>\<exists>a. eval_e i (CE_op op v1 v2) a\<close> using eval_e_eqI[of i v1 _ v2] eval_v_exist \<open>op=Eq\<close> CE_op by auto
   qed
 next
   case (CE_concat v1 v2)
   then obtain bv1 and bv2 where "eval_e i v1 (SBitvec bv1) \<and> eval_e i v2 (SBitvec bv2)"
     using wfV_eval_bitvec  wfCE_elims(6) 
-    by (meson eval_e_elims(6) wfI_wfCE_eval_e)
+    by (meson eval_e_elims(7) wfI_wfCE_eval_e)
   then show ?case using  eval_e.intros by metis
 next
   case (CE_fst ce)
@@ -390,7 +422,7 @@ next
   case (CE_len v1)
   then obtain bv1  where "eval_e i v1 (SBitvec bv1)"
     using wfV_eval_bitvec  CE_len  wfCE_elims eval_e_uniqueness 
-    by (metis eval_e_elims(6) wfCE_concatI wfI_wfCE_eval_e)
+    by (metis eval_e_elims(7) wfCE_concatI wfI_wfCE_eval_e)
   then show ?case using  eval_e.intros by metis
 qed
 
@@ -623,6 +655,14 @@ next
   hence "eval_e (i ( y \<mapsto> s )) v1' (SNum n1) \<and>  eval_e (i ( y \<mapsto> s )) v2' (SNum n2)" using subst_v_eval_v eval_e_leqI 
     using * by blast
   then show ?case using RCLogic.eval_e_leqI * by meson
+next
+  case (eval_e_eqI i v1 n1 v2 n2)
+  then obtain v1' and v2' where *:"e = CE_op Eq v1' v2' \<and> v1 = v1'[y::=v]\<^sub>c\<^sub>e\<^sub>v \<and> v2 = v2'[y::=v]\<^sub>c\<^sub>e\<^sub>v"
+    using assms by(nominal_induct e rule:ce.strong_induct,simp+)
+  hence "eval_e i (v1'[y::=v]\<^sub>c\<^sub>e\<^sub>v) n1 \<and> eval_e i (v2'[y::=v]\<^sub>c\<^sub>e\<^sub>v) n2" using eval_e_eqI by simp
+  hence "eval_e (i ( y \<mapsto> s )) v1' n1 \<and>  eval_e (i ( y \<mapsto> s )) v2' n2" using subst_v_eval_v eval_e_eqI 
+    using * by blast
+  then show ?case using RCLogic.eval_e_eqI * by meson
 next
   case (eval_e_fstI i v1 s1 s2)
   then obtain v1' and v2' where *:"e = CE_fst v1' \<and> v1 = v1'[y::=v]\<^sub>c\<^sub>e\<^sub>v"
@@ -918,6 +958,10 @@ next
 next
   case (eval_e_leqI i v1 n1 v2 n2)
     then show ?case using ce.supp eval_e.intros
+      using eval_v_weakening by auto
+next
+  case (eval_e_eqI i v1 n1 v2 n2)
+    then show ?case using ce.supp eval_e.intros
     using eval_v_weakening by auto
 next
   case (eval_e_fstI i v v1 v2)
@@ -951,6 +995,10 @@ next
     using eval_v_restrict by auto
 next
   case (eval_e_leqI i v1 n1 v2 n2)
+    then show ?case using ce.supp eval_e.intros
+      using eval_v_restrict by auto
+next
+  case (eval_e_eqI i v1 n1 v2 n2)
     then show ?case using ce.supp eval_e.intros
     using eval_v_restrict by auto
 next
@@ -1215,7 +1263,10 @@ next
   case (eval_e_plusI i v1 n1 v2 n2)
   then show ?case using  eval_v_weakening_x eval_e.intros  ce.fresh by metis
 next
-case (eval_e_leqI i v1 n1 v2 n2)
+  case (eval_e_leqI i v1 n1 v2 n2)
+  then show ?case using  eval_v_weakening_x eval_e.intros  ce.fresh by metis
+next
+  case (eval_e_eqI i v1 n1 v2 n2)
   then show ?case using  eval_v_weakening_x eval_e.intros  ce.fresh by metis
 next
   case (eval_e_fstI i v v1 v2)
@@ -1242,8 +1293,8 @@ next
   case (eval_c_falseI i)
   then show ?case using eval_c.intros by auto
 next
-case (eval_c_conjI i c1 b1 c2 b2)
-then show ?case using eval_c.intros by auto
+  case (eval_c_conjI i c1 b1 c2 b2)
+  then show ?case using eval_c.intros by auto
 next
   case (eval_c_disjI i c1 b1 c2 b2)
   then show ?case using eval_c.intros by auto
@@ -1766,7 +1817,44 @@ next
 
 qed
 
+thm  boxed_b_elims
 
+lemma boxed_b_eq_eq:
+  assumes  "boxed_b \<Theta> n1 b1 bv b' n1'" and "boxed_b \<Theta> n2 b1 bv b' n2'" and "s = SBool (n1 = n2)" and 
+   "s' = SBool (n1' = n2')"
+ shows  "s=s'" 
+using assms proof(nominal_induct b1 rule: b.strong_induct)
+  case B_int
+  then show ?case  by (metis boxed_b_elims(2))
+next
+  case B_bool
+  then show ?case by (metis boxed_b_elims(3))
+next
+  case (B_id x)
+  then show ?case using boxed_b_elims(6) sorry 
+next
+  case (B_pair x1 x2)
+  then show ?case using boxed_b_elims(5) sorry
+next
+  case B_unit
+  then show ?case by (metis boxed_b_elims(4))
+next
+  case B_bitvec
+  then show ?case by (metis boxed_b_elims(7))
+next
+  case (B_var x)
+  then show ?case using  boxed_b_elims(1)[OF B_var(1)] boxed_b_elims(1)[OF B_var(2)] 
+  proof -
+    have "bv = x \<longrightarrow> s = s'"
+      by (metis (full_types) \<open>\<And>Pa. \<lbrakk>\<lbrakk>bv = x; n1' = SUt n1; \<Theta> \<turnstile> n1 : b'\<rbrakk> \<Longrightarrow> Pa; \<lbrakk>n1' = n1; bv \<noteq> x; \<Theta> \<turnstile> n1 : B_var x\<rbrakk> \<Longrightarrow> Pa\<rbrakk> \<Longrightarrow> Pa\<close> \<open>\<And>Pa. \<lbrakk>\<lbrakk>bv = x; n2' = SUt n2; \<Theta> \<turnstile> n2 : b'\<rbrakk> \<Longrightarrow> Pa; \<lbrakk>n2' = n2; bv \<noteq> x; \<Theta> \<turnstile> n2 : B_var x\<rbrakk> \<Longrightarrow> Pa\<rbrakk> \<Longrightarrow> Pa\<close> \<open>s = SBool (n1 = n2)\<close> \<open>s' = SBool (n1' = n2')\<close> rcl_val.eq_iff(3) rcl_val.eq_iff(8)) (* 546 ms *)
+    then show ?thesis
+      by (metis (no_types) \<open>\<And>Pa. \<lbrakk>\<lbrakk>bv = x; n1' = SUt n1; \<Theta> \<turnstile> n1 : b'\<rbrakk> \<Longrightarrow> Pa; \<lbrakk>n1' = n1; bv \<noteq> x; \<Theta> \<turnstile> n1 : B_var x\<rbrakk> \<Longrightarrow> Pa\<rbrakk> \<Longrightarrow> Pa\<close> \<open>\<And>Pa. \<lbrakk>\<lbrakk>bv = x; n2' = SUt n2; \<Theta> \<turnstile> n2 : b'\<rbrakk> \<Longrightarrow> Pa; \<lbrakk>n2' = n2; bv \<noteq> x; \<Theta> \<turnstile> n2 : B_var x\<rbrakk> \<Longrightarrow> Pa\<rbrakk> \<Longrightarrow> Pa\<close> \<open>s = SBool (n1 = n2)\<close> \<open>s' = SBool (n1' = n2')\<close>) (* 62 ms *)
+  qed
+next
+  case (B_app x1 x2)
+  then show ?case using boxed_b_elims(8)[OF B_app(2)]  boxed_b_elims(8)[OF B_app(3)] sorry
+qed
+      
 
 
 lemma boxed_i_eval_ce_boxed_b:
@@ -1779,42 +1867,61 @@ using assms proof(nominal_induct e arbitrary: s s' b b' rule: ce.strong_induct)
 next
   case (CE_op opp v1 v2)
 
+(*
   have 1:"wfCE \<Theta> B \<Gamma> v1 (B_int)" using wfCE_elims CE_op by metis
-  have 2:"wfCE \<Theta> B \<Gamma> v2 (B_int)" using wfCE_elims CE_op by metis
+  *have 2:"wfCE \<Theta> B \<Gamma> v2 (B_int)" using wfCE_elims CE_op by metis
+*)
 
-  consider (Plus) "opp = Plus" | (LEq) "opp = LEq" using opp.exhaust by auto
-  then show ?case proof(cases)
-    case Plus
-    have *:"b = B_int" using CE_op wfCE_elims Plus by metis
+  show ?case proof(rule opp.exhaust)
+    assume \<open>opp = Plus\<close>
+    have 1:"wfCE \<Theta> B \<Gamma> v1 (B_int)" using wfCE_elims CE_op  \<open>opp = Plus\<close>  by metis
+    have 2:"wfCE \<Theta> B \<Gamma> v2 (B_int)" using wfCE_elims CE_op  \<open>opp = Plus\<close> by metis
+    have *:"b = B_int" using CE_op wfCE_elims 
+      by (metis \<open>opp = plus\<close>)
 
-    obtain n1 and n2 where n:"s = SNum (n1 + n2) \<and> i \<lbrakk> v1[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ SNum n1 \<and> i \<lbrakk> v2[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ SNum n2" using eval_e_elims CE_op subst_ceb.simps Plus by metis
-    obtain n1' and n2' where n':"s' = SNum (n1' + n2') \<and> i' \<lbrakk> v1 \<rbrakk> ~ SNum n1' \<and> i' \<lbrakk> v2 \<rbrakk> ~ SNum n2'" using eval_e_elims Plus CE_op by metis
+    obtain n1 and n2 where n:"s = SNum (n1 + n2) \<and> i \<lbrakk> v1[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ SNum n1 \<and> i \<lbrakk> v2[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ SNum n2" using eval_e_elims CE_op subst_ceb.simps \<open>opp = plus\<close>  by metis
+    obtain n1' and n2' where n':"s' = SNum (n1' + n2') \<and> i' \<lbrakk> v1 \<rbrakk> ~ SNum n1' \<and> i' \<lbrakk> v2 \<rbrakk> ~ SNum n2'" using eval_e_elims Plus CE_op \<open>opp = plus\<close> by metis
 
-    have "boxed_b \<Theta> (SNum n1) B_int bv b' (SNum n1')" using boxed_i_eval_v_boxed_b 1 2 n n' CE_op by metis
+    have "boxed_b \<Theta> (SNum n1) B_int bv b' (SNum n1')" using boxed_i_eval_v_boxed_b 1 2 n n' CE_op \<open>opp = plus\<close> by metis
     moreover have "boxed_b \<Theta> (SNum n2) B_int bv b' (SNum n2')" using boxed_i_eval_v_boxed_b 1 2 n n' CE_op by metis
     ultimately have "s=s'" using n' n boxed_b_elims(2)
       by (metis rcl_val.eq_iff(2))
     thus ?thesis using  * n n' boxed_b_BIntI CE_op wfRCV.intros Plus by simp
   next
-    case LEq
-    hence *:"b = B_bool" using CE_op wfCE_elims  by metis
-    obtain n1 and n2 where n:"s = SBool (n1 \<le> n2) \<and> i \<lbrakk> v1[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ SNum n1 \<and> i \<lbrakk> v2[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ SNum n2" using eval_e_elims subst_ceb.simps CE_op LEq by metis
-    obtain n1' and n2' where n':"s' = SBool (n1' \<le> n2') \<and> i' \<lbrakk> v1 \<rbrakk> ~ SNum n1' \<and> i' \<lbrakk> v2 \<rbrakk> ~ SNum n2'" using eval_e_elims CE_op LEq  by metis
+    assume \<open>opp = LEq\<close>
+    have 1:"wfCE \<Theta> B \<Gamma> v1 (B_int)" using wfCE_elims CE_op  \<open>opp = LEq\<close>  by metis
+    have 2:"wfCE \<Theta> B \<Gamma> v2 (B_int)" using wfCE_elims CE_op  \<open>opp = LEq\<close> by metis
+    hence *:"b = B_bool" using CE_op wfCE_elims \<open>opp = LEq\<close>   by metis
+    obtain n1 and n2 where n:"s = SBool (n1 \<le> n2) \<and> i \<lbrakk> v1[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ SNum n1 \<and> i \<lbrakk> v2[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ SNum n2" using eval_e_elims subst_ceb.simps CE_op \<open>opp = LEq\<close> by metis
+    obtain n1' and n2' where n':"s' = SBool (n1' \<le> n2') \<and> i' \<lbrakk> v1 \<rbrakk> ~ SNum n1' \<and> i' \<lbrakk> v2 \<rbrakk> ~ SNum n2'" using eval_e_elims CE_op \<open>opp = LEq\<close>  by metis
 
     have "boxed_b \<Theta> (SNum n1) B_int bv b' (SNum n1')" using boxed_i_eval_v_boxed_b 1 2 n n' CE_op by metis
     moreover have "boxed_b \<Theta> (SNum n2) B_int bv b' (SNum n2')" using boxed_i_eval_v_boxed_b 1 2 n n' CE_op by metis
     ultimately have "s=s'" using n' n boxed_b_elims(2)
       by (metis rcl_val.eq_iff(2))
-    thus ?thesis using  * n n' boxed_b_BBoolI CE_op wfRCV.intros LEq by simp
+    thus ?thesis using  * n n' boxed_b_BBoolI CE_op wfRCV.intros \<open>opp = LEq\<close> by simp
+  next
+    assume \<open>opp = Eq\<close>
+    obtain b1 where b1:"wfCE \<Theta> B \<Gamma> v1 b1 \<and> wfCE \<Theta> B \<Gamma> v2 b1" using wfCE_elims CE_op  \<open>opp = Eq\<close>  by metis
+  
+    hence *:"b = B_bool" using CE_op wfCE_elims \<open>opp = Eq\<close>   by metis
+    obtain n1 and n2 where n:"s = SBool (n1 = n2) \<and> i \<lbrakk> v1[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ n1 \<and> i \<lbrakk> v2[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ n2" using eval_e_elims subst_ceb.simps CE_op \<open>opp = Eq\<close> by metis
+    obtain n1' and n2' where n':"s' = SBool (n1' = n2') \<and> i' \<lbrakk> v1 \<rbrakk> ~ n1' \<and> i' \<lbrakk> v2 \<rbrakk> ~ n2'" using eval_e_elims CE_op \<open>opp = Eq\<close>  by metis
+
+    have "boxed_b \<Theta> n1 b1 bv b' n1'" using boxed_i_eval_v_boxed_b b1  n n' CE_op by metis
+    moreover have "boxed_b \<Theta> n2 b1 bv b' n2'" using boxed_i_eval_v_boxed_b b1  n n' CE_op by metis
+    ultimately have "s=s'" using n' n boxed_b_elims
+      boxed_b_eq_eq by metis
+    thus ?thesis using  * n n' boxed_b_BBoolI CE_op wfRCV.intros \<open>opp = Eq\<close> by simp
   qed
 
 next
   case (CE_concat v1 v2)
 
   obtain bv1 and bv2 where s : "s = SBitvec (bv1 @ bv2) \<and> (i \<lbrakk> v1[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ SBitvec bv1)  \<and> i \<lbrakk> v2[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ SBitvec bv2"
-    using eval_e_elims(6) subst_ceb.simps CE_concat.prems(2) eval_e_elims(6) subst_ceb.simps(6) by metis
+    using eval_e_elims(7) subst_ceb.simps CE_concat.prems(2) eval_e_elims(6) subst_ceb.simps(6) by metis
   obtain bv1' and bv2' where s' : "s' = SBitvec (bv1' @ bv2') \<and> i' \<lbrakk> v1 \<rbrakk> ~ SBitvec bv1'  \<and> i' \<lbrakk> v2 \<rbrakk> ~ SBitvec bv2'"
-    using eval_e_elims(6) CE_concat by metis
+    using eval_e_elims(7) CE_concat by metis
 
   then show ?case using boxed_i_eval_v_boxed_b wfCE_elims s s' CE_concat   
     by (metis CE_concat.prems(3) assms assms(5) wfRCV_BBitvecI boxed_b_Bbitvec boxed_b_elims(7) eval_e_concatI eval_e_uniqueness)
@@ -2070,6 +2177,20 @@ proof -
   ultimately show ?thesis using eval_c.intros is_satis.simps by fastforce
 qed
 
+lemma is_satis_eq_imp:
+  assumes "i \<Turnstile> (CE_val (V_var x) ==  CE_val (V_lit (if (n1 =  n2) then L_true else L_false)))" (is "is_satis i ?c1")
+  shows   "i \<Turnstile> (CE_val (V_var x)  ==  CE_op Eq [(V_lit (n1))]\<^sup>c\<^sup>e [(V_lit (n2))]\<^sup>c\<^sup>e)"
+proof -
+ have *:"eval_c i ?c1 True" using assms is_satis.simps by blast
+  then have  "eval_e i (CE_val (V_lit ((if (n1=n2) then L_true else L_false)))) (SBool (n1=n2))"
+    using eval_e_elims(1) eval_v_elims eval_l.simps
+    by (metis (full_types) eval_e.intros(1) eval_v_litI)
+  hence "eval_e i (CE_val (V_var x)) (SBool (n1=n2))" using eval_c_elims(7)[OF *]
+    by (metis eval_e_elims(1) eval_v_elims(1))
+  moreover have "eval_e i (CE_op LEq [(V_lit (n1))]\<^sup>c\<^sup>e [(V_lit (n2) )]\<^sup>c\<^sup>e) (SBool (n1=n2))"
+    using eval_e_elims(3) eval_v_elims eval_l.simps  sorry (*by (metis eval_e.intros eval_v_litI)*)
+  ultimately show ?thesis using eval_c.intros is_satis.simps sorry (*by fastforce*)
+qed
 
 
 lemma valid_eq_e:
@@ -2128,7 +2249,7 @@ proof -
 qed
 
 
-lemma valid_bop:
+lemma valid_arith_bop:
  assumes "wfG \<Theta> \<B>  \<Gamma>" and "opp = Plus \<and> ll = (L_num (n1+n2)) \<or> (opp = LEq \<and> ll = ( if n1\<le>n2 then L_true else L_false))"  
   and "(opp = Plus \<longrightarrow> b = B_int) \<and> (opp = LEq \<longrightarrow> b = B_bool)" and
    "atom x \<sharp> \<Gamma>" 
@@ -2138,7 +2259,7 @@ lemma valid_bop:
       have "wfC \<Theta> \<B> ?G ?c" proof(rule wfC_e_eq2)
         show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_val (V_lit ll) : b" using wfCE_valI wfV_litI assms base_for_lit.simps by metis
         show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op opp ([V_lit (L_num n1)]\<^sup>c\<^sup>e) ([V_lit (L_num n2)]\<^sup>c\<^sup>e) : b " 
-          using wfCE_plusI wfCE_leqI wfV_litI wfCE_valI base_for_lit.simps assms  by metis
+          using wfCE_plusI wfCE_leqI   wfCE_eqI wfV_litI wfCE_valI base_for_lit.simps assms  by metis
         show "\<turnstile>\<^sub>w\<^sub>f \<Theta>" using assms wfX_wfY by auto 
         show "atom x \<sharp> \<Gamma>" using assms by auto
       qed
@@ -2164,7 +2285,7 @@ proof(rule valid_eq_e)
     fix i s1 s2 
     assume as:"\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f GNil  \<and>  \<Theta> ; GNil \<turnstile> i \<and> (i \<lbrakk> [ v\<^sub>1 ]\<^sup>c\<^sup>e \<rbrakk> ~ s1)  \<and> (i \<lbrakk> [#1[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e \<rbrakk> ~ s2)"
     then obtain s2' where *:"i \<lbrakk> [ v\<^sub>1 , v\<^sub>2 ]\<^sup>v \<rbrakk> ~ SPair s2 s2'" 
-      using eval_e_elims(4)[of i "[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e" s2] eval_e_elims 
+      using eval_e_elims(5)[of i "[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e" s2] eval_e_elims 
       by meson
     then have " i \<lbrakk> v\<^sub>1 \<rbrakk> ~ s2" using eval_v_elims(3)[OF *] by auto
     then show "s1 = s2" using eval_v_uniqueness as 
@@ -2189,7 +2310,7 @@ proof(rule valid_eq_e)
     fix i s1 s2 
     assume as:"\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f GNil  \<and>  \<Theta> ; GNil \<turnstile> i \<and> (i \<lbrakk> [ v\<^sub>2 ]\<^sup>c\<^sup>e \<rbrakk> ~ s1)  \<and> (i \<lbrakk> [#2[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e \<rbrakk> ~ s2)"
     then obtain s2' where *:"i \<lbrakk> [ v\<^sub>1 , v\<^sub>2 ]\<^sup>v \<rbrakk> ~ SPair s2' s2" 
-       using eval_e_elims(4)[of i "[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e" s2] eval_e_elims 
+       using eval_e_elims(5)[of i "[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e" s2] eval_e_elims 
       by meson
     then have " i \<lbrakk> v\<^sub>2 \<rbrakk> ~ s2" using eval_v_elims(3)[OF *] by auto
     then show "s1 = s2" using eval_v_uniqueness as 
@@ -2218,7 +2339,7 @@ proof(rule valid_eq_e)
 
     hence *: "i \<lbrakk> [[[ L_bitvec v1 ]\<^sup>v]\<^sup>c\<^sup>e @@ [[ L_bitvec v2 ]\<^sup>v]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e  \<rbrakk> ~ s2"  by auto
     obtain bv1 bv2 where s2:"s2 = SBitvec (bv1 @ bv2) \<and> i \<lbrakk> [ L_bitvec v1 ]\<^sup>v \<rbrakk> ~ SBitvec bv1  \<and> (i \<lbrakk> [ L_bitvec v2 ]\<^sup>v \<rbrakk> ~ SBitvec bv2)" 
-      using eval_e_elims(6)[OF *] eval_e_elims(1) by metis
+      using eval_e_elims(7)[OF *] eval_e_elims(1) by metis
     hence "v1 = bv1 \<and> v2 = bv2" using eval_v_elims(1) eval_l.simps(5) by force
     moreover then have "s1 = SBitvec  (bv1 @ bv2)" using s2 using eval_v_elims(1) eval_l.simps(5) 
       by (metis as eval_e_elims(1))
@@ -2428,7 +2549,7 @@ proof -
     using eval_e_elims(3) 
     using sv \<open>sv1 = SBool True\<close> by metis
   moreover hence "n1 = n" using eval_e_elims(1)[of i] eval_v_elims(2)[of i x "SNum n1"] i by auto
-  moreover  have "n2 = int (length v)"  using eval_e_elims(7) eval_v_elims(1) eval_l.simps i    
+  moreover  have "n2 = int (length v)"  using eval_e_elims(8) eval_v_elims(1) eval_l.simps i    
     by (metis "***" eval_e_elims(1) rcl_val.eq_iff(1) rcl_val.eq_iff(2))    
   ultimately have  le2: "n \<le> int (length v) " by simp
 
@@ -2514,7 +2635,7 @@ qed
     using eval_e_elims(3) 
     using sv \<open>sv1 = SBool True\<close> by metis
   moreover hence "n1 = n" using eval_e_elims(1)[of i] eval_v_elims(2)[of i x "SNum n1"] i by auto
-  moreover  have "n2 = int (length v)"  using eval_e_elims(7) eval_v_elims(1) eval_l.simps i    
+  moreover  have "n2 = int (length v)"  using eval_e_elims(8) eval_v_elims(1) eval_l.simps i    
     by (metis "***" eval_e_elims(1) rcl_val.eq_iff(1) rcl_val.eq_iff(2))    
   ultimately have  le2: "n \<le> int (length v) " by simp
 

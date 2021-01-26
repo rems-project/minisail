@@ -216,6 +216,15 @@ infer_e_valI:  "\<lbrakk>
 \<rbrakk> \<Longrightarrow> 
         \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AE_op LEq v1 v2 \<Rightarrow>  \<lbrace> z3 : B_bool | [[z3]\<^sup>v]\<^sup>c\<^sup>e == (CE_op LEq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e) \<rbrace>"
 
+| infer_e_eqI: "\<lbrakk> 
+        \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
+        \<Theta> \<turnstile>\<^sub>w\<^sub>f (\<Phi>::\<Phi>) ; 
+        \<Theta>; \<B>; \<Gamma> \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : b | c1 \<rbrace> ; 
+        \<Theta>; \<B>; \<Gamma> \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : b | c2 \<rbrace>;
+        atom z3 \<sharp> (AE_op Eq v1 v2); atom z3 \<sharp> \<Gamma>  
+\<rbrakk> \<Longrightarrow> 
+        \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AE_op Eq v1 v2 \<Rightarrow>  \<lbrace> z3 : B_bool | [[z3]\<^sup>v]\<^sup>c\<^sup>e == (CE_op Eq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e) \<rbrace>"
+
 | infer_e_appI: "\<lbrakk> 
         \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;
         \<Theta> \<turnstile>\<^sub>w\<^sub>f (\<Phi>::\<Phi>) ; 
@@ -347,6 +356,9 @@ inductive_cases infer_e_elims[elim!]:
   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AE_concat v1 v2 \<Rightarrow> (\<lbrace> z : B_bitvec |  [[z]\<^sup>v]\<^sup>c\<^sup>e == (CE_concat [v1]\<^sup>c\<^sup>e [v1]\<^sup>c\<^sup>e) \<rbrace>) "
   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> (AE_appP f b v )  \<Rightarrow> \<tau>"
   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AE_split v1 v2 \<Rightarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> (AE_op Eq v1 v2) \<Rightarrow> \<lbrace> z3 : b | c \<rbrace>" 
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> (AE_op Eq v1 v2) \<Rightarrow> \<lbrace> z3 : B_bool | c \<rbrace>" 
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> (AE_op Eq v1 v2) \<Rightarrow> \<tau>" 
 nominal_termination (eqvt)  by lexicographic_order
 
 section \<open>Statements\<close>

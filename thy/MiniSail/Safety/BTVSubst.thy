@@ -377,9 +377,9 @@ instance proof
     apply (induct c rule: ce.induct,  (auto simp add: fresh_at_base  subst_ceb.simps subst_b_ce_def permute_pure pure_supp )+)
 
     using  flip_fresh_fresh flip_l_eq permute_flip_cancel2 has_subst_b_class.flip_subst subst_b_v_def apply metis
-using  flip_fresh_fresh flip_l_eq permute_flip_cancel2 has_subst_b_class.flip_subst subst_b_v_def 
-       apply (metis opp.perm_simps(2) opp.strong_exhaust)+
-  done
+    using  flip_fresh_fresh flip_l_eq permute_flip_cancel2 has_subst_b_class.flip_subst subst_b_v_def 
+    by (simp add: flip_fresh_fresh fresh_opp_all)  
+
 
   fix bv::bv and c::ce and z::bv and v::b
   show "atom bv \<sharp> c \<Longrightarrow> ((bv \<leftrightarrow> z) \<bullet> c)[bv::=v]\<^sub>b = c[z::=v]\<^sub>b"
@@ -723,7 +723,7 @@ qed
     apply(auto simp add: fresh_at_base  subst_eb.simps subst_b_e_def subst_b_v_def  permute_pure pure_supp )
     using  flip_fresh_fresh permute_flip_cancel2 has_subst_b_class.flip_subst subst_b_v_def  subst_b_b_def 
      flip_fresh_fresh subst_b_\<tau>_def apply metis
-    apply (metis (full_types) opp.perm_simps(1) opp.perm_simps(2) opp.strong_exhaust)
+    apply (metis (full_types) opp.perm_simps  opp.strong_exhaust)
     done
     
   fix bv::bv and c::e and z::bv and v::b
@@ -733,7 +733,7 @@ qed
     using  flip_fresh_fresh permute_flip_cancel2 has_subst_b_class.flip_subst subst_b_v_def  subst_b_b_def 
      flip_fresh_fresh subst_b_\<tau>_def apply simp
 
-    apply (metis opp.perm_simps(1) opp.perm_simps(2) opp.strong_exhaust)
+   apply (metis (full_types) opp.perm_simps  opp.strong_exhaust)
     done
 qed
 end
@@ -745,16 +745,16 @@ subst_sb :: "s \<Rightarrow> bv \<Rightarrow> b \<Rightarrow> s"
 and subst_branchb :: "branch_s \<Rightarrow> bv \<Rightarrow> b \<Rightarrow> branch_s" 
 and subst_branchlb :: "branch_list \<Rightarrow> bv \<Rightarrow> b \<Rightarrow> branch_list"
 where
-   "subst_sb (AS_val v') bv b        = (AS_val (subst_vb v' bv b))"
+   "subst_sb (AS_val v') bv b         = (AS_val (subst_vb v' bv b))"
  | "subst_sb  (AS_let y  e s)  bv b   = (AS_let y  (e[bv::=b]\<^sub>e\<^sub>b) (subst_sb s bv b ))"  
  | "subst_sb (AS_let2 y t s1 s2) bv b = (AS_let2 y (subst_tb t bv b) (subst_sb s1 bv b ) (subst_sb s2 bv b))"  
  | "subst_sb (AS_match v'  cs) bv b   = AS_match  (subst_vb v' bv b)  (subst_branchlb cs bv b)"
  | "subst_sb  (AS_assign y v') bv b   = AS_assign y (subst_vb v' bv b)"
  | "subst_sb  (AS_if v' s1 s2) bv b   = (AS_if (subst_vb v' bv b) (subst_sb s1 bv b ) (subst_sb s2 bv b ) )"  
- | "subst_sb  (AS_var u \<tau> v' s) bv b   = AS_var u (subst_tb  \<tau> bv b)  (subst_vb v' bv b) (subst_sb s bv b )"
+ | "subst_sb  (AS_var u \<tau> v' s) bv b  = AS_var u (subst_tb  \<tau> bv b)  (subst_vb v' bv b) (subst_sb s bv b )"
  | "subst_sb  (AS_while s1 s2) bv b   = AS_while (subst_sb s1 bv b  ) (subst_sb s2 bv b )"
  | "subst_sb  (AS_seq s1 s2)  bv b    = AS_seq (subst_sb s1 bv b ) (subst_sb s2 bv b )"
- | "subst_sb  (AS_assert c s)  bv b    = AS_assert (subst_cb c bv b ) (subst_sb s bv b )"
+ | "subst_sb  (AS_assert c s)  bv b   = AS_assert (subst_cb c bv b ) (subst_sb s bv b )"
 
 | "subst_branchb (AS_branch dc x1 s') bv b = AS_branch dc x1 (subst_sb s' bv b)"
 

@@ -58,7 +58,7 @@ nominal_datatype "v" =
   | V_consp tyid dc b "v" 
 
 text \<open> Binary Operations \<close>
-nominal_datatype "opp" = Plus ( "plus") | LEq ("leq")
+nominal_datatype "opp" = Plus ( "plus") | LEq ("leq") | Eq ("eq")
 
 text \<open> Expressions \<close>
 nominal_datatype "e" = 
