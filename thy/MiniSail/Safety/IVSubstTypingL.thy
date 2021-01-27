@@ -987,6 +987,7 @@ next
     show \<open> \<Theta> ; \<B> ; \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>  \<turnstile> v2[x::=v]\<^sub>v\<^sub>v \<Rightarrow> \<lbrace> z2' : bb  | c2'[x::=v]\<^sub>c\<^sub>v \<rbrace>\<close> using subst_tv.simps subst_infer_v infer_e_eqI z2 bb by metis
     show \<open>atom z3' \<sharp> AE_op Eq v1[x::=v]\<^sub>v\<^sub>v v2[x::=v]\<^sub>v\<^sub>v\<close> using fresh_Pair * by metis
     show \<open>atom z3' \<sharp> \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>\<close> using * by auto
+    show "bb \<in> {B_bool, B_int, B_unit}" using infer_e_eqI by auto
   qed
   moreover have "\<lbrace> z3' : B_bool  | CE_val (V_var z3')  ==  CE_op Eq ([v1[x::=v]\<^sub>v\<^sub>v]\<^sup>c\<^sup>e) ([v2[x::=v]\<^sub>v\<^sub>v]\<^sup>c\<^sup>e)  \<rbrace> = \<lbrace> z3' : B_bool  | CE_val (V_var z3')  ==  CE_op Eq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e  \<rbrace>[x::=v]\<^sub>\<tau>\<^sub>v"
     using subst_tv.simps subst_ev.simps * by auto

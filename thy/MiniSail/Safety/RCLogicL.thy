@@ -1817,43 +1817,12 @@ next
 
 qed
 
-thm  boxed_b_elims
-
 lemma boxed_b_eq_eq:
-  assumes  "boxed_b \<Theta> n1 b1 bv b' n1'" and "boxed_b \<Theta> n2 b1 bv b' n2'" and "s = SBool (n1 = n2)" and 
+  assumes  "boxed_b \<Theta> n1 b1 bv b' n1'" and "boxed_b \<Theta> n2 b1 bv b' n2'" and "s = SBool (n1 = n2)" and  "\<turnstile>\<^sub>w\<^sub>f \<Theta>"
    "s' = SBool (n1' = n2')"
- shows  "s=s'" 
-using assms proof(nominal_induct b1 rule: b.strong_induct)
-  case B_int
-  then show ?case  by (metis boxed_b_elims(2))
-next
-  case B_bool
-  then show ?case by (metis boxed_b_elims(3))
-next
-  case (B_id x)
-  then show ?case using boxed_b_elims(6) sorry 
-next
-  case (B_pair x1 x2)
-  then show ?case using boxed_b_elims(5) sorry
-next
-  case B_unit
-  then show ?case by (metis boxed_b_elims(4))
-next
-  case B_bitvec
-  then show ?case by (metis boxed_b_elims(7))
-next
-  case (B_var x)
-  then show ?case using  boxed_b_elims(1)[OF B_var(1)] boxed_b_elims(1)[OF B_var(2)] 
-  proof -
-    have "bv = x \<longrightarrow> s = s'"
-      by (metis (full_types) \<open>\<And>Pa. \<lbrakk>\<lbrakk>bv = x; n1' = SUt n1; \<Theta> \<turnstile> n1 : b'\<rbrakk> \<Longrightarrow> Pa; \<lbrakk>n1' = n1; bv \<noteq> x; \<Theta> \<turnstile> n1 : B_var x\<rbrakk> \<Longrightarrow> Pa\<rbrakk> \<Longrightarrow> Pa\<close> \<open>\<And>Pa. \<lbrakk>\<lbrakk>bv = x; n2' = SUt n2; \<Theta> \<turnstile> n2 : b'\<rbrakk> \<Longrightarrow> Pa; \<lbrakk>n2' = n2; bv \<noteq> x; \<Theta> \<turnstile> n2 : B_var x\<rbrakk> \<Longrightarrow> Pa\<rbrakk> \<Longrightarrow> Pa\<close> \<open>s = SBool (n1 = n2)\<close> \<open>s' = SBool (n1' = n2')\<close> rcl_val.eq_iff(3) rcl_val.eq_iff(8)) (* 546 ms *)
-    then show ?thesis
-      by (metis (no_types) \<open>\<And>Pa. \<lbrakk>\<lbrakk>bv = x; n1' = SUt n1; \<Theta> \<turnstile> n1 : b'\<rbrakk> \<Longrightarrow> Pa; \<lbrakk>n1' = n1; bv \<noteq> x; \<Theta> \<turnstile> n1 : B_var x\<rbrakk> \<Longrightarrow> Pa\<rbrakk> \<Longrightarrow> Pa\<close> \<open>\<And>Pa. \<lbrakk>\<lbrakk>bv = x; n2' = SUt n2; \<Theta> \<turnstile> n2 : b'\<rbrakk> \<Longrightarrow> Pa; \<lbrakk>n2' = n2; bv \<noteq> x; \<Theta> \<turnstile> n2 : B_var x\<rbrakk> \<Longrightarrow> Pa\<rbrakk> \<Longrightarrow> Pa\<close> \<open>s = SBool (n1 = n2)\<close> \<open>s' = SBool (n1' = n2')\<close>) (* 62 ms *)
-  qed
-next
-  case (B_app x1 x2)
-  then show ?case using boxed_b_elims(8)[OF B_app(2)]  boxed_b_elims(8)[OF B_app(3)] sorry
-qed
+  shows  "s=s'" 
+using boxed_b_eq assms by auto
+
       
 
 
@@ -1910,6 +1879,7 @@ next
 
     have "boxed_b \<Theta> n1 b1 bv b' n1'" using boxed_i_eval_v_boxed_b b1  n n' CE_op by metis
     moreover have "boxed_b \<Theta> n2 b1 bv b' n2'" using boxed_i_eval_v_boxed_b b1  n n' CE_op by metis
+    moreover have "\<turnstile>\<^sub>w\<^sub>f \<Theta>" using b1 wfX_wfY by metis
     ultimately have "s=s'" using n' n boxed_b_elims
       boxed_b_eq_eq by metis
     thus ?thesis using  * n n' boxed_b_BBoolI CE_op wfRCV.intros \<open>opp = Eq\<close> by simp
@@ -2177,6 +2147,54 @@ proof -
   ultimately show ?thesis using eval_c.intros is_satis.simps by fastforce
 qed
 
+thm eval_l.simps
+
+lemma eval_lit_inj:
+  fixes n1::l and n2::l
+  assumes "\<lbrakk> n1  \<rbrakk> = s" and "\<lbrakk> n2 \<rbrakk> = s" 
+  shows "n1=n2" 
+  using assms proof(nominal_induct s rule: rcl_val.strong_induct)
+case (SBitvec x)
+then show ?case using eval_l.simps 
+    by (metis l.strong_exhaust rcl_val.distinct rcl_val.eq_iff)
+next
+  case (SNum x)
+  then show ?case using eval_l.simps 
+    by (metis l.strong_exhaust rcl_val.distinct rcl_val.eq_iff)
+next
+  case (SBool x)
+  then show ?case using eval_l.simps 
+    by (metis l.strong_exhaust rcl_val.distinct rcl_val.eq_iff)
+next
+  case (SPair x1a x2a)
+  then show ?case using eval_l.simps 
+    by (metis l.strong_exhaust rcl_val.distinct rcl_val.eq_iff)
+next
+  case (SCons x1a x2a x3a)
+  then show ?case using eval_l.simps 
+    by (metis l.strong_exhaust rcl_val.distinct rcl_val.eq_iff)
+next
+  case (SConsp x1a x2a x3a x4)
+  then show ?case using eval_l.simps 
+    by (metis l.strong_exhaust rcl_val.distinct rcl_val.eq_iff)
+next
+  case SUnit
+  then show ?case using eval_l.simps 
+    by (metis l.strong_exhaust rcl_val.distinct rcl_val.eq_iff)
+next
+  case (SUt x)
+  then show ?case using eval_l.simps 
+    by (metis l.strong_exhaust rcl_val.distinct rcl_val.eq_iff)
+qed
+
+
+lemma eval_e_lit_inj:
+  fixes n1::l and n2::l
+  assumes "i \<lbrakk> [ [ n1 ]\<^sup>v ]\<^sup>c\<^sup>e \<rbrakk> ~ s" and "i \<lbrakk> [ [ n2 ]\<^sup>v ]\<^sup>c\<^sup>e \<rbrakk> ~ s" 
+  shows "n1=n2" 
+  using eval_lit_inj assms eval_e_elims eval_v_elims by metis
+
+
 lemma is_satis_eq_imp:
   assumes "i \<Turnstile> (CE_val (V_var x) ==  CE_val (V_lit (if (n1 =  n2) then L_true else L_false)))" (is "is_satis i ?c1")
   shows   "i \<Turnstile> (CE_val (V_var x)  ==  CE_op Eq [(V_lit (n1))]\<^sup>c\<^sup>e [(V_lit (n2))]\<^sup>c\<^sup>e)"
@@ -2187,9 +2205,21 @@ proof -
     by (metis (full_types) eval_e.intros(1) eval_v_litI)
   hence "eval_e i (CE_val (V_var x)) (SBool (n1=n2))" using eval_c_elims(7)[OF *]
     by (metis eval_e_elims(1) eval_v_elims(1))
-  moreover have "eval_e i (CE_op LEq [(V_lit (n1))]\<^sup>c\<^sup>e [(V_lit (n2) )]\<^sup>c\<^sup>e) (SBool (n1=n2))"
-    using eval_e_elims(3) eval_v_elims eval_l.simps  sorry (*by (metis eval_e.intros eval_v_litI)*)
-  ultimately show ?thesis using eval_c.intros is_satis.simps sorry (*by fastforce*)
+ thm  eval_e_eqI[of i "[(V_lit (n1))]\<^sup>c\<^sup>e"  _ "[(V_lit (n2))]\<^sup>c\<^sup>e" ]
+  moreover have "eval_e i (CE_op Eq [(V_lit (n1))]\<^sup>c\<^sup>e [(V_lit (n2) )]\<^sup>c\<^sup>e) (SBool (n1=n2))"
+  proof -
+    obtain s1 and s2 where *:"i \<lbrakk> [ [ n1 ]\<^sup>v ]\<^sup>c\<^sup>e \<rbrakk> ~ s1  \<and> i \<lbrakk> [ [ n2 ]\<^sup>v ]\<^sup>c\<^sup>e \<rbrakk> ~ s2" using eval_l.simps eval_e.intros eval_v_litI by metis
+    moreover have " SBool (n1 = n2)  =  SBool (s1 = s2)" proof(cases "n1=n2")
+      case True
+      then show ?thesis using * 
+        by (simp add: calculation eval_e_uniqueness)
+    next
+      case False
+      then show ?thesis using *  eval_e_lit_inj by auto
+    qed
+    ultimately show ?thesis using eval_e_eqI[of i "[(V_lit (n1))]\<^sup>c\<^sup>e"  s1 "[(V_lit (n2))]\<^sup>c\<^sup>e" s2 ] by auto
+  qed
+  ultimately show ?thesis using eval_c.intros is_satis.simps by fastforce
 qed
 
 
@@ -2274,6 +2304,32 @@ lemma valid_arith_bop:
       qed
       ultimately show ?thesis using valid.simps by metis
     qed
+
+lemma valid_eq_bop:
+ assumes "wfG \<Theta> \<B>  \<Gamma>" and  "atom x \<sharp> \<Gamma>"  and  "base_for_lit l1 = base_for_lit l2"
+  shows   "\<Theta>; \<B> ; (x, B_bool, (CE_val (V_var x)  ==  CE_val (V_lit (if l1 = l2 then L_true else L_false)) )) #\<^sub>\<Gamma> \<Gamma>  
+                          \<Turnstile> (CE_val (V_var x)  ==  CE_op Eq ([V_lit (l1)]\<^sup>c\<^sup>e) ([V_lit (l2)]\<^sup>c\<^sup>e ))" (is "\<Theta> ; \<B> ; ?G \<Turnstile> ?c")
+proof -
+  let ?ll = "(if l1 = l2 then L_true else L_false)"
+      have "wfC \<Theta> \<B> ?G ?c" proof(rule wfC_e_eq2)
+        show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_val (V_lit ?ll) : B_bool" using wfCE_valI wfV_litI assms base_for_lit.simps by metis
+        show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op Eq ([V_lit (l1)]\<^sup>c\<^sup>e) ([V_lit (l2)]\<^sup>c\<^sup>e) : B_bool " 
+          using wfCE_eqI wfCE_leqI   wfCE_eqI wfV_litI wfCE_valI base_for_lit.simps assms by metis
+        show "\<turnstile>\<^sub>w\<^sub>f \<Theta>" using assms wfX_wfY by auto 
+        show "atom x \<sharp> \<Gamma>" using assms by auto
+      qed
+
+      moreover have "\<forall>i. wfI \<Theta> ?G i \<and> is_satis_g i ?G \<longrightarrow> is_satis i ?c" proof(rule allI , rule impI)
+        fix i
+        assume "wfI \<Theta> ?G i \<and> is_satis_g i ?G" 
+
+        hence "is_satis i  ((CE_val (V_var x)  ==  CE_val (V_lit (?ll)) ))"   by auto
+        thus  "is_satis i ((CE_val (V_var x)  ==  CE_op Eq ([V_lit (l1)]\<^sup>c\<^sup>e) ([V_lit (l2)]\<^sup>c\<^sup>e)))" 
+          using is_satis_eq_imp assms  by auto
+      qed
+      ultimately show ?thesis using valid.simps by metis
+    qed
+
 
 lemma valid_fst:
   fixes x::x and v\<^sub>1::v and v\<^sub>2::v

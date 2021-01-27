@@ -310,6 +310,7 @@ next
     show "\<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile> v2[bv::=b]\<^sub>v\<^sub>b \<Rightarrow> \<lbrace> z2 : bb[bv::=b]\<^sub>b\<^sub>b  | c2[bv::=b]\<^sub>c\<^sub>b \<rbrace>" using subst_b_infer_v  infer_e_eqI subst_b_simps by force
     show "atom z3 \<sharp> AE_op Eq (v1[bv::=b]\<^sub>v\<^sub>b) (v2[bv::=b]\<^sub>v\<^sub>b)" using  subst_b_simps infer_e_eqI subst_b_fresh_x subst_b_e_def by metis
     show "atom z3 \<sharp> \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b" using subst_g_b_x_fresh infer_e_eqI by auto
+    show "bb[bv::=b]\<^sub>b\<^sub>b  \<in> {B_bool, B_int, B_unit}" using infer_e_eqI by auto
   qed
 next
   case (infer_e_appI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> f x b' c \<tau>' s' v \<tau>)

@@ -25,8 +25,8 @@ type_synonym f = string  (* Function name *)
 type_synonym dc = string (* Data constructor *)
 type_synonym tyid = string
 
-(* Would things be easier we if include the base type of the constructor argument *)
-text \<open> Base types \<close>
+(* Would things be easier we if include the basic type of the constructor argument *)
+text \<open> Basic types \<close>
 nominal_datatype "b" =  
    B_int  
  | B_bool  
@@ -35,7 +35,7 @@ nominal_datatype "b" =
  | B_unit
  | B_bitvec
  | B_var bv
- | B_app tyid b  (* Base type application *)
+ | B_app tyid b  (* Basic type application *)
 
 nominal_datatype bit = BitOne | BitZero
 

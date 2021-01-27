@@ -220,8 +220,9 @@ infer_e_valI:  "\<lbrakk>
         \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
         \<Theta> \<turnstile>\<^sub>w\<^sub>f (\<Phi>::\<Phi>) ; 
         \<Theta>; \<B>; \<Gamma> \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : b | c1 \<rbrace> ; 
-        \<Theta>; \<B>; \<Gamma> \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : b | c2 \<rbrace>;
-        atom z3 \<sharp> (AE_op Eq v1 v2); atom z3 \<sharp> \<Gamma>  
+        \<Theta>; \<B>; \<Gamma> \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : b | c2 \<rbrace>;     
+        atom z3 \<sharp> (AE_op Eq v1 v2); atom z3 \<sharp> \<Gamma>  ;
+        b \<in> { B_bool, B_int, B_unit }
 \<rbrakk> \<Longrightarrow> 
         \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AE_op Eq v1 v2 \<Rightarrow>  \<lbrace> z3 : B_bool | [[z3]\<^sup>v]\<^sup>c\<^sup>e == (CE_op Eq [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e) \<rbrace>"
 

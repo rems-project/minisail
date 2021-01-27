@@ -3,7 +3,7 @@ theory BTVSubst
   imports Syntax
 begin
 (*>*)
-chapter \<open>Base Type Variable Substitution\<close>
+chapter \<open>Basic Type Variable Substitution\<close>
 
 section \<open>Class\<close>
 

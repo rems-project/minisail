@@ -437,7 +437,6 @@ proof  -
        by (metis "1" \<open>\<And>thesis. (\<And>z1. t1 = \<lbrace> z1 : B_int | [ [ z1 ]\<^sup>v ]\<^sup>c\<^sup>e == [ plus [ [ L_num n1 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ L_num n2 ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e \<rbrace> \<Longrightarrow> thesis) \<Longrightarrow> thesis\<close> infer_e_wf(2) opp.distinct(1) type_for_lit.simps(3))
    qed
 
-  (* thus ?thesis using subtype_let 1 2 subtype_bop infer_e_wf type_for_lit.simps  assms opp.distinct type_l_eq sorry*)
 qed
 
 lemma check_s_leq:
@@ -468,8 +467,34 @@ proof -
 lemma check_s_eq:
   assumes "\<Theta> ; \<Phi> ;  {||} ; GNil ; \<Delta>  \<turnstile> LET x = (AE_op Eq (V_lit (n1)) (V_lit ( n2))) IN s'  \<Leftarrow> \<tau>" 
   shows "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> LET x = (AE_val (V_lit (if (n1 = n2) then L_true else L_false))) IN s' \<Leftarrow> \<tau>"   
-  sorry
+proof -
+   obtain t1 where 1: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AE_op Eq (V_lit (n1)) (V_lit (n2)) \<Rightarrow> t1"
+     using assms check_s_elims by metis
+   then obtain z1 where 2: "t1 =  \<lbrace> z1 : B_bool  | CE_val (V_var z1)  ==  CE_op Eq  ([V_lit (n1)]\<^sup>c\<^sup>e) ([V_lit (n2)]\<^sup>c\<^sup>e)  \<rbrace>"
+     using infer_e_leq by auto
 
+   obtain z2 where 3: \<open>\<Theta> ; \<Phi> ;  {||} ; GNil ; \<Delta>  \<turnstile> AE_val (V_lit ((if (n1 = n2) then L_true else L_false))) \<Rightarrow> \<lbrace> z2 : B_bool  | CE_val (V_var z2)  ==  CE_val (V_lit ((if (n1 = n2) then L_true else L_false))) \<rbrace>\<close> 
+     using infer_v_form infer_e_valI infer_v_litI   infer_l.intros infer_e_wf 1 
+     fresh_GNil 
+     by simp
+     
+   thm subtype_let
+   show ?thesis proof(rule subtype_let)
+     show \<open> \<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_op Eq [  n1 ]\<^sup>v [  n2 ]\<^sup>v) s' \<Leftarrow> \<tau>\<close> using assms by auto
+     show \<open>\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AE_op Eq [  n1 ]\<^sup>v [  n2 ]\<^sup>v \<Rightarrow> t1\<close> using 1 by auto
+     show \<open>\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> [ [ if n1 = n2 then L_true else L_false ]\<^sup>v ]\<^sup>e \<Rightarrow> \<lbrace> z2 : B_bool  | CE_val (V_var z2)  ==  CE_val (V_lit ((if (n1 = n2) then L_true else L_false))) \<rbrace>\<close> using 3 by auto
+     show \<open>\<Theta> ; {||} ; GNil  \<turnstile> \<lbrace> z2 : B_bool  | CE_val (V_var z2)  ==  CE_val (V_lit ((if (n1 = n2) then L_true else L_false))) \<rbrace> \<lesssim> t1\<close> 
+     proof -
+       have " \<lbrace> z2 : B_bool  | [ [ z2 ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ eq [ [ n1 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ n2 ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  \<rbrace> = t1" using 2 
+         by (metis \<tau>_fresh_c fresh_opp_all infer_l_form2 infer_l_fresh ms_fresh_all(31) ms_fresh_all(33) obtain_fresh_z type_e_eq type_l_eq)
+       moreover have "\<Theta> ; {||}  \<turnstile>\<^sub>w\<^sub>f GNil" using assms wfX_wfY by fastforce
+       moreover have "base_for_lit n1 = base_for_lit n2" using 1 infer_e_wf wfE_elims(12) wfV_elims 
+         by metis
+         ultimately show ?thesis using subtype_bop_eq[OF \<open>\<Theta> ; {||}  \<turnstile>\<^sub>w\<^sub>f GNil\<close>, of n1 n2 z2] by auto     
+   qed
+
+ qed
+qed
 subsection \<open>Operators\<close>
 
 lemma preservation_plus:
@@ -1147,8 +1172,8 @@ next
   case (reduce_let_leqI b n1 n2 \<delta> x s) 
   then show ?case using preservation_leq  by (metis order_refl)  
 next
-  case (reduce_let_eqI b n1 n2 \<delta> x s) 
-  then show ?case using preservation_eq  sorry (* by (metis order_refl)  *)
+  case (reduce_let_eqI b n1 n2 \<Phi> \<delta> x s)
+  then show ?case using preservation_eq[OF reduce_let_eqI(2)] order_refl by metis
 next
   case (reduce_let_appI f z b c \<tau>' s' \<Phi> \<delta> x v s)
   hence tt: "\<Theta>; \<Phi>; {||}; GNil; \<Delta>  \<turnstile> AS_let x (AE_app f v) s \<Leftarrow> \<tau> \<and> \<Theta> \<turnstile> \<delta> \<sim> \<Delta> \<and> (\<forall>fd\<in>set \<Phi>. check_fundef \<Theta> \<Phi> fd)" using config_type_elims[OF reduce_let_appI(2)] by metis 
@@ -1613,8 +1638,8 @@ proof -
   next
     case (infer_e_eqI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> v1 z1 bb c1 v2 z2 c2 z3)
     hence vf: "supp v1 = {} \<and> supp v2 = {}"  by force
-    then obtain n1 and n2 where *: "v1 = V_lit n1  \<and> v2 = (V_lit n2)" using infer_int infer_e_eqI sorry
-    then show ?case using reduce_let_eqI * sorry
+    then obtain n1 and n2 where *: "v1 = V_lit n1  \<and> v2 = (V_lit n2)" using infer_lit infer_e_eqI by metis
+    then show ?case using reduce_let_eqI by blast
   next
     case (infer_e_appI \<Theta> \<B> \<Gamma> \<Delta> \<Phi> f x b c \<tau>' s' v)
     then show ?case using reduce_let_appI by metis

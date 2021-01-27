@@ -294,7 +294,8 @@ inductive
    \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ;
    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>; 
    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : b; 
-   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : b
+   \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : b;
+   b \<in> { B_bool, B_int, B_unit }
 \<rbrakk> \<Longrightarrow> 
    \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>  \<turnstile>\<^sub>w\<^sub>f AE_op Eq v1 v2 : B_bool"
 
@@ -474,6 +475,7 @@ inductive_cases wfE_elims:
  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_app f v: b"
  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_appP f b' v: b"
  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_mvar u : b"
+ "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>\<^sub>w\<^sub>f AE_op Eq v1 v2 : b"
 
 
 inductive_cases wfCS_elims:

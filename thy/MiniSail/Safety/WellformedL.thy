@@ -531,46 +531,46 @@ next
     using  wfE_plusI opp.supp wf_supp1 e.supp pure_supp Un_least 
     by (metis sup_bot.left_neutral)
 
-  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
+  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by metis
 next
   case (wfE_leqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
   hence "supp (AE_op LEq v1 v2) \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using e.supp pure_supp Un_least 
     sup_bot.left_neutral  using opp.supp wf_supp1 by auto
-  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
+  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by metis
 next
   case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b v2)
   hence "supp (AE_op Eq v1 v2) \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using e.supp pure_supp Un_least 
     sup_bot.left_neutral  using opp.supp wf_supp1 by auto
-  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
+  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by metis
 next
   case (wfE_fstI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
  hence "supp (AE_fst  v1 ) \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using e.supp pure_supp   sup_bot.left_neutral  using opp.supp wf_supp1 by auto
-  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
+  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by metis
 next
   case (wfE_sndI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
  hence "supp (AE_snd  v1 ) \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using e.supp pure_supp     wfE_plusI opp.supp wf_supp1  by (metis Un_least)
-  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
+  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by metis
 next
   case (wfE_concatI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
   hence "supp (AE_concat v1 v2) \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using e.supp pure_supp 
     wfE_plusI opp.supp wf_supp1  by (metis Un_least)
-  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
+  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by metis
 next
   case (wfE_splitI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
   hence "supp (AE_split v1 v2) \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using e.supp pure_supp 
     wfE_plusI opp.supp wf_supp1  by (metis Un_least)
-  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
+  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by metis
 next
   case (wfE_lenI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1)
   hence "supp (AE_len v1 ) \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using e.supp pure_supp 
     using e.supp pure_supp   sup_bot.left_neutral  using opp.supp wf_supp1 by auto
-  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by auto
+  then show ?case using  e.supp wfE_elims UnCI subsetCE subsetI x_not_in_b_set by metis
 next
   case (wfE_appI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> f x b c \<tau> s v)
   then obtain b where "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b" using wfE_elims by metis          
   hence  "supp v \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using wfE_appI wf_supp1 by metis
   hence "supp (AE_app f v) \<subseteq> atom_dom \<Gamma> \<union> supp \<B>" using e.supp pure_supp by fast
-  then show ?case using  e.supp(2)  UnCI subsetCE subsetI wfE_appI  using b.supp(3) pure_supp x_not_in_b_set by auto
+  then show ?case using  e.supp(2)  UnCI subsetCE subsetI wfE_appI  using b.supp(3) pure_supp x_not_in_b_set by metis
 next
   case (wfE_appPI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> b' bv v \<tau> f xa ba ca s)
   then obtain b where "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : ( b[bv::=b']\<^sub>b)" using wfE_elims by metis          
@@ -2203,7 +2203,8 @@ next
   then show ?case using wf_intros  wb_b_weakening1 by metis
 next
   case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b v2)
-  then show ?case using wf_intros  wb_b_weakening1 by metis
+  then show ?case  using wf_intros  wb_b_weakening1 
+    by meson
 next
   case (wfE_fstI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
   then show ?case using Wellformed.wfE_fstI  wb_b_weakening1 by metis
@@ -2450,6 +2451,9 @@ next
   then show ?case using wf_intros by metis
 next
   case (wfE_leqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
+  then show ?case using wf_intros by metis
+next
+  case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b v2)
   then show ?case using wf_intros by metis
 next
   case (wfE_fstI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
@@ -4272,11 +4276,17 @@ next
     using subst_vv.simps  subst_ev.simps subst_ev.simps wf_subst1 Wellformed.wfE_eqI 
     
   proof -
+    show ?thesis
+      by (metis (no_types) subst_ev.simps(4) wfE_eqI.hyps(1) wfE_eqI.hyps(4) wfE_eqI.hyps(5) wfE_eqI.hyps(6) wfE_eqI.hyps(7) wfE_eqI.prems(1) wfE_eqI.prems(2) wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.wfE_eqI wfV_subst) (* 31 ms *)
+  qed
+(*
+  proof -
     have "\<And>ts f v va b. \<not> (ts ; f ; \<Gamma>\<^sub>2 \<turnstile>\<^sub>w\<^sub>f v : b') \<or> \<not> (ts ; f ; \<Delta> \<turnstile>\<^sub>w\<^sub>f va : b) \<or> (ts ; f ; \<Delta>[x::=v]\<^sub>\<Gamma>\<^sub>v \<turnstile>\<^sub>w\<^sub>f va[x::=v]\<^sub>v\<^sub>v : b)"
       using wfE_eqI.prems(1) wfV_subst by presburger (* 0.0 ms *)
     then show ?thesis
       by (metis (no_types) subst_ev.simps(4) wfE_eqI.hyps(1) wfE_eqI.hyps(4) wfE_eqI.hyps(5) wfE_eqI.hyps(6) wfE_eqI.prems(1) wfE_eqI.prems(2) wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.wfE_eqI) (* 93 ms *)
   qed
+*)
 next
   case (wfE_fstI \<Theta> \<Gamma> v1 b1 b2)
   then show ?case using subst_vv.simps subst_ev.simps wf_subst1 Wellformed.wfE_fstI 
@@ -4719,11 +4729,18 @@ next
    qed
    
 next
-  case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b v2)
-   then show ?case unfolding subst_eb.simps  
-      using wf_b_subst_lemmas(81) wf_b_subst1(1)  Wellformed.wfE_eqI       
-      
-      by (metis wf_b_subst_lemmas(87))
+  case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 bb v2)
+  thm Wellformed.wfE_eqI
+  show ?case unfolding subst_eb.simps subst_bb.simps proof
+    show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using wfX_wfY wfE_eqI by metis
+    show \<open> \<Theta> ; B ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f \<Delta>[bv::=b]\<^sub>\<Delta>\<^sub>b \<close> using wfX_wfY wfE_eqI by metis
+    show \<open> \<Theta> ; B ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f v1[bv::=b]\<^sub>v\<^sub>b : bb \<close> using subst_bb.simps wfE_eqI 
+      by (metis (no_types, hide_lams) empty_iff insert_iff wf_b_subst1(1))
+    show \<open> \<Theta> ; B ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f v2[bv::=b]\<^sub>v\<^sub>b : bb \<close> using wfX_wfY wfE_eqI       
+      by (metis insert_iff singleton_iff wf_b_subst1(1) wf_b_subst_lemmas(86) wf_b_subst_lemmas(87) wf_b_subst_lemmas(90))
+    show \<open>bb \<in> {B_bool, B_int, B_unit}\<close> using wfE_eqI by auto
+  qed
+     
 next
   case (wfE_fstI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
   then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(84) wf_b_subst1(1)  Wellformed.wfE_fstI         

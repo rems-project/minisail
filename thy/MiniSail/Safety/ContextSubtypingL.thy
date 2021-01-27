@@ -850,6 +850,7 @@ next
     show \<open> \<Theta>; \<B>; \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : bb  | c2 \<rbrace>\<close> using infer_e_eqI ctx_subtype_v_eq by auto
     show \<open>atom z3 \<sharp> AE_op Eq v1 v2\<close> using infer_e_eqI by auto
     show   \<open>atom z3 \<sharp> \<Gamma>' @ (x, b0, c0) #\<^sub>\<Gamma> \<Gamma>\<close> using * infer_e_eqI fresh_replace_inside  infer_v_wf  by metis
+    show "bb \<in> {B_bool, B_int, B_unit}" using infer_e_eqI by auto
   qed
 next
   case (infer_e_appI \<Theta> \<B> \<Gamma>'' \<Delta> \<Phi> f x' b c \<tau>' s' v \<tau>)

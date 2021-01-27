@@ -613,25 +613,36 @@ proof -
       show "atom x \<sharp> \<Gamma>" using xf fresh_Pair by auto
     qed
 
-    show  "wfT \<Theta>  \<B>  \<Gamma> (\<lbrace> x : b  | CE_val (V_var x)  ==  CE_op opp [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e  \<rbrace>)" (is "wfT \<Theta> \<B>  ?A ?C")    sorry
+    consider "opp = Plus" | "opp = LEq" using opp.exhaust assms by blast
+    then show  "wfT \<Theta>  \<B>  \<Gamma> (\<lbrace> x : b  | CE_val (V_var x)  ==  CE_op opp [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e  \<rbrace>)" (is "wfT \<Theta> \<B>  ?A ?C")
+    proof(cases)
+      case 1
+      then show "\<Theta> ; \<B> ; \<Gamma>   \<turnstile>\<^sub>w\<^sub>f \<lbrace> x : b  | [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ opp [ [ L_num n1 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ L_num n2 ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  \<rbrace>"   
+               using wfCE_valI  wfCE_plusI  assms wfV_litI base_for_lit.simps assms 
+               by (metis \<open>atom x \<sharp> \<Gamma>\<close> wfT_e_eq)
+    next
+      case 2
+      then show "\<Theta> ; \<B> ; \<Gamma>   \<turnstile>\<^sub>w\<^sub>f \<lbrace> x : b  | [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ opp [ [ L_num n1 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ L_num n2 ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  \<rbrace>  "  
+        using wfCE_valI  wfCE_plusI  assms wfV_litI base_for_lit.simps assms 
+        
+        by (metis \<open>atom x \<sharp> \<Gamma>\<close> wfCE_leqI wfT_e_eq)
+    qed   
 (*
-    proof(rule wfT_e_eq,rule opp.exhaust[of opp])
       { assume "opp = Plus"
         thus  "\<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f  CE_op opp [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e : b"  using wfCE_valI  wfCE_plusI  assms wfV_litI base_for_lit.simps assms by metis
       }
     next
+      { 
+        assume "opp = plus" and "opp = leq "
+        then show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f [ opp [ [ L_num n1 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ L_num n2 ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e : b " by auto
+      next 
      { assume "opp = LEq"
         thus  "\<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f  CE_op opp [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e : b"  using wfCE_valI  wfCE_leqI  assms wfV_litI base_for_lit.simps assms by metis
       }
-      show "atom x \<sharp> \<Gamma>" using xf fresh_Pair by auto
     next
-     { assume "opp = Eq"
-        thus  False
-      }
-     
-    qed
+      show "atom x \<sharp> \<Gamma>" using xf fresh_Pair by auto
+  *)  
 
-*)
     show   "\<Theta>; \<B> ; (x, b, (CE_val (V_var x)  ==  CE_val (V_lit (ll)) )) #\<^sub>\<Gamma> \<Gamma>  
                           \<Turnstile> (CE_val (V_var x)  ==  CE_op opp [V_lit (L_num n1)]\<^sup>c\<^sup>e [V_lit (L_num n2)]\<^sup>c\<^sup>e)" (is "\<Theta>; \<B>; ?G \<Turnstile> ?c")
       using valid_arith_bop assms xf by simp
@@ -644,11 +655,49 @@ proof -
  
 qed
 
+
 lemma subtype_bop_eq:
-  assumes "wfG \<Theta> \<B>  \<Gamma>" 
+  assumes "wfG \<Theta> \<B>  \<Gamma>" and "base_for_lit l1 = base_for_lit l2"
   shows "\<Theta>; \<B>; \<Gamma>  \<turnstile> (\<lbrace> z : B_bool | C_eq (CE_val (V_var z)) (CE_val (V_lit (if l1 = l2 then L_true else L_false))) \<rbrace>) \<lesssim>  
                       \<lbrace> z : B_bool | C_eq (CE_val (V_var z)) (CE_op Eq [(V_lit l1)]\<^sup>c\<^sup>e [(V_lit l2)]\<^sup>c\<^sup>e) \<rbrace>" (is "\<Theta>; \<B>; \<Gamma>  \<turnstile> ?T1 \<lesssim> ?T2")   
-  sorry
+proof -
+  let ?ll = "if l1 = l2 then L_true else L_false"
+  obtain x::x where  xf: "atom x \<sharp> (z, CE_val (V_var z)  ==  CE_val (V_lit (if l1 = l2 then L_true else L_false)) , z, CE_val (V_var z)  ==  CE_op Eq  [(V_lit l1)]\<^sup>c\<^sup>e [(V_lit l2)]\<^sup>c\<^sup>e , \<Gamma>, (\<Theta>, \<B>, \<Gamma>))" 
+    using obtain_fresh by blast
+
+  have "\<Theta>; \<B>; \<Gamma>  \<turnstile> (\<lbrace> x : B_bool | C_eq (CE_val (V_var x))  (CE_val (V_lit (?ll))) \<rbrace>) \<lesssim>  
+                           \<lbrace> x : B_bool | C_eq (CE_val (V_var x)) (CE_op Eq [(V_lit (l1))]\<^sup>c\<^sup>e [(V_lit (l2))]\<^sup>c\<^sup>e) \<rbrace>" (is "\<Theta>; \<B>; \<Gamma>  \<turnstile> ?S1 \<lesssim> ?S2") 
+  proof(rule  subtype_base_fresh)
+
+    show "atom x \<sharp> \<Gamma>" using xf fresh_Pair by auto
+
+    show  "wfT \<Theta> \<B> \<Gamma> (\<lbrace> x : B_bool | CE_val (V_var x)  ==  CE_val (V_lit ?ll)  \<rbrace>)" (is "wfT \<Theta> \<B> ?A ?B") 
+    proof(rule wfT_e_eq)
+      have   " \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f (V_lit ?ll) : B_bool" using wfV_litI base_for_lit.simps assms by metis
+      thus " \<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f CE_val (V_lit ?ll) : B_bool" using wfCE_valI by auto
+      show "atom x \<sharp> \<Gamma>" using xf fresh_Pair by auto
+    qed
+
+    show " \<Theta> ; \<B> ; \<Gamma>   \<turnstile>\<^sub>w\<^sub>f \<lbrace> x : B_bool  | [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ eq [ [ l1 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ l2 ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e  \<rbrace> "   
+    proof(rule wfT_e_eq)
+      show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f [ eq [ [ l1 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ l2 ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e : B_bool" 
+        apply(rule wfCE_eqI, rule wfCE_valI)
+         apply(rule wfV_litI, simp add: assms)
+        using wfV_litI assms wfCE_valI by auto   
+      show "atom x \<sharp> \<Gamma>"  using xf fresh_Pair by auto
+    qed
+  
+    show   "\<Theta>; \<B> ; (x, B_bool, (CE_val (V_var x)  ==  CE_val (V_lit (?ll)) )) #\<^sub>\<Gamma> \<Gamma>  
+                          \<Turnstile> (CE_val (V_var x)  ==  CE_op Eq [V_lit (l1)]\<^sup>c\<^sup>e [V_lit (l2)]\<^sup>c\<^sup>e)" (is "\<Theta>; \<B>; ?G \<Turnstile> ?c")
+      using valid_eq_bop assms xf by auto
+
+  qed
+  moreover have "?S1 = ?T1 " using type_l_eq by auto
+  moreover have "?S2 = ?T2" using type_e_eq ce.fresh v.fresh supp_l_empty fresh_def empty_iff fresh_e_opp 
+    by (metis ms_fresh_all(4))
+  ultimately show ?thesis by auto 
+ 
+qed
 
 lemma subtype_top:
   assumes "wfT \<Theta> \<B> G  (\<lbrace> z : b | c  \<rbrace>)"
@@ -914,6 +963,29 @@ lemma infer_int:
   assumes "infer_v \<Theta> \<B> \<Gamma> v  (\<lbrace> z : B_int | c \<rbrace>)" and "supp v= {}"
   shows "\<exists>n. V_lit (L_num n) = v"
   using assms infer_int2  by (metis (no_types, lifting))
+
+
+lemma infer_lit:
+  assumes "infer_v \<Theta> \<B> \<Gamma> v  (\<lbrace> z : b | c \<rbrace>)" and "supp v= {}" and "b \<in> { B_bool , B_int , B_unit }"
+  shows "\<exists>l. V_lit l = v"
+using assms proof(nominal_induct v rule: v.strong_induct)
+  case (V_lit x)
+  then show ?case   by (simp add: supp_at_base)
+next
+  case (V_var x)
+  then show ?case 
+    by (simp add: supp_at_base)
+next
+  case (V_pair x1a x2a)
+  then show ?case  using supp_at_base by auto
+next
+  case (V_cons x1a x2a x3)
+  then show ?case   using supp_at_base by auto
+next
+  case (V_consp x1a x2a x3 x4)
+  then show ?case    using supp_at_base by auto
+qed
+
 
 lemma infer_v_form[simp]:
   fixes v::v
@@ -2444,6 +2516,7 @@ next
     show \<open> \<Theta> ;  \<B> ; \<Gamma>'  \<turnstile> v2 \<Rightarrow> \<lbrace> z2 : bb  | c2 \<rbrace>\<close> using infer_v_g_weakening infer_e_eqI by auto
     show \<open>atom z' \<sharp> AE_op Eq v1 v2\<close> using z'  by auto
     show \<open>atom z' \<sharp> \<Gamma>'\<close> using z' by auto
+    show "bb \<in> {B_bool, B_int, B_unit}" using infer_e_eqI by auto
   qed
   thus ?case using * by metis
 next
