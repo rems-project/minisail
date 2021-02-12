@@ -626,22 +626,7 @@ proof -
         using wfCE_valI  wfCE_plusI  assms wfV_litI base_for_lit.simps assms 
         
         by (metis \<open>atom x \<sharp> \<Gamma>\<close> wfCE_leqI wfT_e_eq)
-    qed   
-(*
-      { assume "opp = Plus"
-        thus  "\<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f  CE_op opp [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e : b"  using wfCE_valI  wfCE_plusI  assms wfV_litI base_for_lit.simps assms by metis
-      }
-    next
-      { 
-        assume "opp = plus" and "opp = leq "
-        then show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f [ opp [ [ L_num n1 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ L_num n2 ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e : b " by auto
-      next 
-     { assume "opp = LEq"
-        thus  "\<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f  CE_op opp [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e : b"  using wfCE_valI  wfCE_leqI  assms wfV_litI base_for_lit.simps assms by metis
-      }
-    next
-      show "atom x \<sharp> \<Gamma>" using xf fresh_Pair by auto
-  *)  
+    qed    
 
     show   "\<Theta>; \<B> ; (x, b, (CE_val (V_var x)  ==  CE_val (V_lit (ll)) )) #\<^sub>\<Gamma> \<Gamma>  
                           \<Turnstile> (CE_val (V_var x)  ==  CE_op opp [V_lit (L_num n1)]\<^sup>c\<^sup>e [V_lit (L_num n2)]\<^sup>c\<^sup>e)" (is "\<Theta>; \<B>; ?G \<Turnstile> ?c")
