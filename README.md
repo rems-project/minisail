@@ -27,3 +27,5 @@ The validator will validate as correct:
 [1] - 'ISA Semantics for ARMv8-A, RISC-V, and CHERI-MIPS' https://www.cl.cam.ac.uk/users/pes20/sail/sail-popl2019.pdf
 
 [2] - 'MiniSail - A Core Calculus for Sail'. Supplementary material for the above detailing MiniSail and paper proofs of safety. https://www.cl.cam.ac.uk/~mpew2/papers/minisail_anf.pdf
+
+This work was carried out whilst Mark Wassell was a PhD student at the University of Cambridge and supported by EPSRC award 1789939.
