@@ -10,9 +10,9 @@ all:	docs
 
 
 docs:
-	$(ISA_ROOT)/Isabelle2020/bin/isabelle build -c -D . -o browser_info -v MiniSail
+	cd ./MiniSail; $(ISA_ROOT)/Isabelle2021/Isabelle2021/bin/isabelle build -c -D . -o browser_info -v MiniSail
 
 
 snippets:
-	$(ISA_ROOT)/Isabelle2020/bin/isabelle build -D . Snippets
+	$(ISA_ROOT)/Isabelle2021/bin/isabelle build -D . Snippets
 

@@ -1,18 +1,15 @@
-session "MiniSail" = "HOL" +
+chapter AFP
+
+session "MiniSail" (AFP) = "HOL-Library" +
   description \<open>Formalisation of MiniSail\<close>
-  options [document = pdf, document_output = "output"]
+  options [timeout = 1200]
   sessions   
      "Nominal2"
      "HOL-Eisbach" 
      "Native_Word"
      "Show"
- directories
-   "Safety"
-  theories [document = false]
-    "Nominal2.Nominal2"
-    "Safety/Explorer"
-    "Native_Word.Uint32"
   theories
-    "Safety/Safety"
+    "MiniSail"
   document_files
     "root.tex"
+    "root.bib"

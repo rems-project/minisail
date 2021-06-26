@@ -34,12 +34,23 @@
 % for uniform font size
 %\renewcommand{\isastyle}{\isastyleminor}
 
-
 \begin{document}
 
 \title{MiniSail}
-\author{Mark P. Wassell, University of Cambridge}
+\author{Mark P. Wassell}
 \maketitle
+
+\begin{abstract}
+MiniSail is a kernel language for Sail~\cite{Armstrong2019}, 
+an instruction set architecture (ISA) specification language. 
+Sail is an imperative language with a light-weight dependent type system similar to refinement type systems such as~\cite{Vazou2014}.
+From an ISA specification, the Sail compiler can generate theorem prover code and C (or OCaml) to give an executable 
+emulator for an architecture.
+The idea behind MiniSail is to capture the key and novel features of Sail in terms of their syntax, 
+typing rules and operational semantics,
+and to confirm that they work together by proving progress and preservation lemmas. 
+We use the Nominal2 library to handle binding.
+\end{abstract}
 
 \tableofcontents
 
@@ -53,14 +64,8 @@
   \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{session_graph}
 \end{center}
 
-
-% optional bibliography
-%\bibliographystyle{abbrv}
-%\bibliography{root}
+\bibliographystyle{abbrv}
+\bibliography{root}
 
 \end{document}
 
-%%% Local Variables:
-%%% mode: latex
-%%% TeX-master: t
-%%% End:

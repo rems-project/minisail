@@ -2,10 +2,11 @@
 theory SyntaxL
   imports Syntax IVSubst
 begin
-(*>*)
+  (*>*)
 
+chapter \<open>Syntax Lemmas\<close>
 
-section \<open>Syntax Lemmas\<close>
+section \<open>Support, lookup and contexts\<close>
 
 lemma supp_v_tau [simp]:
   assumes "atom z \<sharp> v"
@@ -19,10 +20,8 @@ lemma supp_v_var_tau [simp]:
   using supp_v_tau assms
   using supp_at_base by fastforce
 
-
-text \<open> Sometimes we need to work with a version of a binder where the variable is fresh in something else, such as 
-a bigger context. I think these could be generated automatically \<close>
-
+text \<open> Sometimes we need to work with a version of a binder where the variable is fresh 
+in something else, such as  a bigger context. I think these could be generated automatically \<close>
 
 lemma obtain_fresh_fun_def:
   fixes t::"'b::fs" 
@@ -35,7 +34,7 @@ proof -
     then show ?thesis  using fun_def.eq_iff Abs1_eq_iff(3)  flip_commute flip_fresh_fresh fresh_PairD by auto
   next
     case False
-    thm fun_typ.eq_iff
+
     have  "(AF_fun_typ y b ((y \<leftrightarrow> x) \<bullet> c) ((y \<leftrightarrow> x) \<bullet> \<tau>) ((y \<leftrightarrow> x) \<bullet> s)) =(AF_fun_typ x b c \<tau> s)" proof(subst fun_typ.eq_iff, subst Abs1_eq_iff(3))
       show  \<open>(y = x \<and> (((y \<leftrightarrow> x) \<bullet> c, (y \<leftrightarrow> x) \<bullet> \<tau>), (y \<leftrightarrow> x) \<bullet> s) = ((c, \<tau>), s) \<or>
          y \<noteq> x \<and> (((y \<leftrightarrow> x) \<bullet> c, (y \<leftrightarrow> x) \<bullet> \<tau>), (y \<leftrightarrow> x) \<bullet> s) = (y \<leftrightarrow> x) \<bullet> ((c, \<tau>), s) \<and> atom y \<sharp> ((c, \<tau>), s)) \<and>
@@ -46,11 +45,10 @@ proof -
   ultimately show  ?thesis using y fresh_Pair by metis
 qed
 
-
 lemma lookup_fun_member:
   assumes "Some (AF_fundef f ft) = lookup_fun \<Phi> f"
   shows "AF_fundef f ft \<in> set \<Phi>"
-using assms proof (induct \<Phi>)
+  using assms proof (induct \<Phi>)
   case Nil
   then show ?case by auto
 next
@@ -59,9 +57,8 @@ next
     by (metis fun_def.exhaust insert_iff list.simps(15) option.inject)
 qed
 
-
 lemma rig_dom_eq:
- "dom (G[x \<longmapsto> c]) = dom G"
+  "dom (G[x \<longmapsto> c]) = dom G"
 proof(induct G rule: \<Gamma>.induct)
   case GNil
   then show ?case using replace_in_g.simps by presburger
@@ -74,7 +71,7 @@ qed
 lemma lookup_in_rig_eq:
   assumes "Some (b,c) = lookup \<Gamma> x" 
   shows "Some (b,c') = lookup (\<Gamma>[x\<longmapsto>c']) x"
-using assms proof(induct \<Gamma> rule: \<Gamma>_induct)
+  using assms proof(induct \<Gamma> rule: \<Gamma>_induct)
   case GNil
   then show ?case by auto
 next
@@ -85,7 +82,7 @@ qed
 lemma lookup_in_rig_neq:
   assumes "Some (b,c) = lookup \<Gamma> y" and "x\<noteq>y"
   shows "Some (b,c) = lookup (\<Gamma>[x\<longmapsto>c']) y"
-using assms proof(induct \<Gamma> rule: \<Gamma>_induct)
+  using assms proof(induct \<Gamma> rule: \<Gamma>_induct)
   case GNil
   then show ?case by auto
 next
@@ -101,8 +98,8 @@ proof(cases "x=y")
   then show ?thesis using lookup_in_rig_eq using assms by blast
 next
   case False
-   then show ?thesis using lookup_in_rig_neq using assms by blast
- qed
+  then show ?thesis using lookup_in_rig_neq using assms by blast
+qed
 
 lemma lookup_inside[simp]:
   assumes "x \<notin> fst ` toSet \<Gamma>'"
@@ -121,7 +118,7 @@ fun tail:: "'a list \<Rightarrow> 'a list" where
 lemma lookup_options:
   assumes "Some (b,c) = lookup (xt#\<^sub>\<Gamma>G) x"
   shows  "((x,b,c) = xt) \<or> (Some (b,c) = lookup G x)"
-by (metis assms lookup.simps(2) option.inject surj_pair)
+  by (metis assms lookup.simps(2) option.inject surj_pair)
 
 lemma lookup_x:
   assumes "Some (b,c) = lookup G x"
@@ -132,7 +129,7 @@ lemma lookup_x:
 lemma GCons_eq_appendI:
   fixes xs1::\<Gamma>
   shows "[| x #\<^sub>\<Gamma> xs1 = ys; xs = xs1 @ zs |] ==> x #\<^sub>\<Gamma> xs = ys @ zs"
-by (drule sym) simp
+  by (drule sym) simp
 
 lemma split_G: "x : toSet xs \<Longrightarrow> \<exists>ys zs. xs = ys @ x #\<^sub>\<Gamma> zs"
 proof (induct xs)
@@ -148,10 +145,10 @@ lemma lookup_not_empty:
   using assms by auto
 
 lemma lookup_in_g:
- assumes "Some (b,c) = lookup \<Gamma> x"
- shows "(x,b,c) \<in> toSet \<Gamma>"
-using assms apply(induct \<Gamma>, simp)
-using lookup_options by fastforce
+  assumes "Some (b,c) = lookup \<Gamma> x"
+  shows "(x,b,c) \<in> toSet \<Gamma>"
+  using assms apply(induct \<Gamma>, simp)
+  using lookup_options by fastforce
 
 lemma lookup_split:
   fixes \<Gamma>::\<Gamma>
@@ -164,13 +161,13 @@ lemma toSet_splitU[simp]:
   using append_g_toSetU toSet.simps by auto
 
 lemma toSet_splitP[simp]:
- "(\<forall>(x', b', c')\<in>toSet (\<Gamma>' @ (x, b, c) #\<^sub>\<Gamma> \<Gamma>). P x' b' c') \<longleftrightarrow> (\<forall> (x', b', c')\<in>toSet \<Gamma>'. P x' b' c') \<and> P x b c \<and> (\<forall> (x', b', c')\<in>toSet \<Gamma>. P x' b' c')"  (is "?A \<longleftrightarrow> ?B")
+  "(\<forall>(x', b', c')\<in>toSet (\<Gamma>' @ (x, b, c) #\<^sub>\<Gamma> \<Gamma>). P x' b' c') \<longleftrightarrow> (\<forall> (x', b', c')\<in>toSet \<Gamma>'. P x' b' c') \<and> P x b c \<and> (\<forall> (x', b', c')\<in>toSet \<Gamma>. P x' b' c')"  (is "?A \<longleftrightarrow> ?B")
   using toSet_splitU by force
 
 lemma lookup_restrict:
   assumes "Some (b',c') = lookup (\<Gamma>'@(x,b,c)#\<^sub>\<Gamma>\<Gamma>) y" and "x \<noteq> y" 
   shows "Some (b',c') = lookup (\<Gamma>'@\<Gamma>) y"
-using assms  proof(induct \<Gamma>' rule:\<Gamma>_induct)
+  using assms  proof(induct \<Gamma>' rule:\<Gamma>_induct)
   case GNil
   then show ?case by auto
 next
@@ -185,7 +182,6 @@ lemma supp_list_member:
   using assms apply(induct l, auto)
   using supp_Cons by auto
 
-
 lemma GNil_append:
   assumes "GNil = G1@G2"
   shows "G1 = GNil \<and> G2 = GNil"
@@ -198,8 +194,7 @@ qed
 lemma GCons_eq_append_conv:
   fixes xs::\<Gamma>
   shows "x#\<^sub>\<Gamma>xs = ys@zs = (ys = GNil \<and> x#\<^sub>\<Gamma>xs = zs \<or> (\<exists>ys'. x#\<^sub>\<Gamma>ys' = ys \<and> xs = ys'@zs))"
-by(cases ys) auto
-
+  by(cases ys) auto
 
 lemma dclist_distinct_unique:
   assumes  "(dc, const) \<in> set dclist2" and  "(cons, const1) \<in> set dclist2" and "dc=cons" and  "distinct (List.map fst dclist2)"
@@ -210,11 +205,10 @@ proof -
   thus ?thesis by auto
 qed
 
-
 lemma fresh_d_fst_d:
   assumes "atom u \<sharp> \<delta>"
   shows  "u \<notin> fst ` set \<delta>"
-using assms proof(induct \<delta>)
+  using assms proof(induct \<delta>)
   case Nil
   then show ?case by auto
 next
@@ -225,14 +219,13 @@ next
   ultimately show ?case using Cons by auto
 qed
 
-
 lemma bv_not_in_bset_supp:
   fixes bv::bv
   assumes "bv |\<notin>| B"
   shows "atom bv \<notin> supp B"
 proof - 
   have *:"supp B = fset (fimage atom B)"
-      by (metis fimage.rep_eq finite_fset supp_finite_set_at_base supp_fset)
+    by (metis fimage.rep_eq finite_fset supp_finite_set_at_base supp_fset)
   thus ?thesis using assms 
     using notin_fset by fastforce
 qed
@@ -241,7 +234,7 @@ lemma u_fresh_d:
   assumes "atom u \<sharp> D"
   shows "u \<notin> fst ` setD D"
   using assms proof(induct D rule: \<Delta>_induct)
-case DNil
+  case DNil
   then show ?case by auto
 next
   case (DCons u' t' \<Delta>')
@@ -249,9 +242,7 @@ next
     using fresh_DCons fresh_Pair  by (simp add: fresh_Pair fresh_at_base(2))
 qed
 
-
 section \<open>Type Definitions\<close>
-
 
 lemma exist_fresh_bv:
   fixes tm::"'a::fs"
@@ -283,31 +274,27 @@ lemma obtain_fresh_bv:
              atom bva2 \<sharp> tm" 
   using exist_fresh_bv by metis
 
-
 section \<open>Function Definitions\<close>
-
 
 lemma fun_typ_flip:
   fixes bv1::bv and c::bv
   shows   "(bv1 \<leftrightarrow> c) \<bullet> AF_fun_typ x1 b1 c1 \<tau>1 s1 = AF_fun_typ x1 ((bv1 \<leftrightarrow> c) \<bullet> b1) ((bv1 \<leftrightarrow> c) \<bullet> c1) ((bv1 \<leftrightarrow> c) \<bullet> \<tau>1) ((bv1 \<leftrightarrow> c) \<bullet> s1)"
-using fun_typ.perm_simps flip_fresh_fresh supp_at_base  fresh_def
-  flip_fresh_fresh fresh_def supp_at_base 
+  using fun_typ.perm_simps flip_fresh_fresh supp_at_base  fresh_def
+    flip_fresh_fresh fresh_def supp_at_base 
   by (simp add: flip_fresh_fresh)
-
 
 lemma fun_def_eq:
   assumes  "AF_fundef fa (AF_fun_typ_none (AF_fun_typ xa ba ca \<tau>a sa)) = AF_fundef f (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))"
   shows "f = fa" and "b = ba" and "[[atom xa]]lst. sa = [[atom x]]lst. s" and "[[atom xa]]lst. \<tau>a = [[atom x]]lst. \<tau>" and
-           " [[atom xa]]lst. ca = [[atom x]]lst. c"
+    " [[atom xa]]lst. ca = [[atom x]]lst. c"
   using fun_def.eq_iff fun_typ_q.eq_iff fun_typ.eq_iff lst_snd lst_fst  using assms apply metis
   using fun_def.eq_iff fun_typ_q.eq_iff fun_typ.eq_iff lst_snd lst_fst  using assms apply metis
 proof - 
   have "([[atom xa]]lst. ((ca, \<tau>a), sa) = [[atom x]]lst. ((c, \<tau>), s))" using assms  fun_def.eq_iff fun_typ_q.eq_iff  fun_typ.eq_iff by auto
   thus "[[atom xa]]lst. sa = [[atom x]]lst. s" and "[[atom xa]]lst. \<tau>a = [[atom x]]lst. \<tau>" and
-           " [[atom xa]]lst. ca = [[atom x]]lst. c" using lst_snd lst_fst by metis+
+    " [[atom xa]]lst. ca = [[atom x]]lst. c" using lst_snd lst_fst by metis+
 qed
 
-(* FIXME Use proof style of fun_poly_ret_unique to improve this *)
 lemma fun_arg_unique_aux: 
   assumes "AF_fun_typ x1 b1 c1 \<tau>1' s1' = AF_fun_typ x2 b2 c2 \<tau>2' s2'"
   shows "\<lbrace> x1 : b1 | c1 \<rbrace> = \<lbrace> x2 : b2 | c2\<rbrace>"
@@ -322,10 +309,9 @@ lemma fresh_x_neq:
   shows "atom x \<sharp> y = (x \<noteq> y)"
   using fresh_at_base  fresh_def by auto
 
-
 lemma obtain_fresh_z3:
- fixes tm::"'b::fs"
- obtains z::x where "\<lbrace> x : b  | c \<rbrace> =  \<lbrace> z : b  | c[x::=V_var z]\<^sub>c\<^sub>v \<rbrace> \<and>  atom z \<sharp> tm \<and> atom z \<sharp> (x,c)" 
+  fixes tm::"'b::fs"
+  obtains z::x where "\<lbrace> x : b  | c \<rbrace> =  \<lbrace> z : b  | c[x::=V_var z]\<^sub>c\<^sub>v \<rbrace> \<and>  atom z \<sharp> tm \<and> atom z \<sharp> (x,c)" 
 proof -
   obtain z::x and c'::c where z:"\<lbrace> x : b  | c \<rbrace> =  \<lbrace> z : b | c' \<rbrace> \<and>  atom z \<sharp> (tm,x,c)" using obtain_fresh_z2 b_of.simps by metis
   hence "c' = c[x::=V_var z]\<^sub>c\<^sub>v" proof - 
@@ -341,16 +327,15 @@ qed
 lemma u_fresh_v:
   fixes u::u and t::v
   shows "atom u \<sharp> t" 
-by(nominal_induct t rule:v.strong_induct,auto)
+  by(nominal_induct t rule:v.strong_induct,auto)
 
 lemma u_fresh_ce:
   fixes u::u and t::ce
   shows "atom u \<sharp> t" 
   apply(nominal_induct t rule:ce.strong_induct)
   using  u_fresh_v pure_fresh 
-  apply (auto simp add:  opp.fresh ce.fresh opp.fresh opp.exhaust)
+       apply (auto simp add:  opp.fresh ce.fresh opp.fresh opp.exhaust)
   unfolding ce.fresh opp.fresh opp.exhaust  by (simp add: fresh_opp_all)
-
 
 lemma u_fresh_c:
   fixes u::u and t::c
@@ -367,11 +352,10 @@ lemma u_fresh_t:
   shows "atom u \<sharp> t" 
   by(nominal_induct t rule:\<tau>.strong_induct,auto simp add: \<tau>.fresh u_fresh_c u_fresh_b)
 
-
 lemma b_of_c_of_eq:
   assumes "atom z \<sharp> \<tau>" 
   shows "\<lbrace> z : b_of \<tau> |  c_of \<tau> z \<rbrace> = \<tau>" 
-using assms proof(nominal_induct \<tau> avoiding: z rule: \<tau>.strong_induct)
+  using assms proof(nominal_induct \<tau> avoiding: z rule: \<tau>.strong_induct)
   case (T_refined_type x1a x2a x3a)
 
   hence " \<lbrace> z : b_of \<lbrace> x1a : x2a  | x3a \<rbrace>  | c_of \<lbrace> x1a : x2a  | x3a \<rbrace> z \<rbrace> = \<lbrace> z : x2a | x3a[x1a::=V_var z]\<^sub>c\<^sub>v \<rbrace>" 
@@ -380,12 +364,10 @@ using assms proof(nominal_induct \<tau> avoiding: z rule: \<tau>.strong_induct)
   ultimately show  ?case by auto
 qed
 
-
-(* MOVE *)
 lemma fresh_d_not_in:
   assumes "atom u2 \<sharp> \<Delta>'" 
   shows   "u2 \<notin> fst ` setD \<Delta>'" 
-using assms proof(induct \<Delta>' rule: \<Delta>_induct)
+  using assms proof(induct \<Delta>' rule: \<Delta>_induct)
   case DNil
   then show ?case by simp
 next

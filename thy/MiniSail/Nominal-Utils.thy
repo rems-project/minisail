@@ -5,7 +5,7 @@ begin
 (*>*)
 
 chapter \<open>Prelude\<close>
-text \<open>Some useful generic lemmas. Many of these are from Launchbury.Nominal-Utils.\<close>
+text \<open>Some useful Nominal lemmas. Many of these are from Launchbury.Nominal-Utils.\<close>
 
 section \<open>Lemmas helping with equivariance proofs\<close>
 
@@ -38,7 +38,6 @@ lemma eqvt_at_apply'':
   shows "(p \<bullet> f) (p \<bullet> x) = f (p \<bullet> x)"
 by (metis (hide_lams, no_types) assms eqvt_at_def permute_fun_def permute_minus_cancel(1))
 
-
 lemma size_list_eqvt[eqvt]: "p \<bullet> size_list f x = size_list (p \<bullet> f) (p \<bullet> x)"
 proof (induction x)
   case (Cons x xs)
@@ -48,7 +47,7 @@ proof (induction x)
   show ?case by (auto simp add: permute_pure)
 qed simp
 
-section {* Freshness via equivariance *}
+section \<open> Freshness via equivariance \<close>
 
 lemma eqvt_fresh_cong1: "(\<And>p x. p \<bullet> (f x) = f (p \<bullet> x)) \<Longrightarrow> a \<sharp> x \<Longrightarrow> a \<sharp> f x "
   apply (rule fresh_fun_eqvt_app[of f])
@@ -66,11 +65,8 @@ lemma eqvt_fresh_cong2:
 proof-
   have "eqvt (\<lambda> (x,y). f x y)"
     using eqvt
-    apply -
-    apply (auto simp add: eqvt_def)
-    apply (rule ext)
-    apply auto
-    by (metis permute_minus_cancel(1))
+    apply (- , auto simp add: eqvt_def)
+    by (rule ext, auto, metis permute_minus_cancel(1))
   moreover
   have "a \<sharp> (x, y)" using fresh1 fresh2 by auto
   ultimately
@@ -97,11 +93,8 @@ lemma eqvt_fresh_cong3:
 proof-
   have "eqvt (\<lambda> (x,y,z). f x y z)"
     using eqvt
-    apply -
-    apply (auto simp add: eqvt_def)
-    apply (rule ext)
-    apply auto
-    by (metis permute_minus_cancel(1))
+    apply (- , auto simp add: eqvt_def)
+    by(rule ext, auto, metis permute_minus_cancel(1))
   moreover
   have "a \<sharp> (x, y, z)" using fresh1 fresh2 fresh3 by auto
   ultimately
@@ -115,7 +108,7 @@ lemma eqvt_fresh_star_cong3:
   shows "a \<sharp>* f x y z"
   by (metis fresh_star_def eqvt_fresh_cong3 assms)
 
-section {* Additional simplification rules *}
+section \<open> Additional simplification rules \<close>
 
 lemma not_self_fresh[simp]: "atom x \<sharp> x \<longleftrightarrow> False"
   by (metis fresh_at_base(2))
@@ -123,7 +116,7 @@ lemma not_self_fresh[simp]: "atom x \<sharp> x \<longleftrightarrow> False"
 lemma fresh_star_singleton: "{ x } \<sharp>* e \<longleftrightarrow> x \<sharp> e"
   by (simp add: fresh_star_def)
 
-section {* Additional equivariance lemmas *}
+section \<open> Additional equivariance lemmas \<close>
 
 lemma eqvt_cases:
   fixes f x \<pi>
@@ -148,13 +141,7 @@ lemma supp_option_eqvt:
 
 lemma funpow_eqvt[simp,eqvt]:
   "\<pi> \<bullet> ((f :: 'a \<Rightarrow> 'a::pt) ^^ n) = (\<pi> \<bullet> f) ^^ (\<pi> \<bullet> n)"
- apply (induct n)
- apply simp
- apply (rule ext)
- apply simp
- apply perm_simp
- apply simp
- done
+ by (induct n,simp, rule ext, simp, perm_simp,simp)
 
 lemma delete_eqvt[eqvt]:
   "\<pi> \<bullet> AList.delete x \<Gamma> = AList.delete (\<pi> \<bullet> x) (\<pi> \<bullet> \<Gamma>)"
@@ -193,12 +180,7 @@ lemma map_add_eqvt[eqvt]:
 
 lemma map_of_eqvt[eqvt]:
   "\<pi> \<bullet> map_of l = map_of (\<pi> \<bullet> l)"
-  apply (induct l)
-  apply (simp add: permute_fun_def)
-  apply simp
-  apply perm_simp
-  apply auto
-  done
+  by (induct l, simp add: permute_fun_def,simp,perm_simp,auto)
 
 lemma concat_eqvt[eqvt]: "\<pi> \<bullet> concat l = concat (\<pi> \<bullet> l)"
   by (induction l)(auto simp add: append_eqvt)
@@ -243,8 +225,7 @@ lemma Projr_permute:
   shows "(p \<bullet> (Sum_Type.projr f)) = Sum_Type.projr (p \<bullet> f)"
 using a by auto
 
-
-section {* Freshness lemmas *}
+section \<open> Freshness lemmas \<close>
 
 lemma fresh_list_elem:
   assumes "a \<sharp> \<Gamma>"
@@ -271,8 +252,7 @@ lemma fresh_star_at_base:
   shows "S \<sharp>* x \<longleftrightarrow> atom x \<notin> S"
   by (metis fresh_at_base(2) fresh_star_def)
 
-
-section {* Freshness and support for subsets of variables *}
+section \<open> Freshness and support for subsets of variables \<close>
 
 lemma supp_mono: "finite (B::'a::fs set) \<Longrightarrow> A \<subseteq> B \<Longrightarrow> supp A \<subseteq> supp B"
   by (metis infinite_super subset_Un_eq supp_of_finite_union)
@@ -289,7 +269,7 @@ lemma fresh_star_set_subset:
   "x \<sharp>* (B :: 'a::at_base list) \<Longrightarrow> set A \<subseteq> set B \<Longrightarrow> x \<sharp>* A"
   by (metis fresh_star_set fresh_star_subset[OF finite_set])
 
-section {* The set of free variables of an expression *}
+section \<open> The set of free variables of an expression \<close>
 
 definition fv :: "'a::pt \<Rightarrow> 'b::at_base set"
   where "fv e = {v. atom v \<in> supp e}"
@@ -358,8 +338,7 @@ proof-
   finally show ?thesis.
 qed
 
-
-section {* Other useful lemmas *}
+section \<open> Other useful lemmas \<close>
 
 lemma pure_permute_id: "permute p = (\<lambda> x. (x::'a::pure))"
   by rule (simp add: permute_pure)
@@ -424,16 +403,12 @@ lemma map_permute: "map (permute p) = permute p"
 lemma fresh_star_restrictA[intro]: "a \<sharp>* \<Gamma> \<Longrightarrow> a \<sharp>* AList.restrict V \<Gamma>"
   by (induction \<Gamma>) (auto simp add: fresh_star_Cons)
 
- 
-
-(* Unused. Still submit? *)
 lemma Abs_lst_Nil_eq[simp]: "[[]]lst. (x::'a::fs) = [xs]lst. x' \<longleftrightarrow> (([],x) = (xs, x'))"
   apply rule
   apply (frule Abs_lst_fcb2[where f = "\<lambda> x y _ . (x,y)" and as = "[]" and bs = "xs" and c = "()"])
   apply (auto simp add: fresh_star_def)
   done
 
-(* Unused. Still submit? *)
 lemma Abs_lst_Nil_eq2[simp]: "[xs]lst. (x::'a::fs) = [[]]lst. x' \<longleftrightarrow> ((xs,x) = ([], x'))"
   by (subst eq_commute) auto
 
@@ -478,7 +453,6 @@ lemma fresh_prod7[nominal_prod_simps,ms_fresh]: "x \<sharp> (a,b,c,d,e,f,g) = (x
 lemma fresh_prod8[nominal_prod_simps,ms_fresh]: "x \<sharp> (a,b,c,d,e,f,g,h) = (x \<sharp> a \<and> x \<sharp> b  \<and> x \<sharp> c  \<and> x \<sharp> d \<and> x \<sharp> e \<and> x \<sharp> f \<and> x \<sharp> g \<and> x \<sharp> h )"
   using fresh_def supp_Pair by fastforce
 
-
 lemma fresh_prod9[nominal_prod_simps,ms_fresh]: "x \<sharp> (a,b,c,d,e,f,g,h,i) = (x \<sharp> a \<and> x \<sharp> b  \<and> x \<sharp> c  \<and> x \<sharp> d \<and> x \<sharp> e \<and> x \<sharp> f \<and> x \<sharp> g \<and> x \<sharp> h \<and> x \<sharp> i)"
   using fresh_def supp_Pair by fastforce
 
@@ -487,7 +461,6 @@ lemma fresh_prod10[nominal_prod_simps,ms_fresh]: "x \<sharp> (a,b,c,d,e,f,g,h,i,
 
 lemma fresh_prod12[nominal_prod_simps,ms_fresh]: "x \<sharp> (a,b,c,d,e,f,g,h,i,j,k,l) = (x \<sharp> a \<and> x \<sharp> b  \<and> x \<sharp> c  \<and> x \<sharp> d \<and> x \<sharp> e \<and> x \<sharp> f \<and> x \<sharp> g \<and> x \<sharp> h \<and> x \<sharp> i \<and> x \<sharp> j \<and> x \<sharp> k \<and> x \<sharp> l)"
   using fresh_def supp_Pair by fastforce
-
 
 lemmas fresh_prodN = fresh_Pair fresh_prod3  fresh_prod4  fresh_prod5 fresh_prod6 fresh_prod7 fresh_prod8 fresh_prod9 fresh_prod10 fresh_prod12
 
@@ -511,7 +484,6 @@ lemma fresh_prod5I:
   assumes "x \<sharp> x1" and "x \<sharp> x2" and "x \<sharp> x3" and "x \<sharp> x4" and "x \<sharp> x5"
   shows "x \<sharp> (x1,x2,x3,x4,x5)" using fresh_prod5 assms by auto
 
-
 lemma flip_collapse[simp]:
   fixes b1::"'a::pt" and bv1::"'b::at" and bv2::"'b::at"
   assumes "atom bv2 \<sharp> b1" and "atom c \<sharp> (bv1,bv2,b1)" and "bv1 \<noteq> bv2" 
@@ -523,14 +495,12 @@ proof -
   thus ?thesis using assms flip_fresh_fresh by force
 qed
 
-
 lemma triple_eqvt[simp]:
   "p \<bullet> (x, b,c) = (p \<bullet> x,  p \<bullet> b , p \<bullet> c)"
 proof - 
   have "(x,b,c) = (x,(b,c))" by simp
   thus ?thesis using Pair_eqvt by simp
 qed
-
 
 lemma lst_fst:
   fixes x::"'a::at" and t1::"'b::fs" and  x'::"'a::at" and t2::"'c::fs" 
@@ -562,7 +532,6 @@ proof -
   thus ?thesis using Abs1_eq_iff_all(3)[of x t2 x' t2' "(t1,t1')"] by simp
 qed
 
-
 lemma lst_head_cons_pair:
   fixes y1::"'a ::at" and y2::"'a::at" and x1::"'b::fs" and x2::"'b::fs" and xs1::"('b::fs) list" and xs2::"('b::fs) list"
   assumes "[[atom y1]]lst. (x1 # xs1) = [[atom y2]]lst. (x2 # xs2)"
@@ -582,7 +551,6 @@ proof
   thus  False using Abs1_eq_iff(3)[of y1 "x1#xs1" y2 Nil]  assms as by auto
 qed
 
-
 lemma lst_head_cons:
   fixes y1::"'a ::at" and y2::"'a::at" and x1::"'b::fs" and x2::"'b::fs" and xs1::"('b::fs) list" and xs2::"('b::fs) list"
   assumes "[[atom y1]]lst. (x1 # xs1) = [[atom y2]]lst. (x2 # xs2)"
@@ -595,8 +563,6 @@ lemma lst_pure:
   shows "t1=t2"
   using assms Abs1_eq_iff_all(3) pure_fresh flip_fresh_fresh 
   by (metis Abs1_eq(3) permute_pure)
-
-sledgehammer_params[debug=true,timeout=600]
 
 lemma lst_supp:
  assumes "[[atom x1]]lst. t1 = [[atom x2]]lst. t2"
@@ -611,9 +577,6 @@ lemma lst_supp_subset:
    assumes "[[atom x1]]lst. t1 = [[atom x2]]lst. t2" and "supp t1 \<subseteq> {atom x1} \<union> B"
    shows "supp t2 \<subseteq> {atom x2} \<union> B"
   using assms lst_supp by fast
-
- 
-
 
 lemma projl_inl_eqvt:
   fixes \<pi> :: perm

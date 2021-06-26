@@ -2,18 +2,20 @@
 theory Typing
   imports  RCLogic WellformedL
 begin
-(*>*)
+  (*>*)
 
 chapter \<open>Type System\<close>
 
-
+text \<open>The MiniSail type system. We define subtyping judgement first and then typing judgement
+for the term forms\<close>
 
 section \<open>Subtyping\<close>
 
-text {* Subtyping is defined on top of SMT logic. A subtyping check is converted into an SMT validity check. *}
+text \<open> Subtyping is defined on top of refinement constraint logic (RCL). 
+A subtyping check is converted into an RCL validity check. \<close>
 
 inductive subtype :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<tau> \<Rightarrow> \<tau> \<Rightarrow> bool"  ("_ ; _ ; _  \<turnstile> _ \<lesssim> _" [50, 50, 50] 50) where
-subtype_baseI: "\<lbrakk>  
+  subtype_baseI: "\<lbrakk>  
    atom x \<sharp> (\<Theta>, \<B>, \<Gamma>, z,c,z',c') ; 
    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f  \<lbrace> z : b | c \<rbrace>;  
    \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f  \<lbrace> z' : b | c' \<rbrace>;                    
@@ -36,10 +38,9 @@ inductive_cases subtype_elims:
   "\<Theta>; \<B>; \<Gamma> \<turnstile> \<lbrace> z : b | c \<rbrace> \<lesssim>  \<lbrace> z' : b | c' \<rbrace>"
   "\<Theta>; \<B>; \<Gamma> \<turnstile> \<tau>\<^sub>1 \<lesssim>  \<tau>\<^sub>2"
 
-
 section \<open>Literals\<close>
 
-text {* The type synthesised has the constraint that z equates to the literal *}
+text \<open>The type synthesised has the constraint that z equates to the literal\<close>
 
 inductive infer_l  :: "l \<Rightarrow> \<tau> \<Rightarrow> bool" (" \<turnstile> _ \<Rightarrow> _" [50, 50] 50) where
   infer_trueI:   " \<turnstile> L_true  \<Rightarrow> \<lbrace> z : B_bool | [[z]\<^sup>v]\<^sup>c\<^sup>e ==  [[L_true]\<^sup>v]\<^sup>c\<^sup>e \<rbrace>"
@@ -59,7 +60,6 @@ inductive_cases infer_l_elims[elim!]:
   "\<turnstile> L_bitvec x \<Rightarrow> \<tau>"
   "\<turnstile> l \<Rightarrow> \<tau>"
 
-
 lemma infer_l_form2[simp]:
   shows "\<exists>z. \<turnstile> l \<Rightarrow> (\<lbrace> z : base_for_lit l | [[z]\<^sup>v]\<^sup>c\<^sup>e == [[l]\<^sup>v]\<^sup>c\<^sup>e \<rbrace>)"
 proof (nominal_induct l rule: l.strong_induct)
@@ -67,21 +67,19 @@ proof (nominal_induct l rule: l.strong_induct)
   then show ?case using infer_l.intros base_for_lit.simps has_fresh_z by metis
 next
   case L_true
-then show ?case using infer_l.intros base_for_lit.simps has_fresh_z by metis
+  then show ?case using infer_l.intros base_for_lit.simps has_fresh_z by metis
 next
-case L_false
+  case L_false
   then show ?case using infer_l.intros base_for_lit.simps has_fresh_z by metis
 next
   case L_unit
   then show ?case using infer_l.intros base_for_lit.simps has_fresh_z by metis
 next
-case (L_bitvec x)
+  case (L_bitvec x)
   then show ?case using infer_l.intros base_for_lit.simps has_fresh_z by metis
 qed
 
 section \<open>Values\<close>
-
-
 
 inductive infer_v :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> v \<Rightarrow> \<tau> \<Rightarrow> bool" (" _ ; _ ; _ \<turnstile> _ \<Rightarrow> _" [50, 50, 50] 50) where
 
@@ -127,7 +125,7 @@ infer_v_varI: "\<lbrakk>
 
 equivariance infer_v
 nominal_inductive infer_v
-avoids infer_v_conspI: bv and z | infer_v_varI: z | infer_v_pairI: z | infer_v_consI:  z 
+  avoids infer_v_conspI: bv and z | infer_v_varI: z | infer_v_pairI: z | infer_v_consI:  z 
 proof(goal_cases)
   case (1 \<Theta> \<B> \<Gamma> b c x z)
   hence "atom z \<sharp> \<lbrace> z : b  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  \<rbrace>" using \<tau>.fresh by simp
@@ -138,7 +136,7 @@ next
 next
   case (3 z v1 v2 \<Theta> \<B> \<Gamma> t1 t2)
   hence "atom z \<sharp> \<lbrace> z : [ b_of t1 , b_of t2 ]\<^sup>b  | [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ v1 , v2 ]\<^sup>v ]\<^sup>c\<^sup>e  \<rbrace>" using \<tau>.fresh by simp
- then show ?case unfolding fresh_star_def using 3 by simp
+  then show ?case unfolding fresh_star_def using 3 by simp
 next
   case (4 z v1 v2 \<Theta> \<B> \<Gamma> t1 t2)
   then show ?case by auto
@@ -173,24 +171,18 @@ inductive_cases infer_v_elims[elim!]:
   "\<Theta>; \<B>; \<Gamma> \<turnstile> V_pair v1 v2 \<Rightarrow> (\<lbrace> z : [ b1 , b2 ]\<^sup>b |  [[z]\<^sup>v]\<^sup>c\<^sup>e == [[v1,v2]\<^sup>v]\<^sup>c\<^sup>e \<rbrace>) "
   "\<Theta>; \<B>; \<Gamma> \<turnstile> V_consp s dc b v  \<Rightarrow> \<tau> "
 
-section \<open>Introductions\<close>
-
 inductive check_v :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> v \<Rightarrow> \<tau> \<Rightarrow> bool"  ("_ ; _ ; _  \<turnstile> _ \<Leftarrow> _" [50, 50, 50] 50) where
-check_v_subtypeI:  "\<lbrakk>  \<Theta>; \<B>; \<Gamma> \<turnstile> \<tau>1 \<lesssim> \<tau>2; \<Theta>; \<B>; \<Gamma> \<turnstile> v \<Rightarrow> \<tau>1 \<rbrakk> \<Longrightarrow> \<Theta>; \<B> ;  \<Gamma> \<turnstile>  v \<Leftarrow> \<tau>2"
+  check_v_subtypeI:  "\<lbrakk>  \<Theta>; \<B>; \<Gamma> \<turnstile> \<tau>1 \<lesssim> \<tau>2; \<Theta>; \<B>; \<Gamma> \<turnstile> v \<Rightarrow> \<tau>1 \<rbrakk> \<Longrightarrow> \<Theta>; \<B> ;  \<Gamma> \<turnstile>  v \<Leftarrow> \<tau>2"
 equivariance check_v
 nominal_inductive check_v  .
 
 inductive_cases check_v_elims[elim!]:
   "\<Theta>; \<B> ; \<Gamma> \<turnstile> v \<Leftarrow> \<tau>"
 
-
 section \<open>Expressions\<close>
 
-(*
+text \<open> Type synthesis for expressions \<close>
 
-*)
-
-text {* Type synthesis for expressions *}
 inductive infer_e :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta> \<Rightarrow> e \<Rightarrow> \<tau> \<Rightarrow> bool"  ("_ ; _ ; _ ; _ ; _  \<turnstile> _ \<Rightarrow> _" [50, 50, 50,50] 50) where
 
 infer_e_valI:  "\<lbrakk>
@@ -283,33 +275,23 @@ infer_e_valI:  "\<lbrakk>
         atom z3 \<sharp> (AE_concat v1 v2); atom z3 \<sharp> \<Gamma> \<rbrakk> \<Longrightarrow> 
         \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AE_concat  v1 v2 \<Rightarrow> \<lbrace> z3 : B_bitvec | [[z3]\<^sup>v]\<^sup>c\<^sup>e == (CE_concat [v1]\<^sup>c\<^sup>e [v2]\<^sup>c\<^sup>e) \<rbrace>"
 
-(*
-| infer_e_splitI: "\<lbrakk> 
-        \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;
-        \<Theta> \<turnstile>\<^sub>w\<^sub>f (\<Phi>::\<Phi>) ; 
-        \<Theta>; \<B>; \<Gamma> \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_bitvec | c1 \<rbrace> ; 
-        \<Theta>; \<B>; \<Gamma> \<turnstile> v2 \<Leftarrow> \<lbrace> z2 : B_int | (CE_op LEq [V_lit (L_num 0)]\<^sup>c\<^sup>e [[z2]\<^sup>v]\<^sup>c\<^sup>e) AND (CE_op LEq [[z2]\<^sup>v]\<^sup>c\<^sup>e (CE_len [v1]\<^sup>c\<^sup>e)) \<rbrace>;        
-        atom z3 \<sharp> (AE_split v1 v2); atom z3 \<sharp> \<Gamma> \<rbrakk> \<Longrightarrow> 
-        \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AE_split  v1 v2 \<Rightarrow> \<lbrace> z3 : B_pair B_bitvec B_bitvec  | [v1]\<^sup>c\<^sup>e == (CE_concat [#1[z3]\<^sup>v]\<^sup>c\<^sup>e [#2[z3]\<^sup>v]\<^sup>c\<^sup>e) AND ((CE_len [#1[z2]\<^sup>v]\<^sup>c\<^sup>e) == ([v2]\<^sup>c\<^sup>e)) \<rbrace>"
-
-*)
 | infer_e_splitI: "\<lbrakk>
-  \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;
+        \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;
         \<Theta> \<turnstile>\<^sub>w\<^sub>f (\<Phi>::\<Phi>);
- infer_v \<Theta>  \<B>  \<Gamma> v1 \<lbrace> z1 : B_bitvec | c1 \<rbrace> ;
- check_v \<Theta> \<B> \<Gamma> v2 \<lbrace> z2 : B_int | (CE_op LEq (CE_val (V_lit (L_num 0))) (CE_val (V_var z2))) == (CE_val (V_lit L_true)) AND 
+        \<Theta> ; \<B> ; \<Gamma> \<turnstile> v1 \<Rightarrow> \<lbrace> z1 : B_bitvec | c1 \<rbrace> ;
+        \<Theta> ; \<B> ; \<Gamma> \<turnstile> v2 \<Leftarrow> \<lbrace> z2 : B_int | (CE_op LEq (CE_val (V_lit (L_num 0))) (CE_val (V_var z2))) == (CE_val (V_lit L_true)) AND 
                                          (CE_op LEq (CE_val (V_var z2)) (CE_len (CE_val (v1)))) == (CE_val (V_lit L_true)) \<rbrace>;
- atom z1 \<sharp> (AE_split v1 v2); atom z1 \<sharp> \<Gamma>;
- atom z2 \<sharp> (AE_split v1 v2); atom z2 \<sharp> \<Gamma>;
- atom z3 \<sharp> (AE_split v1 v2); atom z3 \<sharp> \<Gamma>
+        atom z1 \<sharp> (AE_split v1 v2); atom z1 \<sharp> \<Gamma>;
+        atom z2 \<sharp> (AE_split v1 v2); atom z2 \<sharp> \<Gamma>;
+        atom z3 \<sharp> (AE_split v1 v2); atom z3 \<sharp> \<Gamma>
 \<rbrakk> \<Longrightarrow> 
-        infer_e \<Theta> \<Phi> \<B> \<Gamma>  \<Delta> (AE_split  v1 v2) \<lbrace> z3 : B_pair B_bitvec B_bitvec  | 
+        \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> (AE_split  v1 v2) \<Rightarrow> \<lbrace> z3 : B_pair B_bitvec B_bitvec  | 
                       ((CE_val v1) == (CE_concat (CE_fst (CE_val (V_var z3))) (CE_snd (CE_val (V_var z3)))))
                   AND (((CE_len (CE_fst (CE_val (V_var z3))))) == (CE_val ( v2))) \<rbrace>"
 
 equivariance infer_e
 nominal_inductive infer_e 
-avoids  infer_e_appI: x |infer_e_appPI: bv |  infer_e_splitI: z3 and z1 and z2 
+  avoids  infer_e_appI: x |infer_e_appPI: bv |  infer_e_splitI: z3 and z1 and z2 
 proof(goal_cases)
   case (1 \<Theta> \<B> \<Gamma> \<Delta> \<Phi> f x b c \<tau>' s' v \<tau>)
   moreover hence "atom x \<sharp> [ f  v  ]\<^sup>e" using fresh_prodN pure_fresh e.fresh by force
@@ -364,19 +346,16 @@ nominal_termination (eqvt)  by lexicographic_order
 
 section \<open>Statements\<close>
 
-
 inductive check_s ::  "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta> \<Rightarrow> s \<Rightarrow> \<tau> \<Rightarrow> bool" (" _ ; _ ; _ ; _ ; _  \<turnstile> _ \<Leftarrow> _" [50, 50, 50,50,50] 50) and
-     check_branch_s ::  "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta>  \<Rightarrow> tyid \<Rightarrow> string \<Rightarrow> \<tau> \<Rightarrow> v \<Rightarrow> branch_s \<Rightarrow> \<tau> \<Rightarrow> bool" (" _ ;  _ ; _ ; _ ; _ ; _ ; _ ; _ ; _ \<turnstile> _ \<Leftarrow> _" [50, 50, 50,50,50] 50) and
-     check_branch_list ::  "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta>  \<Rightarrow> tyid \<Rightarrow> (string * \<tau>) list \<Rightarrow> v \<Rightarrow> branch_list \<Rightarrow> \<tau> \<Rightarrow> bool" (" _ ;  _ ; _ ; _ ; _ ; _ ; _ ; _ \<turnstile> _ \<Leftarrow> _" [50, 50, 50,50,50] 50) where 
-check_valI:  "\<lbrakk> 
+  check_branch_s ::  "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta>  \<Rightarrow> tyid \<Rightarrow> string \<Rightarrow> \<tau> \<Rightarrow> v \<Rightarrow> branch_s \<Rightarrow> \<tau> \<Rightarrow> bool" (" _ ;  _ ; _ ; _ ; _ ; _ ; _ ; _ ; _ \<turnstile> _ \<Leftarrow> _" [50, 50, 50,50,50] 50) and
+  check_branch_list ::  "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> \<Delta>  \<Rightarrow> tyid \<Rightarrow> (string * \<tau>) list \<Rightarrow> v \<Rightarrow> branch_list \<Rightarrow> \<tau> \<Rightarrow> bool" (" _ ;  _ ; _ ; _ ; _ ; _ ; _ ; _ \<turnstile> _ \<Leftarrow> _" [50, 50, 50,50,50] 50) where 
+  check_valI:  "\<lbrakk> 
        \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> ;   
        \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> ;
        \<Theta>; \<B>; \<Gamma> \<turnstile> v \<Rightarrow> \<tau>'; 
        \<Theta>; \<B>; \<Gamma> \<turnstile> \<tau>' \<lesssim> \<tau> \<rbrakk> \<Longrightarrow> 
        \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> (AS_val v) \<Leftarrow> \<tau>"
 
-(* (\<Theta>, \<Phi>, \<B>, \<Gamma>, \<Delta>,e, \<tau>) - need to be explicit about freshness of atom x and z so that we can setup 'avoidance' machinary
-   when tagging this as an inductive predicate *)
 | check_letI: "\<lbrakk>
        atom x \<sharp> (\<Theta>, \<Phi>, \<B>, \<Gamma>, \<Delta>, e, \<tau>);  
        atom z \<sharp> (x, \<Theta>, \<Phi>, \<B>, \<Gamma>, \<Delta>, e, \<tau>, s);  
@@ -443,7 +422,7 @@ check_valI:  "\<lbrakk>
        \<Theta>; \<B>; \<Gamma> \<turnstile>  v \<Leftarrow> \<tau>;
        \<Theta>; \<B>; \<Gamma> \<turnstile> (\<lbrace> z : B_unit | TRUE \<rbrace>) \<lesssim> \<tau>'  
 \<rbrakk> \<Longrightarrow> 
-       \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>  (u ::= v) \<Leftarrow> \<tau>'"  (* Experiment - any supertype of unit TRUE is ok *)
+       \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile>  (u ::= v) \<Leftarrow> \<tau>'" 
 
 | check_whileI: "\<lbrakk> 
         \<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> s1 \<Leftarrow> \<lbrace> z : B_bool | TRUE \<rbrace>; 
@@ -481,7 +460,7 @@ next
   hence "atom x \<sharp> AS_assert c s" using fresh_prodN s_branch_s_branch_list.fresh pure_fresh  by auto 
   then show ?case using fresh_star_def 3 by force
 next
-   case (5 \<Theta> \<B> \<Gamma> \<Delta> \<tau> const x \<Phi> tid cons v s)
+  case (5 \<Theta> \<B> \<Gamma> \<Delta> \<tau> const x \<Phi> tid cons v s)
   hence "atom x \<sharp> AS_branch cons x s" using fresh_prodN s_branch_s_branch_list.fresh pure_fresh  by auto 
   then show ?case using fresh_star_def 5 by force
 next
@@ -498,32 +477,30 @@ next
   then show ?case  using fresh_star_def 11 by force
 
 qed(auto+)
- 
 
 inductive_cases check_s_elims[elim!]:
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_val v \<Leftarrow> \<tau>"
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_let x e s \<Leftarrow> \<tau>"
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_if v s1 s2 \<Leftarrow> \<tau>"
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_let2 x t s1 s2 \<Leftarrow> \<tau>"
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_while s1 s2 \<Leftarrow> \<tau>"
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_var u t v s \<Leftarrow> \<tau>"
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_seq s1 s2 \<Leftarrow> \<tau>"
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_assign u v \<Leftarrow> \<tau>"
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_match v cs \<Leftarrow> \<tau>"
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_assert c s \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_val v \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_let x e s \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_if v s1 s2 \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_let2 x t s1 s2 \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_while s1 s2 \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_var u t v s \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_seq s1 s2 \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_assign u v \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_match v cs \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta> \<turnstile> AS_assert c s \<Leftarrow> \<tau>"
 
 inductive_cases check_branch_s_elims[elim!]:
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>; tid ; dclist ; v \<turnstile> (AS_final cs) \<Leftarrow> \<tau>"
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>; tid ; dclist ; v \<turnstile> (AS_cons cs css) \<Leftarrow> \<tau>"
-   "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>; tid ; cons ; const ; v \<turnstile> (AS_branch dc x s ) \<Leftarrow> \<tau>"
-
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>; tid ; dclist ; v \<turnstile> (AS_final cs) \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>; tid ; dclist ; v \<turnstile> (AS_cons cs css) \<Leftarrow> \<tau>"
+  "\<Theta>; \<Phi>; \<B>; \<Gamma>; \<Delta>; tid ; cons ; const ; v \<turnstile> (AS_branch dc x s ) \<Leftarrow> \<tau>"
 
 section \<open>Programs\<close>
 
 text \<open>Type check function bodies\<close>
 
 inductive check_funtyp :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow>  \<B> \<Rightarrow> fun_typ \<Rightarrow> bool" ( " _ ; _ ; _ \<turnstile> _ " ) where
-check_funtypI: "\<lbrakk>
+  check_funtypI: "\<lbrakk>
   atom x \<sharp> (\<Theta>, \<Phi>, B , b );
   \<Theta>; \<Phi> ;  B ; ((x,b,c) #\<^sub>\<Gamma> GNil) ; []\<^sub>\<Delta> \<turnstile> s \<Leftarrow> \<tau>
 \<rbrakk>  \<Longrightarrow> 
@@ -533,7 +510,7 @@ equivariance check_funtyp
 nominal_inductive check_funtyp
   avoids check_funtypI: x
 proof(goal_cases)
-    case (1 x \<Theta> \<Phi> B b c s \<tau>  )
+  case (1 x \<Theta> \<Phi> B b c s \<tau>  )
   hence "atom x \<sharp> (AF_fun_typ x b c \<tau> s)"  using fun_def.fresh fun_typ_q.fresh fun_typ.fresh by simp
   then show ?case using fresh_star_def 1 fresh_prodN by fastforce
 next
@@ -542,7 +519,7 @@ next
 qed
 
 inductive check_funtypq :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> fun_typ_q \<Rightarrow> bool"  ( " _ ; _ \<turnstile> _ " ) where 
-check_fundefq_simpleI: "\<lbrakk>
+  check_fundefq_simpleI: "\<lbrakk>
   \<Theta>; \<Phi> ; {||} \<turnstile> (AF_fun_typ x b c t s)
 \<rbrakk>  \<Longrightarrow> 
   \<Theta>; \<Phi> \<turnstile> ((AF_fun_typ_none (AF_fun_typ x b c t s)))"
@@ -566,14 +543,13 @@ next
 qed
 
 inductive check_fundef :: "\<Theta> \<Rightarrow> \<Phi> \<Rightarrow> fun_def \<Rightarrow> bool" ( " _ ; _ \<turnstile> _ " ) where
-check_fundefI: "\<lbrakk>
+  check_fundefI: "\<lbrakk>
   \<Theta>; \<Phi> \<turnstile> ft 
 \<rbrakk>  \<Longrightarrow> 
   \<Theta>; \<Phi> \<turnstile> (AF_fundef f ft)"
 
 equivariance check_fundef
 nominal_inductive check_fundef .
-
 
 text \<open>Temporarily remove this simproc as it produces untidy eliminations\<close>
 declare[[ simproc del: alpha_lst]]
@@ -585,10 +561,8 @@ inductive_cases check_funtypq_elims[elim!]:
   "check_funtypq \<Theta> \<Phi> (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))"
   "check_funtypq \<Theta> \<Phi> (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s))"
 
-
 inductive_cases check_fundef_elims[elim!]:
   "check_fundef \<Theta> \<Phi> (AF_fundef f ftq)"
-
 
 declare[[ simproc add: alpha_lst]]
 
@@ -597,16 +571,16 @@ nominal_function \<Delta>_of :: "var_def list \<Rightarrow> \<Delta>" where
 | "\<Delta>_of ((AV_def u t v)#vs) = (u,t) #\<^sub>\<Delta>  (\<Delta>_of vs)" 
   apply auto
   using  eqvt_def \<Delta>_of_graph_aux_def neq_Nil_conv old.prod.exhaust apply force
- using  eqvt_def \<Delta>_of_graph_aux_def neq_Nil_conv old.prod.exhaust 
+  using  eqvt_def \<Delta>_of_graph_aux_def neq_Nil_conv old.prod.exhaust 
   by (metis var_def.strong_exhaust)
 nominal_termination (eqvt) by lexicographic_order
 
 inductive check_prog :: "p \<Rightarrow> \<tau> \<Rightarrow> bool" ( "\<turnstile> _ \<Leftarrow> _")  where 
-"\<lbrakk>
+  "\<lbrakk>
    \<Theta>; \<Phi>; {||}; GNil ; \<Delta>_of \<G> \<turnstile> s \<Leftarrow> \<tau>
 \<rbrakk> \<Longrightarrow>  \<turnstile> (AP_prog \<Theta> \<Phi> \<G> s) \<Leftarrow> \<tau>"
 
 inductive_cases check_prog_elims[elim!]:
-   "\<turnstile> (AP_prog \<Theta> \<Phi> \<G> s) \<Leftarrow> \<tau>"
+  "\<turnstile> (AP_prog \<Theta> \<Phi> \<G> s) \<Leftarrow> \<tau>"
 
 end

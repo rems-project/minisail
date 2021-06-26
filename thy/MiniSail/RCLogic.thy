@@ -2,39 +2,40 @@
 theory RCLogic
   imports Wellformed
 begin
-(*>*)
+  (*>*)
 
 hide_const Syntax.dom
 
 chapter \<open>Refinement Constraint Logic\<close>
 
-text {* Semantics for the logic we use in the refinement constraints. It is a multi-sorted, quantifier free
+text \<open> Semantics for the logic we use in the refinement constraints. It is a multi-sorted, quantifier free
 logic with polymorphic datatypes and linear arithmetic. We could have modelled by using one of the 
-encodings to FOL however we wanted to explore using a more direct model. *}
-
+encodings to FOL however we wanted to explore using a more direct model. \<close>
 
 section \<open>Evaluation and Satisfiability\<close>
 
 subsection \<open>Valuation\<close>
 
-text {* RCL values. This is our universe. SUt is a value for uninterpreted sort that corresponds to base type variables. For now we only need one of these universes.
-        We wrap an smt\_val inside it during a process we call 'boxing' that is introduced in the RCLModelLemmass theory *}
+text \<open> Refinement constraint logic values. SUt is a value for the uninterpreted 
+       sort that corresponds to basic type variables. For now we only need one of these universes.
+       We wrap an smt\_val inside it during a process we call 'boxing' 
+       which is introduced in the RCLogicL theory \<close>
 nominal_datatype rcl_val = SBitvec "bit list" | SNum int | SBool bool | SPair rcl_val rcl_val | 
-       SCons tyid string rcl_val | SConsp tyid string b rcl_val |
-       SUnit | SUt rcl_val (* | SFst rcl_val | SSnd rcl_val*)
+  SCons tyid string rcl_val | SConsp tyid string b rcl_val |
+  SUnit | SUt rcl_val 
 
-text {* RCL sorts. Represent our domains. The universe is the union of all of the these.
-        S\_Ut is the single uninterpreted sort. Map almost directly to base type but should have them to clearly
-        distinguish syntax (base types) and semantics (RCL sorts) *}
+text \<open> RCL sorts. Represent our domains. The universe is the union of all of the these.
+        S\_Ut is the single uninterpreted sort. These map almost directly to basic type 
+        but we have them to distinguish syntax (basic types) and semantics (RCL sorts) \<close>
 nominal_datatype rcl_sort = S_bool | S_int | S_unit | S_pair rcl_sort rcl_sort | S_id tyid | S_app tyid rcl_sort | S_bitvec | S_ut 
-
 
 type_synonym valuation = "(x,rcl_val) map"
 
 type_synonym type_valuation = "(bv,rcl_sort) map"
 
+text \<open>Well-sortedness for RCL values\<close>
 inductive wfRCV:: "\<Theta> \<Rightarrow> rcl_val \<Rightarrow> b \<Rightarrow> bool" ( " _  \<turnstile> _ : _" [50,50] 50) where
-wfRCV_BBitvecI:  "P \<turnstile> (SBitvec bv)  : B_bitvec"
+  wfRCV_BBitvecI:  "P \<turnstile> (SBitvec bv)  : B_bitvec"
 | wfRCV_BIntI:  "P \<turnstile> (SNum n)  : B_int"
 | wfRCV_BBoolI: "P \<turnstile> (SBool b) : B_bool"
 | wfRCV_BPairI: "\<lbrakk> P \<turnstile> s1 : b1 ; P \<turnstile> s2 : b2 \<rbrakk> \<Longrightarrow> P \<turnstile> (SPair s1 s2) : (B_pair b1 b2)"
@@ -59,31 +60,29 @@ next
 qed
 
 inductive_cases wfRCV_elims :
- "wfRCV P s  B_bitvec"
- "wfRCV P s (B_pair b1 b2)"
- "wfRCV P s (B_int)"
- "wfRCV P s (B_bool)"
- "wfRCV P s (B_id ss)"
- "wfRCV P s (B_var bv)"
- "wfRCV P s (B_unit)"
- "wfRCV P s (B_app tyid b)"
- "wfRCV P (SBitvec bv) b"
- "wfRCV P (SNum n)  b"
- "wfRCV P (SBool n)  b"
- "wfRCV P (SPair s1 s2) b"
- "wfRCV P (SCons s dc s1) b"
- "wfRCV P (SConsp s dc b' s1) b"
- "wfRCV P SUnit b"
- "wfRCV P (SUt s1) b"
+  "wfRCV P s  B_bitvec"
+  "wfRCV P s (B_pair b1 b2)"
+  "wfRCV P s (B_int)"
+  "wfRCV P s (B_bool)"
+  "wfRCV P s (B_id ss)"
+  "wfRCV P s (B_var bv)"
+  "wfRCV P s (B_unit)"
+  "wfRCV P s (B_app tyid b)"
+  "wfRCV P (SBitvec bv) b"
+  "wfRCV P (SNum n)  b"
+  "wfRCV P (SBool n)  b"
+  "wfRCV P (SPair s1 s2) b"
+  "wfRCV P (SCons s dc s1) b"
+  "wfRCV P (SConsp s dc b' s1) b"
+  "wfRCV P SUnit b"
+  "wfRCV P (SUt s1) b"
 
-thm wfRCV_elims(9)
-
-text \<open> Sometimes we want to do @{text "P \<turnstile> s ~ b[bv=b']"} and we want to know what b is however substitution is not
-injective so we can't write this in terms of @{text "wfRCV"}. So we define a relation that makes the variable and
-thing being substitited in explicit. \<close>
+text \<open> Sometimes we want to assert @{text "P \<turnstile> s ~ b[bv=b']"} and we want to know what b is 
+however substitution is not injective so we can't write this in terms of @{text "wfRCV"}. 
+So we define a relation that makes the components of the substitution explicit. \<close>
 
 inductive wfRCV_subst:: "\<Theta> \<Rightarrow> rcl_val \<Rightarrow> b \<Rightarrow> (bv*b) option \<Rightarrow> bool" where
-wfRCV_subst_BBitvecI:  "wfRCV_subst P (SBitvec bv) B_bitvec  sub "
+  wfRCV_subst_BBitvecI:  "wfRCV_subst P (SBitvec bv) B_bitvec  sub "
 | wfRCV_subst_BIntI:  "wfRCV_subst P (SNum n)  B_int sub "
 | wfRCV_subst_BBoolI: "wfRCV_subst P (SBool b)  B_bool sub  "
 | wfRCV_subst_BPairI: "\<lbrakk> wfRCV_subst P s1 b1 sub ; wfRCV_subst P s2 b2 sub \<rbrakk> \<Longrightarrow> wfRCV_subst P (SPair s1 s2) (B_pair b1 b2) sub"
@@ -100,63 +99,40 @@ wfRCV_subst_BBitvecI:  "wfRCV_subst P (SBitvec bv) B_bitvec  sub "
 equivariance wfRCV_subst
 nominal_inductive wfRCV_subst .
 
-(*
-inductive sort_of :: "\<Theta> \<Rightarrow> rcl_val \<Rightarrow> rcl_sort \<Rightarrow> bool" ( " _  \<turnstile> _ ~ _" [50,50] 50) where
-sort_of_BBitvecI:  "P \<turnstile> (SBitvec bv)  ~ S_bitvec"
-| sort_of_BIntI:  "P \<turnstile> (SNum n)  ~ S_int"
-| sort_of_BBoolI: "P \<turnstile> (SBool b) ~ S_bool"
-| sort_of_BPairI: "\<lbrakk> P \<turnstile> s1 ~ b1 ; P \<turnstile> s2 ~ b2 \<rbrakk> \<Longrightarrow> P \<turnstile> (SPair s1 s2) ~ (S_pair b1 b2)"
-| sort_of_BConsI: "\<lbrakk>  AF_typedef s dclist \<in> set \<Theta>;
-      (dc, \<lbrace> x : b  | c \<rbrace>) \<in> set dclist ;
-     \<Theta> \<turnstile> s1 ~ b \<rbrakk> \<Longrightarrow> \<Theta> \<turnstile>(SCons s dc s1) ~ (S_id s)"
-(*| sort_of_BConsPI :"\<lbrakk> AF_typedef_poly s bv dclist \<in> set \<Theta>;
-      (dc, \<lbrace> x : b  | c \<rbrace>) \<in> set dclist ;
-     \<Theta> \<turnstile> s1 ~ b[bv::=b']\<^sub>b\<^sub>b \<rbrakk> \<Longrightarrow> \<Theta> \<turnstile>(SConsp s dc b' s1) ~ (B_app s b')"*)
-| sort_of_BUnitI: "P \<turnstile> SUnit ~ S_unit"
-| sort_of_BVarI:  "P \<turnstile> SUt n ~ S_ut"
-equivariance sort_of
-nominal_inductive sort_of .
-*)
 subsection \<open>Evaluation base-types\<close>
 
 inductive eval_b :: "type_valuation \<Rightarrow> b \<Rightarrow> rcl_sort \<Rightarrow> bool"  ( "_ \<lbrakk> _ \<rbrakk> ~ _ " ) where
-"v \<lbrakk> B_bool \<rbrakk> ~ S_bool"
+  "v \<lbrakk> B_bool \<rbrakk> ~ S_bool"
 | "v \<lbrakk> B_int \<rbrakk> ~ S_int"
 | "Some s = v bv \<Longrightarrow> v \<lbrakk> B_var bv \<rbrakk> ~ s"
 equivariance eval_b
 nominal_inductive eval_b .
 
-subsection \<open>Wellformed Evaluation\<close>
+subsection \<open>Wellformed vvaluations\<close>
 
 definition wfI ::  "\<Theta> \<Rightarrow> \<Gamma> \<Rightarrow> valuation \<Rightarrow> bool" ( " _ ; _ \<turnstile> _" )  where
   "\<Theta> ; \<Gamma> \<turnstile> i = (\<forall> (x,b,c) \<in> toSet \<Gamma>. \<exists>s. Some s = i x \<and> \<Theta> \<turnstile> s : b)"
 
-(*
-definition wfI2 ::  "\<Theta> \<Rightarrow>  \<B>  \<Rightarrow> \<Gamma> \<Rightarrow> valuation \<Rightarrow> type_valuation \<Rightarrow> bool" ( " _ ; _ ; _ \<turnstile> _ ; _" )  where
-  "\<Theta> ; \<B> ; \<Gamma> \<turnstile> i ; tv = ((\<forall> (x,b,c) \<in> toSet \<Gamma>. \<exists>s d. Some s = i x \<and> \<Theta> \<turnstile> s ~ d \<and> tv \<lbrakk> b \<rbrakk> ~ d ) \<and> (\<forall>bv. bv |\<in>| \<B> \<longrightarrow> (\<exists>d. Some d = tv bv)))"
-*)
-
 subsection \<open>Evaluating Terms\<close>
 
 nominal_function eval_l :: "l \<Rightarrow> rcl_val" ( "\<lbrakk> _ \<rbrakk> " ) where
-   "\<lbrakk> L_true \<rbrakk> = SBool True"
+  "\<lbrakk> L_true \<rbrakk> = SBool True"
 |  "\<lbrakk> L_false \<rbrakk> = SBool False"
 |  "\<lbrakk> L_num n \<rbrakk> = SNum n"
 |  "\<lbrakk> L_unit \<rbrakk> = SUnit"
 |  "\<lbrakk> L_bitvec n \<rbrakk> = SBitvec n"
-apply(auto simp: eqvt_def eval_l_graph_aux_def)
-by (metis l.exhaust)
+                   apply(auto simp: eqvt_def eval_l_graph_aux_def)
+  by (metis l.exhaust)
 nominal_termination (eqvt) by lexicographic_order
 
 inductive eval_v :: "valuation \<Rightarrow> v \<Rightarrow> rcl_val \<Rightarrow> bool"  ( "_ \<lbrakk> _ \<rbrakk> ~ _ " ) where
-eval_v_litI:   "i \<lbrakk> V_lit l \<rbrakk> ~ \<lbrakk> l \<rbrakk> "
- | eval_v_varI: "Some sv = i x  \<Longrightarrow> i \<lbrakk> V_var x \<rbrakk> ~ sv"
- | eval_v_pairI: "\<lbrakk> i \<lbrakk> v1 \<rbrakk> ~ s1 ; i \<lbrakk> v2 \<rbrakk> ~ s2 \<rbrakk> \<Longrightarrow> i \<lbrakk> V_pair v1 v2 \<rbrakk> ~ SPair s1 s2"
- | eval_v_consI: "i \<lbrakk> v \<rbrakk> ~ s \<Longrightarrow> i \<lbrakk> V_cons tyid dc v \<rbrakk> ~ SCons tyid dc s"
- | eval_v_conspI: "i \<lbrakk> v \<rbrakk> ~ s \<Longrightarrow> i \<lbrakk> V_consp tyid dc b v \<rbrakk> ~ SConsp tyid dc b s"
+  eval_v_litI:   "i \<lbrakk> V_lit l \<rbrakk> ~ \<lbrakk> l \<rbrakk> "
+| eval_v_varI: "Some sv = i x  \<Longrightarrow> i \<lbrakk> V_var x \<rbrakk> ~ sv"
+| eval_v_pairI: "\<lbrakk> i \<lbrakk> v1 \<rbrakk> ~ s1 ; i \<lbrakk> v2 \<rbrakk> ~ s2 \<rbrakk> \<Longrightarrow> i \<lbrakk> V_pair v1 v2 \<rbrakk> ~ SPair s1 s2"
+| eval_v_consI: "i \<lbrakk> v \<rbrakk> ~ s \<Longrightarrow> i \<lbrakk> V_cons tyid dc v \<rbrakk> ~ SCons tyid dc s"
+| eval_v_conspI: "i \<lbrakk> v \<rbrakk> ~ s \<Longrightarrow> i \<lbrakk> V_consp tyid dc b v \<rbrakk> ~ SConsp tyid dc b s"
 equivariance eval_v
 nominal_inductive eval_v .
-
 
 inductive_cases eval_v_elims:
   "i \<lbrakk> V_lit l \<rbrakk> ~  s"
@@ -164,7 +140,6 @@ inductive_cases eval_v_elims:
   "i \<lbrakk> V_pair v1 v2 \<rbrakk> ~ s"
   "i \<lbrakk> V_cons tyid dc v \<rbrakk> ~ s"
   "i \<lbrakk> V_consp tyid dc b v \<rbrakk> ~ s"
-
 
 inductive eval_e :: "valuation \<Rightarrow> ce \<Rightarrow> rcl_val \<Rightarrow> bool" ( "_ \<lbrakk> _ \<rbrakk> ~ _ " )  where
   eval_e_valI: "i \<lbrakk> v \<rbrakk> ~  sv \<Longrightarrow> i \<lbrakk> CE_val v \<rbrakk> ~ sv"
@@ -178,18 +153,15 @@ inductive eval_e :: "valuation \<Rightarrow> ce \<Rightarrow> rcl_val \<Rightarr
 equivariance eval_e
 nominal_inductive eval_e .
 
-thm eval_e.induct
-
 inductive_cases eval_e_elims:
- "i \<lbrakk> (CE_val v) \<rbrakk> ~ s"
- "i \<lbrakk> (CE_op Plus v1 v2) \<rbrakk> ~ s"
- "i \<lbrakk> (CE_op LEq v1 v2) \<rbrakk> ~ s"
- "i \<lbrakk> (CE_op Eq v1 v2) \<rbrakk> ~ s"
- "i \<lbrakk> (CE_fst v) \<rbrakk> ~ s"
- "i \<lbrakk> (CE_snd v) \<rbrakk> ~ s"
- "i \<lbrakk> (CE_concat v1 v2) \<rbrakk> ~ s"
- "i \<lbrakk> (CE_len v) \<rbrakk> ~ s"
-
+  "i \<lbrakk> (CE_val v) \<rbrakk> ~ s"
+  "i \<lbrakk> (CE_op Plus v1 v2) \<rbrakk> ~ s"
+  "i \<lbrakk> (CE_op LEq v1 v2) \<rbrakk> ~ s"
+  "i \<lbrakk> (CE_op Eq v1 v2) \<rbrakk> ~ s"
+  "i \<lbrakk> (CE_fst v) \<rbrakk> ~ s"
+  "i \<lbrakk> (CE_snd v) \<rbrakk> ~ s"
+  "i \<lbrakk> (CE_concat v1 v2) \<rbrakk> ~ s"
+  "i \<lbrakk> (CE_len v) \<rbrakk> ~ s"
 
 inductive eval_c :: "valuation \<Rightarrow> c \<Rightarrow> bool \<Rightarrow> bool" ( " _ \<lbrakk> _ \<rbrakk> ~ _ ")  where
   eval_c_trueI:  "i \<lbrakk> C_true \<rbrakk> ~ True"
@@ -203,16 +175,15 @@ equivariance eval_c
 nominal_inductive eval_c .
 
 inductive_cases eval_c_elims:
- "i \<lbrakk> C_true \<rbrakk> ~  True"
- "i \<lbrakk> C_false \<rbrakk> ~ False"
- "i \<lbrakk> (C_conj c1 c2)\<rbrakk> ~ s"
- "i \<lbrakk> (C_disj c1 c2)\<rbrakk> ~ s"
- "i \<lbrakk> (C_imp c1 c2)\<rbrakk> ~ s"
- "i \<lbrakk> (C_not c) \<rbrakk> ~ s"
- "i \<lbrakk> (C_eq e1 e2)\<rbrakk> ~ s"
- "i \<lbrakk> C_true \<rbrakk> ~ s"
- "i \<lbrakk> C_false \<rbrakk> ~ s"
-
+  "i \<lbrakk> C_true \<rbrakk> ~  True"
+  "i \<lbrakk> C_false \<rbrakk> ~ False"
+  "i \<lbrakk> (C_conj c1 c2)\<rbrakk> ~ s"
+  "i \<lbrakk> (C_disj c1 c2)\<rbrakk> ~ s"
+  "i \<lbrakk> (C_imp c1 c2)\<rbrakk> ~ s"
+  "i \<lbrakk> (C_not c) \<rbrakk> ~ s"
+  "i \<lbrakk> (C_eq e1 e2)\<rbrakk> ~ s"
+  "i \<lbrakk> C_true \<rbrakk> ~ s"
+  "i \<lbrakk> C_false \<rbrakk> ~ s"
 
 subsection \<open>Satisfiability\<close>
 
@@ -224,24 +195,16 @@ nominal_inductive is_satis .
 nominal_function is_satis_g :: "valuation \<Rightarrow> \<Gamma> \<Rightarrow> bool" ( " _ \<Turnstile> _ " ) where
   "i \<Turnstile> GNil = True"
 | "i \<Turnstile> ((x,b,c) #\<^sub>\<Gamma> G) = ( i \<Turnstile> c \<and>  i \<Turnstile> G)"
-apply(auto simp: eqvt_def is_satis_g_graph_aux_def)
-by (metis \<Gamma>.exhaust old.prod.exhaust)
+       apply(auto simp: eqvt_def is_satis_g_graph_aux_def)
+  by (metis \<Gamma>.exhaust old.prod.exhaust)
 nominal_termination (eqvt) by lexicographic_order
-
 
 section \<open>Validity\<close>
 
 nominal_function  valid :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> c \<Rightarrow> bool"  ("_ ; _ ; _  \<Turnstile> _ " [50, 50] 50)  where
- "P ; B ; G \<Turnstile> c = ( (P ; B ; G \<turnstile>\<^sub>w\<^sub>f c) \<and> (\<forall>i. (P ; G \<turnstile> i) \<and>  i \<Turnstile> G \<longrightarrow> i \<Turnstile> c))"
+  "P ; B ; G \<Turnstile> c = ( (P ; B ; G \<turnstile>\<^sub>w\<^sub>f c) \<and> (\<forall>i. (P ; G \<turnstile> i) \<and>  i \<Turnstile> G \<longrightarrow> i \<Turnstile> c))"
   by (auto simp: eqvt_def wfI_def valid_graph_aux_def)
 nominal_termination (eqvt) by lexicographic_order
-
-(*
-nominal_function  valid2 :: "\<Theta> \<Rightarrow> \<B> \<Rightarrow> \<Gamma> \<Rightarrow> c \<Rightarrow> bool"  ("_ ; _ ; _  \<Turnstile>2 _ " [50, 50] 50)  where
- "P ; B ; G \<Turnstile>2 c = ( (P ; B ; G \<turnstile>\<^sub>w\<^sub>f c) \<and> (\<forall>i tv. (P ; B ; G \<turnstile> i ; tv) \<and>  i \<Turnstile> G \<longrightarrow> i \<Turnstile> c))"
-  by (auto simp: eqvt_def wfI2_def valid2_graph_aux_def)
-nominal_termination (eqvt) by lexicographic_order
-*)
 
 section \<open>Lemmas\<close>
 text \<open>Lemmas needed for Examples\<close>
@@ -255,70 +218,5 @@ proof -
   moreover have "P ; B ; G \<turnstile>\<^sub>w\<^sub>f C_true" using wfC_trueI assms by simp
   ultimately show ?thesis using valid.simps by simp
 qed
-
-
-inductive split :: "int \<Rightarrow> bit list \<Rightarrow> bit list * bit list \<Rightarrow> bool" where
- "split 0 xs ([], xs)"
-| "split m xs (ys,zs) \<Longrightarrow> split (m+1) (x#xs) ((x # ys), zs)"
-equivariance split
-nominal_inductive split .
-
-lemma split_concat:
- assumes "split n v (v1,v2)"
- shows "v = append v1 v2"
-using assms proof(induct "(v1,v2)" arbitrary: v1 v2 rule: split.inducts)
-  case 1
-  then show ?case by auto
-next
-  case (2 m xs ys zs x)
-  then show ?case by auto
-qed
-
-
-lemma split_n:
-  assumes "split n v (v1,v2)"
-  shows "0 \<le> n \<and> n \<le> int (length v)"
-using assms proof(induct rule: split.inducts)
-  case (1 xs)
-  then show ?case by auto
-next
-  case (2 m xs ys zs x)
-  then show ?case by auto
-qed
-
-lemma split_length:
-  assumes "split n v (v1,v2)"
-  shows "n = int (length v1)"
-using assms proof(induct  "(v1,v2)" arbitrary: v1 v2 rule: split.inducts)
-  case (1 xs)
-  then show ?case by auto
-next
-  case (2 m xs ys zs x)
-  then show ?case by auto
-qed
-
-lemma obtain_split:
-  assumes "0 \<le> n" and "n \<le> int (length bv)" 
-  shows "\<exists> bv1 bv2. split n bv (bv1 , bv2)" 
-using assms proof(induct bv arbitrary: n)
-  case Nil
-  then show ?case using split.intros by auto
-next
-  case (Cons b bv)
-  show ?case proof(cases "n = 0")
-    case True
-    then show ?thesis using split.intros by auto
-  next
-    case False
-    then obtain m where m:"n=m+1" using Cons 
-      by (metis add.commute add_minus_cancel)
-    moreover have "0 \<le> m" using False m Cons by linarith
-    then obtain bv1 and bv2 where "split m bv (bv1 , bv2)" using Cons m by force
-    hence "split n (b # bv) ((b#bv1), bv2)" using m split.intros by auto
-    then show ?thesis by auto
-  qed
-qed
-
-
 
 end

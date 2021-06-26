@@ -1,9 +1,8 @@
 (*<*)
 theory WellformedL
-  imports Wellformed "SyntaxL" Explorer
+  imports Wellformed "SyntaxL"
 begin                                                                                                                                                                                   
 (*>*)
-
 
 chapter \<open>Wellformedness Lemmas\<close>
 
@@ -21,10 +20,9 @@ lemmas wf_intros = wfV_wfC_wfG_wfT_wfTs_wfTh_wfB_wfCE_wfTD.intros wfE_wfS_wfCS_w
 
 lemmas freshers = fresh_prodN b.fresh c.fresh v.fresh ce.fresh fresh_GCons fresh_GNil fresh_at_base 
 
-
 section \<open>Strong Elimination\<close>
 
-
+text \<open>Inversion/elimination for well-formed polymorphic constructors \<close>
 lemma wf_strong_elim:
   fixes \<Gamma>::\<Gamma> and  \<Gamma>'::\<Gamma> and v::v and e::e and c::c and \<tau>::\<tau> and ts::"(string*\<tau>) list" 
            and \<Delta>::\<Delta> and b::b and ftq::fun_typ_q and ft::fun_typ and ce::ce and td::type_def and s::s and tm::"'a::fs" 
@@ -35,9 +33,7 @@ lemma wf_strong_elim:
                \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f b  \<and> atom bv \<sharp> (\<Theta>, \<B>, \<Gamma>, b, v) \<and>  \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b'[bv::=b]\<^sub>b\<^sub>b \<and> atom bv \<sharp> tm)" and           
          "\<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f  c           \<Longrightarrow> True" and
          "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>                \<Longrightarrow> True" and
-         "\<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<tau>            \<Longrightarrow> 
-           \<exists> z b c. \<tau> = \<lbrace> z : b  | c \<rbrace> \<and> atom z \<sharp> (\<Theta>, \<B>, \<Gamma>) \<and> atom z \<sharp> tm \<and>
-           \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f b  \<and>  \<Theta>; \<B>; (z, b, TRUE)  #\<^sub>\<Gamma> \<Gamma>   \<turnstile>\<^sub>w\<^sub>f c"     and
+         "\<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<tau>            \<Longrightarrow> True" and
          "\<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f ts \<Longrightarrow> True" and 
          "\<turnstile>\<^sub>w\<^sub>f \<Theta> \<Longrightarrow>True" and       
          "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f b \<Longrightarrow> True " and      
@@ -50,11 +46,7 @@ proof(nominal_induct
 rule:wfV_wfC_wfG_wfT_wfTs_wfTh_wfB_wfCE_wfTD.strong_induct)
   case (wfV_conspI bv dclist \<Theta> x b' c \<B> \<Gamma>)
   then show ?case by force
-next
-  case (wfTI z \<Theta> \<B> \<Gamma> b c)
-  then show ?case by force
 qed(auto+)
-
 
 section \<open>Context Extension\<close>
 
@@ -150,7 +142,6 @@ next
   qed
 qed
     
-
 lemma lookup_iff:
   fixes \<Theta>::\<Theta> and \<Gamma>::\<Gamma>
   assumes "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>"
@@ -192,7 +183,6 @@ proof -
   have "(x, b, c) \<in> toSet (\<Gamma>'@(x, b, c)   #\<^sub>\<Gamma> \<Gamma>)" by simp
   thus ?thesis using wf_g_unique assms by blast
 qed
-
 
 section \<open>Converting between wb forms\<close>
 
@@ -329,8 +319,6 @@ next
   then show ?thesis using wfG_elims(2)[OF assms] by auto
 qed
 
-
-
 lemma wfG_cons_wfC:
   fixes \<Gamma>::\<Gamma> and c::c
   assumes "\<Theta> ; B  \<turnstile>\<^sub>w\<^sub>f (x, b, c)   #\<^sub>\<Gamma> \<Gamma>"
@@ -390,7 +378,6 @@ proof -
   ultimately show ?thesis using wfCE_valI assms by auto
 qed
   
-
 section \<open>Support\<close>
 
 lemma wf_supp1:
@@ -434,7 +421,6 @@ next
     Un_commute b.supp sup_bot.right_neutral supp_b_empty pure_supp 
     by (simp add: Un_commute pure_supp sup.coboundedI1)
 next
-
   case (wfC_eqI \<Theta> \<B> \<Gamma> e1 b e2)
   hence "supp e1 \<subseteq> atom_dom \<Gamma> \<union> supp \<B>"  using   c.supp wfC_elims 
     image_empty list.set(1) sup_bot.right_neutral  by (metis IntI UnE empty_iff subsetCE subsetI)
@@ -650,7 +636,6 @@ next
     by (simp add: pure_supp supp_Cons)
 next
   case (wfFTI \<Theta> B' b s x c \<tau> \<Phi>)
-  thm fun_typ.supp
   have " supp (AF_fun_typ x b c \<tau> s) = supp c \<union> (supp \<tau> \<union> supp s) - set [atom x] \<union> supp b" using fun_typ.supp by auto
   thus ?case using wfFTI wf_supp1 
   proof -
@@ -739,7 +724,6 @@ using assms proof(induct G rule: \<Gamma>_induct)
     using supp_GNil by auto
 next
   case (GCons x' b' c' G)
-  thm wfG_cons
 
   show ?case proof(cases "x' = x")
     case True
@@ -767,7 +751,6 @@ next
         then show ?thesis by simp
       qed
     qed
-
     also have "... = (atom x \<in> supp ((x', b', c')   #\<^sub>\<Gamma> G))"  using supp_at_base False supp_GCons by simp
     finally show ?thesis by simp
   qed
@@ -783,7 +766,6 @@ lemma beta_flip_eq:
   fixes x::x and xa::x and \<B>::\<B>
   shows  "(x \<leftrightarrow> xa) \<bullet> \<B> = \<B>"
 proof - 
-  thm x_not_in_b_set
   have "atom x \<sharp> \<B> \<and> atom xa \<sharp> \<B>" using x_not_in_b_set fresh_def supp_set by metis
   thus ?thesis  by (simp add: flip_fresh_fresh fresh_def)
 qed
@@ -808,7 +790,6 @@ lemma wfT_wfC:
   assumes "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b | c \<rbrace>" and "atom z \<sharp> \<Gamma>"
   shows "\<Theta>; \<B>; (z,b,TRUE)  #\<^sub>\<Gamma>\<Gamma> \<turnstile>\<^sub>w\<^sub>f c"
 proof -
-  
   obtain za ba ca where *:"\<lbrace> z : b  | c \<rbrace> = \<lbrace> za : ba  | ca \<rbrace> \<and> atom za \<sharp> (\<Theta>,\<B>,\<Gamma>) \<and>  \<Theta>; \<B>; (za, ba, TRUE)   #\<^sub>\<Gamma> \<Gamma>  \<turnstile>\<^sub>w\<^sub>f ca"
     using wfT_elims[OF assms(1)] by metis
   hence c1: "[[atom z]]lst. c = [[atom za]]lst. ca" using \<tau>.eq_iff by meson
@@ -869,7 +850,7 @@ next
    thus  ?case using supp_GCons GCons wfG_elims by blast
 qed
 
-(* An important lemma that confirms that types only depend on immutable variables *)
+text \<open>An important lemma that confirms that types only depend on immutable variables\<close>
 lemma u_not_in_t:
   fixes u::u
   assumes "wfT \<Theta> B G \<tau>"
@@ -922,7 +903,6 @@ lemma wfCE_b_fresh:
   shows "atom bv \<sharp> ce"
 using bv_not_in_dom_g fresh_def assms bv_not_in_bset_supp wf_supp1(8) by fast
  
-
 section \<open>Freshness\<close>
 
 lemma wfG_fresh_x:
@@ -931,8 +911,6 @@ lemma wfG_fresh_x:
   shows "atom z \<sharp> (\<Theta>,\<B>, \<Gamma>)"
 unfolding fresh_prodN apply(intro conjI)
   using wf_supp1 wfX_wfY assms fresh_def x_not_in_b_set by(metis empty_iff)+
-
-
 
 lemma wfG_wfT:
   assumes "wfG P \<B> ((x, b, c[z::=V_var x]\<^sub>c\<^sub>v)   #\<^sub>\<Gamma> G)" and "atom x \<sharp> c"
@@ -958,7 +936,6 @@ proof -
   moreover have "\<lbrace> z : b |  c \<rbrace> = \<lbrace> z2 : b | c[z::=V_var z2]\<^sub>c\<^sub>v \<rbrace>"  using type_eq_subst assms fresh_Pair by auto
   ultimately show ?thesis using wfTI assms by argo
 qed
-
 
 lemma wfT_fresh_c:
   fixes x::x
@@ -999,9 +976,6 @@ next
   thus ?case using DCons fresh_DCons wfd by fast
 qed
 
-
-thm wf_supp2
-
 lemma wfG_fresh_x2:
   fixes \<Gamma>::\<Gamma> and z::x and \<Delta>::\<Delta> and \<Phi>::\<Phi>
   assumes "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>" and "\<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi>" and "atom z \<sharp> \<Gamma>" 
@@ -1037,7 +1011,6 @@ proof -
   moreover have "atom x \<notin> atom`fst`setD \<Delta>" by auto
   ultimately show ?thesis using fresh_def x_not_in_b_set by fast 
 qed
-
 
 lemma wfT_x_fresh:
   fixes \<tau>::\<tau> and \<Gamma>::\<Gamma> and  x::x
@@ -1106,7 +1079,6 @@ lemma wfG_inside_x_in_atom_dom:
   shows "atom x \<in> atom_dom ( \<Gamma>'@ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v)   #\<^sub>\<Gamma> \<Gamma>)"
   by(induct \<Gamma>'  rule: \<Gamma>_induct, (simp add: toSet.simps atom_dom.simps)+)
 
-
 lemma wfG_inside_x_neq:
   fixes c::c and x::x  and \<Gamma>::\<Gamma> and G::\<Gamma> and xa::x
   assumes "G=( \<Gamma>'@ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v)   #\<^sub>\<Gamma> \<Gamma>)" and "atom xa \<sharp> G" and " \<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f G"
@@ -1146,7 +1118,6 @@ proof -
   ultimately show  ?thesis by auto
 qed
 
-
 lemma flip_u_eq:
   fixes  u::u and u'::u and \<Theta>::\<Theta> and \<tau>::\<tau>
   assumes "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<tau>" 
@@ -1174,10 +1145,9 @@ proof -
   qed
 qed
 
-
 section \<open>Context Strengthening\<close>
 
-text \<open>Can remove an entry for a variable from the context if the variable doesn't appear in the 
+text \<open>We can remove an entry for a variable from the context if the variable doesn't appear in the 
 term and the variable is not used later in the context or any other context\<close>
 
 lemma fresh_restrict:
@@ -1360,7 +1330,6 @@ lemma wf_restrict2:
     
 proof(induct   arbitrary: \<Gamma>\<^sub>1 and \<Gamma>\<^sub>1 and  \<Gamma>\<^sub>1 and  \<Gamma>\<^sub>1 and  \<Gamma>\<^sub>1 and  \<Gamma>\<^sub>1 and \<Gamma>\<^sub>1 and \<Gamma>\<^sub>1 and \<Gamma>\<^sub>1 and  \<Gamma>\<^sub>1 and \<Gamma>\<^sub>1  and \<Gamma>\<^sub>1 and  \<Gamma>\<^sub>1 and \<Gamma>\<^sub>1  and \<Gamma>\<^sub>1 and \<Gamma>\<^sub>1 
                rule:wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.inducts)
-
   case (wfE_valI \<Theta> \<Phi> \<Gamma> \<Delta> v b)
   then show ?case using e.fresh wf_intros wf_restrict1 by metis
 next
@@ -1404,12 +1373,10 @@ next
     show \<open>Some (AF_fundef f (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f\<close>  using wfE_appPI by auto
     show \<open> \<Theta>; \<B>; \<Gamma>\<^sub>1 @ \<Gamma>\<^sub>2 \<turnstile>\<^sub>w\<^sub>f v : b[bv::=b']\<^sub>b \<close>  using wfE_appPI wf_restrict1 by auto
   qed
-
 next
   case (wfE_mvarI \<Theta> \<Phi> \<Gamma> \<Delta> u \<tau>)
   then show ?case using e.fresh wf_intros by metis
 next
-
   case (wfD_emptyI \<Theta> \<Gamma>)
   then show ?case using c.fresh wf_intros wf_restrict1 by metis
 next
@@ -1432,7 +1399,6 @@ qed(auto)+
 
 lemmas wf_restrict=wf_restrict1 wf_restrict2
 
-
 lemma wfT_restrict2:
   fixes \<tau>::\<tau>
   assumes "wfT \<Theta> \<B> ((x, b, c) #\<^sub>\<Gamma> \<Gamma>) \<tau>" and "atom x \<sharp> \<tau>" 
@@ -1453,8 +1419,6 @@ proof -
     then show ?thesis using wfG_cons1I * assms by auto
   qed
 qed
-
-
 
 section \<open>Type Definitions\<close>
 
@@ -1510,7 +1474,6 @@ qed(metis wf_intros)+
 lemma wf_theta_weakening2: 
   fixes \<Gamma>::\<Gamma> and  \<Gamma>'::\<Gamma> and v::v and e::e and c::c and \<tau>::\<tau> and ts::"(string*\<tau>) list" and \<Delta>::\<Delta> and s::s and b::b and \<B> :: \<B> and ftq::fun_typ_q and ft::fun_typ and ce::ce and td::type_def
          and cs::branch_s and css::branch_list and t::\<tau>
-
   shows 
          "\<Theta>; \<Phi>; \<B>; \<Gamma>  ; \<Delta> \<turnstile>\<^sub>w\<^sub>f e : b \<Longrightarrow> \<turnstile>\<^sub>w\<^sub>f \<Theta>' \<Longrightarrow> set \<Theta> \<subseteq> set \<Theta>' \<Longrightarrow> \<Theta>' ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f e : b" and
          "\<Theta>; \<Phi>; \<B>; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s : b \<Longrightarrow> \<turnstile>\<^sub>w\<^sub>f \<Theta>' \<Longrightarrow> set \<Theta> \<subseteq> set \<Theta>' \<Longrightarrow> \<Theta>' ; \<Phi> ; \<B> ; \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s : b" and
@@ -1533,7 +1496,6 @@ rule:wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.strong_induct)
     show \<open>Some (AF_fundef f (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f\<close> using wfE_appPI by auto
     show \<open> \<Theta>' ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b[bv::=b']\<^sub>b \<close> using wfE_appPI wf_theta_weakening1 by auto
   qed
-
 next
   case (wfS_matchI \<Theta> \<B> \<Gamma> v tid  dclist \<Delta> \<Phi> cs b)
   show ?case proof
@@ -1625,7 +1587,6 @@ qed
 
 subsection \<open>Simple\<close>
 
-
 lemma wfTh_dclist_unique:
   assumes   "wfTh \<Theta>" and "AF_typedef tid dclist1 \<in> set \<Theta>" and  "AF_typedef tid dclist2 \<in> set \<Theta>" 
   shows "dclist1 = dclist2"
@@ -1709,7 +1670,6 @@ lemma wfTh_supp_b:
   shows "supp b = {}" 
   using assms wfTh_lookup_supp_empty \<tau>.supp by blast
 
-
 lemma wfTh_b_eq_iff:
   fixes bva1::bv and bva2::bv and dc::string 
   assumes "(dc, \<lbrace> x1 : b1  | c1 \<rbrace>) \<in> set dclist1" and "(dc, \<lbrace> x2 : b2  | c2 \<rbrace>) \<in> set dclist2" and
@@ -1731,8 +1691,7 @@ next
       using Cons lst_head_cons Cons cons by metis
     hence **: "fst dct1' = fst dct2'" using lst_fst[THEN lst_pure] 
       by (metis (no_types) \<open>[[atom bva1]]lst. dclist1' = [[atom bva2]]lst. dclist2' \<and> [[atom bva1]]lst. dct1' = [[atom bva2]]lst. dct2'\<close> 
-            \<open>\<And>x2 x1 t2' t2a t2 t1. [[atom x1]]lst. (t1, t2a) = [[atom x2]]lst. (t2, t2') \<Longrightarrow> t1 = t2\<close> fst_conv surj_pair)
-    
+            \<open>\<And>x2 x1 t2' t2a t2 t1. [[atom x1]]lst. (t1, t2a) = [[atom x2]]lst. (t2, t2') \<Longrightarrow> t1 = t2\<close> fst_conv surj_pair)    
     show ?thesis proof(cases "fst dct1' = dc")
       case True
       have "dc \<notin> fst ` set dclist1'" using  wfTs_elims Cons by (metis True fstI)
@@ -1828,8 +1787,7 @@ using assms proof(induct \<Gamma>' rule: \<Gamma>_induct)
   case GNil
   then show ?case using subst_gb.simps by simp
 next
-  case (GCons x' b' c' G)
- 
+  case (GCons x' b' c' G) 
   hence wfg:"wfG P \<B> (G @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v)  #\<^sub>\<Gamma> \<Gamma>) \<and> atom x' \<sharp> (G @ (x, b, c[z::=V_var x]\<^sub>c\<^sub>v)  #\<^sub>\<Gamma> \<Gamma>)" using wfG_elims(2) 
     using GCons.prems append_g.simps by metis 
   hence "atom x \<notin> atom_dom ((x', b', c')  #\<^sub>\<Gamma> G)"  using  GCons wfG_inside_fresh by fast
@@ -1843,7 +1801,6 @@ next
   also have "... = ((x', b', c')  #\<^sub>\<Gamma> G)[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma>"  using subst_gv.simps \<open>x\<noteq>x'\<close>  by simp
   finally show ?case by auto
 qed
-
 
 lemma wfTh_td_eq: 
   assumes "td1 \<in> set (td2 # P)" and "wfTh (td2 # P)" and "name_of_type td1 = name_of_type td2"
@@ -1891,7 +1848,6 @@ next
       by (metis Cons.hyps Cons.prems distinct.simps(2) fst_conv list.set_map list.simps(9) wfTs_elims(2)) 
 qed 
 
-
 lemma wfTh_dclist_distinct:
   assumes "AF_typedef s dclist \<in> set P" and "wfTh P"
   shows "distinct (map fst  dclist)"
@@ -1900,7 +1856,6 @@ proof -
   hence "wfTs P {||} GNil dclist" using wfTD_elims by metis
   thus ?thesis using wfTs_distinct by metis
 qed
-
 
 lemma wfTh_dc_t_unique2:
   assumes "AF_typedef s dclist' \<in> set P" and "(dc,tc' ) \<in> set dclist'" and "AF_typedef s dclist \<in> set P" and "wfTh P" and
@@ -1913,14 +1868,11 @@ proof -
     by (meson eq_key_imp_eq_value)
 qed
 
-
 lemma wfTh_dc_t_unique:
   assumes "AF_typedef s dclist' \<in> set P" and "(dc, \<lbrace> x' : b'  | c' \<rbrace> ) \<in> set dclist'" and "AF_typedef s dclist \<in> set P" and "wfTh P" and
         "(dc,  \<lbrace> x : b  | c \<rbrace>) \<in> set dclist"
       shows "\<lbrace> x' : b'  | c' \<rbrace>= \<lbrace> x : b  | c \<rbrace>"
   using assms wfTh_dc_t_unique2 by metis
-
-  
 
 lemma wfTs_wfT:
   fixes dclist::"(string *\<tau>) list" and t::\<tau>
@@ -1943,7 +1895,6 @@ proof -
   hence "P ; {||} ; GNil \<turnstile>\<^sub>w\<^sub>f dclist" using wfTD_elims by auto
   thus ?thesis using wfTs_wfT assms by auto
 qed
-
 
 lemma td_lookup_eq_iff:
   fixes dc :: string and bva1::bv and bva2::bv
@@ -1974,9 +1925,7 @@ next
     then show ?thesis using Cons 
       by (metis "local.*" cons list.set_intros(2))
   qed
-
 qed
-
 
 lemma lst_t_b_eq_iff:
   fixes bva1::bv and bva2::bv
@@ -2002,15 +1951,12 @@ proof -
   thus ?thesis using subst_b_flip_eq_two subst_b_b_def by metis
 qed
 
-
 section \<open>Equivariance Lemmas\<close>
-
 
 lemma x_not_in_u_set[simp]:
   fixes  x::x and us::"u fset"
   shows "atom x \<notin> supp us"
   by(induct us,auto, simp add: supp_finsert supp_at_base)
-
 
 lemma wfS_flip_eq:
   fixes s1::s and x1::x and s2::s and x2::x  and \<Delta>::\<Delta>
@@ -2024,7 +1970,6 @@ proof(cases "x1=x2")
   then show ?thesis using assms True by simp
 next
   case False
-  thm wfD_x_fresh
   have "\<turnstile>\<^sub>w\<^sub>f \<Theta> \<and> \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> \<and>  \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>" using wfX_wfY assms by metis
   moreover have "atom x1 \<sharp> \<Gamma>" using wfX_wfY wfG_elims assms by metis
   moreover hence "atom x1 \<sharp> \<Delta> \<and> atom x2 \<sharp> \<Delta> " using wfD_x_fresh assms by auto
@@ -2135,11 +2080,10 @@ proof -
 qed
 
 
-(* It is possible to collapse some of the easy to prove inductive cases into a single proof at the qed line
+text \<open>It is possible to collapse some of the easy to prove inductive cases into a single proof at the qed line
    but this makes it fragile under change. For example, changing the lemma statement might make one of the previously
    trivial cases non-trivial and so the collapsing needs to be unpacked. Is there a way to find which case
-   has failed in the qed line?
-*)
+   has failed in the qed line?\<close>
 
 lemma wb_b_weakening1:
   fixes \<Gamma>::\<Gamma> and  \<Gamma>'::\<Gamma> and v::v and e::e and c::c and \<tau>::\<tau> and ts::"(string*\<tau>) list" and \<Delta>::\<Delta> and s::s and \<B>::\<B> and ftq::fun_typ_q and ft::fun_typ and ce::ce and td::type_def
@@ -2156,7 +2100,6 @@ lemma wb_b_weakening1:
          "\<Theta>  \<turnstile>\<^sub>w\<^sub>f td \<Longrightarrow> True"
 proof(nominal_induct b and c and \<Gamma> and \<tau> and ts and P and b and b and td 
      avoiding:  \<B>'
-(*     arbitrary: \<B>' and \<B>' and  \<B>' and  \<B>' and \<B>' and  \<B>' and \<B>' and \<B>' and  \<B>' and \<B>' and  \<B>' and \<B>'  and \<B>' and \<B>' and \<B>' and \<B>' *)
 rule:wfV_wfC_wfG_wfT_wfTs_wfTh_wfB_wfCE_wfTD.strong_induct)
   case (wfV_conspI s bv dclist \<Theta> dc x b' c \<B> b \<Gamma> v)
   show ?case proof
@@ -2189,10 +2132,8 @@ lemma wb_b_weakening2:
          "\<Theta> ; \<Phi>   \<turnstile>\<^sub>w\<^sub>f ftq \<Longrightarrow> True" and
          "\<Theta> ; \<Phi>  ; \<B> \<turnstile>\<^sub>w\<^sub>f ft \<Longrightarrow> \<B> |\<subseteq>| \<B>' \<Longrightarrow> \<Theta> ; \<Phi>  ; \<B>' \<turnstile>\<^sub>w\<^sub>f ft"
 proof(nominal_induct b and b and b and b and \<Phi> and \<Delta> and ftq and ft  
-     avoiding:  \<B>'
-(*     arbitrary: \<B>' and \<B>' and  \<B>' and  \<B>' and \<B>' and  \<B>' and \<B>' and \<B>' and  \<B>' and \<B>' and  \<B>' and \<B>'  and \<B>' and \<B>' and \<B>' and \<B>' *)
-     rule:wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.strong_induct)
-
+   avoiding:  \<B>'
+   rule:wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.strong_induct)
   case (wfE_valI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v b)
   then show ?case using wf_intros wb_b_weakening1 by metis
 next
@@ -2323,8 +2264,7 @@ next
     show \<open> \<Theta>; \<B>' ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wb_b_weakening1 wfS_assertI by simp
     have "atom x \<sharp>  \<B>'" using x_not_in_b_set fresh_def by metis
     thus  \<open>atom x \<sharp> (\<Phi>, \<Theta>, \<B>', \<Gamma>, \<Delta>, c, b, s)\<close> using wfS_assertI fresh_prodN by simp
-  qed
-   
+  qed   
 qed(auto)
 
 lemmas wb_b_weakening = wb_b_weakening1 wb_b_weakening2
@@ -2334,7 +2274,6 @@ lemma wfG_b_weakening:
   assumes "\<B> |\<subseteq>| \<B>'" and "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>"
   shows "\<Theta>; \<B>'  \<turnstile>\<^sub>w\<^sub>f \<Gamma> "
   using wb_b_weakening assms by auto
-
 
 lemma wfT_b_weakening:
   fixes \<Gamma>::\<Gamma> and \<Theta>::\<Theta> and \<tau>::\<tau>
@@ -2381,7 +2320,6 @@ next
 next
   case (B_app s b)
   then obtain bv' dclist where *:"AF_typedef_poly s bv' dclist \<in> set \<Theta> \<and> \<Theta> ; {|bv|}   \<turnstile>\<^sub>w\<^sub>f b" using wfB_elims by metis
-  thm wfB_appI
   show ?case unfolding subst_b_simps proof
     show "\<turnstile>\<^sub>w\<^sub>f \<Theta> " using B_app wfX_wfY by metis
     show "\<Theta> ;   \<B>  \<turnstile>\<^sub>w\<^sub>f b[bv::=b']\<^sub>b\<^sub>b " using * B_app forget_subst wfB_supp fresh_def 
@@ -2424,7 +2362,6 @@ next
   moreover hence "(x1, b1, c1) \<in> toSet (\<Gamma>' @ (x, b, c)  #\<^sub>\<Gamma> \<Gamma>)" using wf_not_in_prefix by fastforce
   ultimately show ?case using wfG_cons by fastforce
 qed
-
 
 section \<open>Function Definitions\<close>
 
@@ -2484,7 +2421,6 @@ next
       using wfE_appPI lookup_fun_weakening by metis
     show \<open> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b[bv::=b']\<^sub>b \<close> using wfE_appPI by auto
   qed
-
 next
   case (wfE_mvarI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> u \<tau>)
   then show ?case using wf_intros by metis
@@ -2526,31 +2462,27 @@ next
 next
   case (wfS_assertI \<Theta> \<Phi> \<B> x c \<Gamma> \<Delta> s b)
   show ?case proof
-
-  show \<open> \<Theta> ; \<Phi>' ; \<B> ; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s : b \<close>  using wfS_assertI by auto
-next
-  show \<open> \<Theta>; \<B>; \<Gamma>   \<turnstile>\<^sub>w\<^sub>f c \<close> using wfS_assertI by auto
-next
-  show \<open> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close>  using wfS_assertI by auto
-
-  have "atom x \<sharp> \<Phi>'" using wfS_assertI wfPhi_supp fresh_def by blast
-  thus  \<open>atom x \<sharp> (\<Phi>', \<Theta>, \<B>, \<Gamma>, \<Delta>, c, b, s)\<close>  using fresh_prodN wfS_assertI wfPhi_supp fresh_def by auto
-qed
+    show \<open> \<Theta> ; \<Phi>' ; \<B> ; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s : b \<close>  using wfS_assertI by auto
+  next
+    show \<open> \<Theta>; \<B>; \<Gamma>   \<turnstile>\<^sub>w\<^sub>f c \<close> using wfS_assertI by auto
+  next
+    show \<open> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close>  using wfS_assertI by auto
+    have "atom x \<sharp> \<Phi>'" using wfS_assertI wfPhi_supp fresh_def by blast
+    thus  \<open>atom x \<sharp> (\<Phi>', \<Theta>, \<B>, \<Gamma>, \<Delta>, c, b, s)\<close>  using fresh_prodN wfS_assertI wfPhi_supp fresh_def by auto
+  qed
 next
   case (wfFTI \<Theta> B b s x c \<tau> \<Phi>)
   show ?case proof
-
-  show \<open> \<Theta> ; B  \<turnstile>\<^sub>w\<^sub>f b \<close>  using wfFTI by auto
-next
-
-  show \<open>supp c \<subseteq> {atom x}\<close> using wfFTI by auto
-next
-  show \<open> \<Theta> ; B ; (x, b, c) #\<^sub>\<Gamma> GNil   \<turnstile>\<^sub>w\<^sub>f \<tau> \<close> using wfFTI by auto
-next
-  show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi>' \<close> using wfFTI by auto
-next
-  show \<open>supp s \<subseteq> {atom x} \<union> supp B\<close> using wfFTI by auto
-qed
+    show \<open> \<Theta> ; B  \<turnstile>\<^sub>w\<^sub>f b \<close>  using wfFTI by auto
+  next
+    show \<open>supp c \<subseteq> {atom x}\<close> using wfFTI by auto
+  next
+    show \<open> \<Theta> ; B ; (x, b, c) #\<^sub>\<Gamma> GNil   \<turnstile>\<^sub>w\<^sub>f \<tau> \<close> using wfFTI by auto
+  next
+    show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi>' \<close> using wfFTI by auto
+  next
+    show \<open>supp s \<subseteq> {atom x} \<union> supp B\<close> using wfFTI by auto
+  qed
 qed(auto|metis wf_intros)+
 
 
@@ -2574,13 +2506,11 @@ proof -
   thus ?thesis  using  beta_flip_eq theta_flip_eq  wfT_wf wfG_wf  * ** True_eqvt wfT.eqvt permute_flip_cancel by metis
 qed
 
-
 lemma wfFT_wf_aux:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q and s::s and \<Delta>::\<Delta>
   assumes "\<Theta> ; \<Phi>  ; B \<turnstile>\<^sub>w\<^sub>f (AF_fun_typ x b c \<tau> s)" 
   shows "\<Theta> ; B ; (x,b,c) #\<^sub>\<Gamma> GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta>  \<turnstile>\<^sub>w\<^sub>f  \<Phi> \<and> supp s \<subseteq> { atom x } \<union> supp B"
 proof -
-
   obtain xa and ca and sa and \<tau>' where *:"\<Theta> ; B  \<turnstile>\<^sub>w\<^sub>f b  \<and>  (\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>  )  \<and>
     supp sa \<subseteq> {atom xa} \<union> supp B \<and>  (\<Theta> ; B ; (xa, b, ca)  #\<^sub>\<Gamma> GNil   \<turnstile>\<^sub>w\<^sub>f \<tau>')  \<and>  
   AF_fun_typ x b c \<tau> s = AF_fun_typ xa b ca \<tau>' sa " 
@@ -2605,13 +2535,11 @@ proof -
   thus ?thesis using wfFT_wf_aux by force
 qed
 
-
 lemma wfFT_poly_wf:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ftq :: fun_typ_q and s::s and \<Delta>::\<Delta>
   assumes "\<Theta> ; \<Phi>  \<turnstile>\<^sub>w\<^sub>f (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s))" 
   shows "\<Theta> ; {|bv|} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau> \<and> \<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi> \<and> \<Theta> ; \<Phi>  ; {|bv|}  \<turnstile>\<^sub>w\<^sub>f (AF_fun_typ x b c \<tau> s)"
 proof -
-
   obtain bv1 ft1 where  *:"\<Theta> ; \<Phi>  ; {|bv1|} \<turnstile>\<^sub>w\<^sub>f ft1 \<and> [[atom bv1]]lst. ft1 = [[atom bv]]lst. AF_fun_typ x b c \<tau> s" 
     using wfFTQ_elims(3)[OF assms]  by metis
 
@@ -2640,7 +2568,6 @@ lemma wfFT_poly_wfT:
   assumes "\<Theta> ; \<Phi>  \<turnstile>\<^sub>w\<^sub>f (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s))"
   shows "\<Theta> ; {| bv |} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau>"
   using wfFT_poly_wf assms by simp
-
 
 lemma b_of_supp:
   "supp (b_of t) \<subseteq> supp t"
@@ -2684,7 +2611,6 @@ lemma wfPhi_f_simple_wfT:
   shows "\<Theta> ; {||} ; (x,b,c) #\<^sub>\<Gamma>GNil \<turnstile>\<^sub>w\<^sub>f \<tau>"
   using wfPhi_f_simple_wf assms  using lookup_fun_member by blast
 
-
 lemma  wfPhi_f_simple_supp_b:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
   assumes "Some (AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
@@ -2694,14 +2620,11 @@ proof -
   thus ?thesis using wfT_wf wfG_cons wfB_supp by fastforce
 qed
 
-
 lemma wfPhi_f_simple_supp_t:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
   assumes "Some (AF_fundef f  (AF_fun_typ_none (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
   shows "supp \<tau> \<subseteq> { atom x }"
   using wfPhi_f_simple_wfT wfT_supp assms by fastforce
-
-
 
 lemma  wfPhi_f_simple_supp_c:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
@@ -2753,7 +2676,6 @@ next
       by blast
   qed
 qed
-
 
 lemma wfPhi_f_poly_wfT:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
@@ -2826,10 +2748,6 @@ proof -
     using supp_at_base by fastforce
 qed
 
-
-
-
-
 lemma  wfPhi_f_poly_supp_s:
   fixes \<tau>::\<tau> and \<Theta>::\<Theta> and \<Phi>::\<Phi> and ft :: fun_typ_q
   assumes "Some (AF_fundef f  (AF_fun_typ_some bv (AF_fun_typ x b c \<tau> s))) = lookup_fun \<Phi> f" and "\<Theta> \<turnstile>\<^sub>w\<^sub>f \<Phi>"
@@ -2842,7 +2760,6 @@ proof -
   thus ?thesis using wfFT_wf_aux[OF *]  using supp_at_base by auto
 qed
 
-
 lemmas wfPhi_f_supp = wfPhi_f_poly_supp_b wfPhi_f_simple_supp_b wfPhi_f_poly_supp_c 
     wfPhi_f_simple_supp_t wfPhi_f_poly_supp_t wfPhi_f_simple_supp_t wfPhi_f_poly_wfT wfPhi_f_simple_wfT 
     wfPhi_f_poly_supp_s wfPhi_f_simple_supp_s
@@ -2853,7 +2770,6 @@ lemma fun_typ_eq_ret_unique:
 proof -
   have "[[atom x1]]lst. \<tau>1' = [[atom x2]]lst. \<tau>2'" using assms lst_fst fun_typ.eq_iff lst_snd by metis
   thus ?thesis using subst_v_flip_eq_two[of x1 \<tau>1' x2 \<tau>2' v] subst_v_\<tau>_def by metis
-
 qed
 
 lemma fun_typ_eq_body_unique: 
@@ -2871,7 +2787,6 @@ lemma fun_ret_unique:
 proof -
   have *: " (AF_fundef f (AF_fun_typ_none (AF_fun_typ x1 b1 c1 \<tau>1' s1'))) = (AF_fundef f (AF_fun_typ_none (AF_fun_typ x2 b2 c2 \<tau>2' s2')))" using option.inject assms by metis
   thus ?thesis using fun_typ_eq_ret_unique fun_def.eq_iff fun_typ_q.eq_iff by metis
-
 qed
 
 lemma fun_poly_arg_unique:
@@ -2934,7 +2849,6 @@ proof -
   thus ?thesis using   subst_v_flip_eq_two  \<tau>.eq_iff 
     by (metis assms fun_typ.eq_iff fun_typ_eq_body_unique fun_typ_eq_ret_unique)
 qed
-
 
 section \<open>Weakening\<close>
 
@@ -3108,7 +3022,6 @@ next
   then show ?case using wfX_wfB1 
     by (meson Wellformed.wfFTI wb_b_weakening2(8))
 qed(metis wfV_wf wfG_wf  wf_intros wfX_wfB1)
-(*qed(auto | metis wfV_wf wfG_wf  wf_intros wfX_wfB1 )+*)
 
 lemmas wfX_wfB = wfX_wfB1 wfX_wfB2
 
@@ -3150,7 +3063,6 @@ next
     show \<open>atom bv \<sharp> (\<Theta>, \<B>, \<Gamma>', b, v)\<close> using wfV_conspI by simp
     show \<open> \<Theta>; \<B>; \<Gamma>' \<turnstile>\<^sub>w\<^sub>f v : b'[bv::=b]\<^sub>b\<^sub>b \<close> using wfV_conspI by auto
   qed
-
 qed(metis wf_intros)+
 
 lemma wf_weakening2:
@@ -3169,7 +3081,6 @@ proof(nominal_induct
           b and b and b and b and \<Phi> and \<Delta> and ftq and ft
           avoiding:  \<Gamma>'          
           rule:wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.strong_induct)
- 
   case (wfE_appPI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> b' bv v \<tau> f x b c s)
   show ?case proof
     show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using wfE_appPI by auto
@@ -3189,7 +3100,7 @@ next
     show \<open>atom x \<sharp> (\<Phi>, \<Theta>, \<B>, \<Gamma>', \<Delta>, e, b)\<close>  using wfS_letI by auto
   qed
 next
-   case (wfS_let2I \<Theta> \<Phi> \<B> \<Gamma> \<Delta> s1 \<tau> x s2 b)
+  case (wfS_let2I \<Theta> \<Phi> \<B> \<Gamma> \<Delta> s1 \<tau> x s2 b)
   show ?case proof
     show \<open> \<Theta> ; \<Phi>  ; \<B> ; \<Gamma>' ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s1 : b_of \<tau> \<close> using wfS_let2I by auto
     show \<open> \<Theta>; \<B>; \<Gamma>'   \<turnstile>\<^sub>w\<^sub>f \<tau> \<close>  using wfS_let2I wf_weakening1 by auto
@@ -3222,7 +3133,7 @@ next
 next
   case (wfS_assertI \<Theta> \<Phi> \<B> x c \<Gamma> \<Delta> s b)
   show ?case proof(rule)
-show \<open> \<Theta>; \<B>; \<Gamma>'   \<turnstile>\<^sub>w\<^sub>f c \<close> using wfS_assertI wf_weakening1 by auto
+    show \<open> \<Theta>; \<B>; \<Gamma>'   \<turnstile>\<^sub>w\<^sub>f c \<close> using wfS_assertI wf_weakening1 by auto
     have "\<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>'" proof(rule wfG_consI)
       show \<open> \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f \<Gamma>' \<close> using wfS_assertI by auto
       show \<open>atom x \<sharp> \<Gamma>'\<close> using wfS_assertI by auto
@@ -3233,16 +3144,13 @@ show \<open> \<Theta>; \<B>; \<Gamma>'   \<turnstile>\<^sub>w\<^sub>f c \<close>
         show \<open>atom x \<sharp> \<Gamma>'\<close> using wfS_assertI by auto
         show \<open> \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f B_bool \<close> using wfS_assertI wfB_boolI wfX_wfY by metis
       qed
-  thus  \<open> \<Theta>; \<B>; (x, B_bool, TRUE) #\<^sub>\<Gamma> \<Gamma>' \<turnstile>\<^sub>w\<^sub>f c \<close> 
-    using  wf_weakening1(2)[OF \<open> \<Theta>; \<B>; \<Gamma>' \<turnstile>\<^sub>w\<^sub>f c \<close>  \<open> \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, B_bool, TRUE) #\<^sub>\<Gamma> \<Gamma>' \<close>] by force
-   qed
-   
-    thus  \<open> \<Theta>; \<Phi>; \<B>; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>' ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s : b \<close> using wfS_assertI by fastforce
-    
+      thus  \<open> \<Theta>; \<B>; (x, B_bool, TRUE) #\<^sub>\<Gamma> \<Gamma>' \<turnstile>\<^sub>w\<^sub>f c \<close> 
+       using  wf_weakening1(2)[OF \<open> \<Theta>; \<B>; \<Gamma>' \<turnstile>\<^sub>w\<^sub>f c \<close>  \<open> \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, B_bool, TRUE) #\<^sub>\<Gamma> \<Gamma>' \<close>] by force
+    qed  
+    thus  \<open> \<Theta>; \<Phi>; \<B>; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>' ; \<Delta> \<turnstile>\<^sub>w\<^sub>f s : b \<close> using wfS_assertI by fastforce   
     show \<open> \<Theta>; \<B>; \<Gamma>' \<turnstile>\<^sub>w\<^sub>f \<Delta> \<close> using wfS_assertI by auto
     show \<open>atom x \<sharp> (\<Phi>, \<Theta>, \<B>, \<Gamma>', \<Delta>, c, b, s)\<close> using wfS_assertI by auto
   qed
-
 qed(metis wf_intros wf_weakening1)+
 
 lemmas wf_weakening = wf_weakening1 wf_weakening2
@@ -3302,7 +3210,6 @@ proof
   qed    
 qed
 
-
 lemma wfT_weakening_all:
   fixes \<Gamma>::\<Gamma> and  \<Gamma>'::\<Gamma> and \<tau>::\<tau>
   assumes "\<Theta>; \<B>; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f \<tau>"  and "\<Theta>; \<B>' \<turnstile>\<^sub>w\<^sub>f  \<Gamma>'" and "toSet \<Gamma> \<subseteq> toSet \<Gamma>'" and "\<B> |\<subseteq>| \<B>'" 
@@ -3315,7 +3222,6 @@ lemma wfT_weakening_nil:
   shows "\<Theta>; \<B>' ; \<Gamma>'  \<turnstile>\<^sub>w\<^sub>f  \<tau>" 
   using wfT_weakening_all
   using assms(1) assms(2) toSet.simps(1) by blast
-
 
 lemma wfTh_wfT2: 
   fixes x::x and v::v and \<tau>::\<tau> and G::\<Gamma>
@@ -3339,9 +3245,7 @@ proof -
   thus "\<tau>[x::=v]\<^sub>\<tau>\<^sub>v = \<tau>"  by (simp add: fresh_def)
   have "wfT \<Theta> {||} GNil \<tau>" using assms wfTh_wfT by auto
   thus "wfT \<Theta> B G \<tau>" using assms wfT_weakening_nil by simp
-
 qed
-
 
 lemma wf_d_weakening:
   fixes \<Gamma>::\<Gamma> and  \<Gamma>'::\<Gamma> and v::v and e::e and c::c and \<tau>::\<tau> and ts::"(string*\<tau>) list" and \<Delta>::\<Delta> and s::s and \<B>::\<B> and ftq::fun_typ_q and ft::fun_typ and ce::ce and td::type_def
@@ -3419,20 +3323,20 @@ next
   case (wfS_assertI \<Theta> \<Phi> \<B> x c \<Gamma> \<Delta> s b)
   show ?case proof
     have "\<Theta>; \<B>; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>'" proof(rule  wf_weakening2(6))
-  show \<open> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>' \<close> using wfS_assertI by auto
-next
-  show \<open> \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> \<close> using wfS_assertI wfX_wfY by metis
-next
-  show \<open>toSet \<Gamma> \<subseteq> toSet ((x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>)\<close> using wfS_assertI by auto
-qed
+      show \<open> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>' \<close> using wfS_assertI by auto
+    next
+      show \<open> \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> \<close> using wfS_assertI wfX_wfY by metis
+    next
+      show \<open>toSet \<Gamma> \<subseteq> toSet ((x, B_bool, c) #\<^sub>\<Gamma> \<Gamma>)\<close> using wfS_assertI by auto
+    qed
     thus  \<open> \<Theta>; \<Phi>; \<B>; (x, B_bool, c) #\<^sub>\<Gamma> \<Gamma> ; \<Delta>' \<turnstile>\<^sub>w\<^sub>f s : b \<close> using wfS_assertI wfX_wfY by metis
-next
-  show \<open> \<Theta>; \<B>; \<Gamma>   \<turnstile>\<^sub>w\<^sub>f c \<close> using wfS_assertI by auto
-next
-  show \<open> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>' \<close> using wfS_assertI by auto
-next
-  show \<open>atom x \<sharp> (\<Phi>, \<Theta>, \<B>, \<Gamma>, \<Delta>', c, b, s)\<close> using wfS_assertI by auto
-qed
+  next
+    show \<open> \<Theta>; \<B>; \<Gamma>   \<turnstile>\<^sub>w\<^sub>f c \<close> using wfS_assertI by auto
+  next
+    show \<open> \<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<Delta>' \<close> using wfS_assertI by auto
+  next
+    show \<open>atom x \<sharp> (\<Phi>, \<Theta>, \<B>, \<Gamma>, \<Delta>', c, b, s)\<close> using wfS_assertI by auto
+  qed
 next
   case (wfS_let2I \<Theta> \<Phi> \<B> \<Gamma> \<Delta> s1 \<tau> x s2 b)
   show ?case proof
@@ -3489,8 +3393,7 @@ next
   then show ?case using wf_intros by metis
 qed(auto+)
 
-
-section \<open>Forms\<close>
+section \<open>Useful well-formedness instances\<close>
 
 text \<open>Well-formedness for particular constructs that we will need later\<close>
 
@@ -3595,7 +3498,6 @@ lemma wfT_v_eq:
   using wfT_e_eq wfE_valI assms wfX_wfY 
   by (simp add: wfCE_valI)
 
-
 lemma wfC_wfG:
   fixes \<Gamma>::\<Gamma> and c::c and b::b
   assumes "\<Theta> ; B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c" and "\<Theta> ; B  \<turnstile>\<^sub>w\<^sub>f b" and "atom x \<sharp> \<Gamma>" 
@@ -3606,7 +3508,7 @@ proof -
   thus ?thesis using wfG_consI assms wfX_wfY by metis
 qed
 
-section \<open>Replacing\<close>
+section \<open>Replacing the constraint on a variable in a context\<close>
 
 lemma wfG_cons_fresh2:
   fixes \<Gamma>'::\<Gamma>
@@ -3888,8 +3790,6 @@ proof -
   ultimately show ?thesis using wfC_replace_cons subst_v_c_def by simp
 qed
 
-
-
 lemma wfT_wfC2:
   fixes c::c  and x::x
   assumes "\<Theta>; \<B>; \<Gamma> \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b | c \<rbrace>" and "atom x \<sharp> \<Gamma>"
@@ -3916,7 +3816,6 @@ proof -
   thus ?thesis using wfG_consI assms wfT_wfB b_of.simps wfX_wfY by metis
 qed
 
-
 lemma wfG_replace_inside2:
   fixes \<Gamma>::\<Gamma> 
   assumes "wfG P \<B> (\<Gamma>' @ (x, b, c')  #\<^sub>\<Gamma> \<Gamma>)" and "wfG P \<B> ((x,b,c) #\<^sub>\<Gamma>\<Gamma>)"
@@ -3925,7 +3824,6 @@ proof -
   have "wfC P \<B> ((x,b,TRUE) #\<^sub>\<Gamma>\<Gamma>) c" using wfG_wfC assms by auto
   thus ?thesis using wf_replace_inside1(3)[OF assms(1)] by auto
 qed
-
 
 lemma wfG_replace_inside_full:
   fixes \<Gamma>::\<Gamma> 
@@ -3980,7 +3878,7 @@ lemma replace_in_g_fresh_single:
   shows "atom x \<sharp> G[x'\<longmapsto>c'']" 
   using rig_dom_eq wfG_dom_supp assms fresh_def atom_dom.simps dom.simps by metis
 
-section \<open>Substitution\<close>
+section \<open>Preservation of well-formedness under substitution\<close>
 
 lemma wfC_cons_switch:
   fixes c::c and c'::c
@@ -4045,7 +3943,6 @@ next
     then show ?thesis using subst_gv.simps GCons by auto
   next
     case False
-    thm subst_gv.simps
     hence  *:"((x1, b1, c1)  #\<^sub>\<Gamma> \<Gamma>1)[x'::=v']\<^sub>\<Gamma>\<^sub>v =  ((x1, b1, c1[x'::=v']\<^sub>c\<^sub>v)  #\<^sub>\<Gamma> \<Gamma>1[x'::=v']\<^sub>\<Gamma>\<^sub>v)" using subst_gv.simps by auto
     then show ?thesis proof(cases "x1=x")
       case True
@@ -4100,7 +3997,6 @@ proof(nominal_induct
   qed  
 next
   case (wfV_litI \<Theta> \<Gamma> l)
-
   then show ?case using  subst_vv.simps  wf_intros by auto
 next
   case (wfV_pairI \<Theta> \<Gamma> v1 b1 v2 b2)
@@ -4118,7 +4014,6 @@ next
     ultimately show \<open>atom bv \<sharp> (\<Theta>, \<B>, \<Gamma>[x::=v']\<^sub>\<Gamma>\<^sub>v, b, va[x::=v']\<^sub>v\<^sub>v)\<close> unfolding fresh_prodN  using wfV_conspI by auto
     show \<open> \<Theta>; \<B>; \<Gamma>[x::=v']\<^sub>\<Gamma>\<^sub>v \<turnstile>\<^sub>w\<^sub>f va[x::=v']\<^sub>v\<^sub>v : b'[bv::=b]\<^sub>b\<^sub>b \<close> using wfV_conspI by auto
   qed
-
 next
   case (wfTI z \<Theta> \<B> \<Gamma>  b c)
   have "  \<Theta>; \<B>; \<Gamma>[x::=v']\<^sub>\<Gamma>\<^sub>v   \<turnstile>\<^sub>w\<^sub>f \<lbrace> z : b  | c[x::=v']\<^sub>c\<^sub>v  \<rbrace>" proof
@@ -4133,8 +4028,7 @@ next
     have "atom z \<sharp> \<Gamma>[x::=v']\<^sub>\<Gamma>\<^sub>v" using fresh_subst_gv_if wfTI by metis
     moreover have "\<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f  \<Gamma>[x::=v']\<^sub>\<Gamma>\<^sub>v" using wfTI wfX_wfY wfG_elims subst_gv.simps * by metis
     ultimately show  \<open>atom z \<sharp>  (\<Theta>, \<B>, \<Gamma>[x::=v']\<^sub>\<Gamma>\<^sub>v)\<close> using wfG_fresh_x  by metis
-    show \<open>  \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f b  \<close> using wfTI by auto
-   
+    show \<open>  \<Theta>; \<B>  \<turnstile>\<^sub>w\<^sub>f b  \<close> using wfTI by auto   
   qed
   thus ?case using subst_tv.simps wfTI by auto
 next
@@ -4194,7 +4088,6 @@ next
   qed
 next
   case (wfG_cons2I c \<Theta> \<B> \<Gamma> y b)
- 
   show ?case proof(cases "x=y")
     case True
     hence "((y, b, c)  #\<^sub>\<Gamma> \<Gamma>)[x::=v']\<^sub>\<Gamma>\<^sub>v  = \<Gamma>" using subst_gv.simps by auto
@@ -4273,20 +4166,11 @@ next
 next
   case (wfE_eqI \<Theta> \<Phi> \<Gamma> \<Delta> v1 b v2)
   then show ?case 
-    using subst_vv.simps  subst_ev.simps subst_ev.simps wf_subst1 Wellformed.wfE_eqI 
-    
+    using subst_vv.simps  subst_ev.simps subst_ev.simps wf_subst1 Wellformed.wfE_eqI     
   proof -
     show ?thesis
       by (metis (no_types) subst_ev.simps(4) wfE_eqI.hyps(1) wfE_eqI.hyps(4) wfE_eqI.hyps(5) wfE_eqI.hyps(6) wfE_eqI.hyps(7) wfE_eqI.prems(1) wfE_eqI.prems(2) wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.wfE_eqI wfV_subst) (* 31 ms *)
   qed
-(*
-  proof -
-    have "\<And>ts f v va b. \<not> (ts ; f ; \<Gamma>\<^sub>2 \<turnstile>\<^sub>w\<^sub>f v : b') \<or> \<not> (ts ; f ; \<Delta> \<turnstile>\<^sub>w\<^sub>f va : b) \<or> (ts ; f ; \<Delta>[x::=v]\<^sub>\<Gamma>\<^sub>v \<turnstile>\<^sub>w\<^sub>f va[x::=v]\<^sub>v\<^sub>v : b)"
-      using wfE_eqI.prems(1) wfV_subst by presburger (* 0.0 ms *)
-    then show ?thesis
-      by (metis (no_types) subst_ev.simps(4) wfE_eqI.hyps(1) wfE_eqI.hyps(4) wfE_eqI.hyps(5) wfE_eqI.hyps(6) wfE_eqI.prems(1) wfE_eqI.prems(2) wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.wfE_eqI) (* 93 ms *)
-  qed
-*)
 next
   case (wfE_fstI \<Theta> \<Gamma> v1 b1 b2)
   then show ?case using subst_vv.simps subst_ev.simps wf_subst1 Wellformed.wfE_fstI 
@@ -4428,7 +4312,6 @@ next
     show "\<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> "  using wfS_assignI by auto
   qed
 next
-
   case (wfS_matchI \<Theta> \<B> \<Gamma> v tid dclist \<Delta> \<Phi> cs b)
   show ?case  proof(subst subst_sv.simps, rule wf_intros)
     show \<open> \<Theta>; \<B>; \<Gamma>[x::=v']\<^sub>\<Gamma>\<^sub>v \<turnstile>\<^sub>w\<^sub>f v[x::=v']\<^sub>v\<^sub>v : B_id tid \<close> using wfS_matchI wf_subst1  by auto
@@ -4455,7 +4338,6 @@ next
     show \<open> \<Theta>; \<B>; \<Gamma>[x::=v']\<^sub>\<Gamma>\<^sub>v \<turnstile>\<^sub>w\<^sub>f \<Delta>[x::=v']\<^sub>\<Delta>\<^sub>v \<close> using wfS_branchI by auto
   qed
   thus ?case using subst_branchv.simps wfS_branchI by auto
-
 next
   case (wfS_finalI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> tid dclist' cs b dclist)
   then show ?case using subst_branchlv.simps wf_intros by metis
@@ -4471,7 +4353,6 @@ lemma wfG_subst_wfV:
   assumes "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b, c0[z0::=V_var x]\<^sub>c\<^sub>v)  #\<^sub>\<Gamma> \<Gamma>" and "wfV \<Theta> \<B> \<Gamma> v b"
   shows "\<Theta>; \<B> \<turnstile>\<^sub>w\<^sub>f \<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ \<Gamma> "
   using assms wf_subst subst_g_inside_simple by auto
-
 
 lemma wfG_member_subst:
   assumes "(x1,b1,c1) \<in> toSet (\<Gamma>'@\<Gamma>)" and "wfG \<Theta> \<B> (\<Gamma>'@((x,b,c) #\<^sub>\<Gamma>\<Gamma>))" and "x \<noteq> x1"
@@ -4526,10 +4407,6 @@ qed
 
 lemmas wf_b_subst_lemmas = subst_eb.simps wf_intros 
     forget_subst subst_b_b_def subst_b_v_def subst_b_ce_def fresh_e_opp_all subst_bb.simps wfV_b_fresh ms_fresh_all(6)
-
-
-(* The use of B' and then {|bv|} = B' is to help with proof in the cases *)
-(* Note that the b we are substitition in is closed/ground WRONG - We need it for infer_e_wf wfT_subst_wfT*)
 
 lemma wf_b_subst1:
   fixes \<Gamma>::\<Gamma> and  \<Gamma>'::\<Gamma> and v::v and e::e and c::c and \<tau>::\<tau> and ts::"(string*\<tau>) list" and \<Delta>::\<Delta> and b::b and ftq::fun_typ_q and ft::fun_typ and s::s and b'::b and ce::ce and td::type_def
@@ -4594,15 +4471,12 @@ next
     ultimately show  "\<Theta> ; B ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f v[bv::=b]\<^sub>v\<^sub>b : b'" using wfV_consI by simp
   qed
 next
-  (*case (wfV_conspI s bva dclist \<Theta> dc x b' c ba \<B> \<Gamma> v)*)
   case (wfV_conspI s bva dclist \<Theta> dc x b' c \<B>' ba \<Gamma> v)
   have *:"atom bv \<sharp> b'" using  wfTh_poly_supp_b[of s bva dclist \<Theta> dc x b' c] fresh_def wfX_wfY \<open>atom bva \<sharp> bv\<close> 
     by (metis insert_iff not_self_fresh singleton_insert_inj_eq' subsetI subset_antisym wfV_conspI wfV_conspI.hyps(4) wfV_conspI.prems(2))
   show ?case unfolding subst_vb.simps subst_bb.simps proof
     show \<open>AF_typedef_poly s bva dclist \<in> set \<Theta>\<close> using wfV_conspI by auto
     show \<open>(dc, \<lbrace> x : b'  | c \<rbrace>) \<in> set dclist\<close> using wfV_conspI by auto
-    (*have "ba[bv::=b]\<^sub>b\<^sub>b = ba" using wfB_supp forget_subst wfV_conspI fresh_def subst_b_b_def *)
-      
     thus \<open> \<Theta> ; B  \<turnstile>\<^sub>w\<^sub>f ba[bv::=b]\<^sub>b\<^sub>b \<close> using wfV_conspI by metis
     have "atom bva \<sharp> \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b" using fresh_subst_if subst_b_\<Gamma>_def wfV_conspI by metis
     moreover have "atom bva \<sharp> ba[bv::=b]\<^sub>b\<^sub>b"  using fresh_subst_if subst_b_b_def wfV_conspI by metis
@@ -4644,7 +4518,6 @@ next
     show "\<Theta> ;  B  \<turnstile>\<^sub>w\<^sub>f b'[bv::=b]\<^sub>b\<^sub>b "  using wfG_cons2I by auto
   qed
 next
-
   case (wfCE_valI \<Theta> \<B> \<Gamma> v b)
   then show ?case using subst_ceb.simps wf_intros wfX_wfY   
     by (metis wf_b_subst_lemmas wfCE_b_fresh)
@@ -4652,24 +4525,19 @@ next
   case (wfCE_plusI \<Theta> \<B> \<Gamma> v1 v2)
   then show ?case using  subst_bb.simps subst_ceb.simps wf_intros wfX_wfY   
     by metis
-
 next
   case (wfCE_leqI \<Theta> \<B> \<Gamma> v1 v2)
   then show ?case using  subst_bb.simps subst_ceb.simps wf_intros wfX_wfY   
     by metis
-
-
 next
   case (wfCE_eqI \<Theta> \<B> \<Gamma> v1 b v2)
   then show ?case using  subst_bb.simps subst_ceb.simps wf_intros wfX_wfY   
     by metis
-
 next
   case (wfCE_fstI \<Theta> \<B> \<Gamma> v1 b1 b2)
    then show ?case 
      by (metis (no_types) subst_bb.simps(5) subst_ceb.simps(3) wfCE_fstI.hyps(2) 
         wfCE_fstI.prems(1) wfCE_fstI.prems(2) Wellformed.wfCE_fstI) 
-
 next
   case (wfCE_sndI \<Theta> \<B> \<Gamma> v1 b1 b2)
   then show ?case 
@@ -4720,17 +4588,14 @@ next
   case (wfE_leqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
    then show ?case unfolding subst_eb.simps  
      using wf_b_subst_lemmas wf_b_subst1  Wellformed.wfE_leqI       
-
    proof -
      have "\<And>ts f b ba g v. \<not> (ts ; f \<turnstile>\<^sub>w\<^sub>f b) \<or> \<not> (ts ; {|ba|} ; g \<turnstile>\<^sub>w\<^sub>f v : B_int) \<or> (ts ; f ; g[ba::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f v[ba::=b]\<^sub>v\<^sub>b : B_int)"
        by (metis wf_b_subst1(1) wf_b_subst_lemmas(86)) (* 46 ms *)
      then show "\<Theta> ; \<Phi> ; B ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b ; \<Delta>[bv::=b]\<^sub>\<Delta>\<^sub>b \<turnstile>\<^sub>w\<^sub>f [ leq v1[bv::=b]\<^sub>v\<^sub>b v2[bv::=b]\<^sub>v\<^sub>b ]\<^sup>e : B_bool[bv::=b]\<^sub>b\<^sub>b"
        by (metis (no_types) wfE_leqI.hyps(1) wfE_leqI.hyps(4) wfE_leqI.hyps(5) wfE_leqI.hyps(6) wfE_leqI.prems(1) wfE_leqI.prems(2) wfE_wfS_wfCS_wfCSS_wfPhi_wfD_wfFTQ_wfFT.wfE_leqI wf_b_subst_lemmas(87)) (* 46 ms *)
-   qed
-   
+   qed   
 next
   case (wfE_eqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 bb v2)
-  thm Wellformed.wfE_eqI
   show ?case unfolding subst_eb.simps subst_bb.simps proof
     show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using wfX_wfY wfE_eqI by metis
     show \<open> \<Theta> ; B ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f \<Delta>[bv::=b]\<^sub>\<Delta>\<^sub>b \<close> using wfX_wfY wfE_eqI by metis
@@ -4739,8 +4604,7 @@ next
     show \<open> \<Theta> ; B ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b \<turnstile>\<^sub>w\<^sub>f v2[bv::=b]\<^sub>v\<^sub>b : bb \<close> using wfX_wfY wfE_eqI       
       by (metis insert_iff singleton_iff wf_b_subst1(1) wf_b_subst_lemmas(86) wf_b_subst_lemmas(87) wf_b_subst_lemmas(90))
     show \<open>bb \<in> {B_bool, B_int, B_unit}\<close> using wfE_eqI by auto
-  qed
-     
+  qed     
 next
   case (wfE_fstI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 b1 b2)
   then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(84) wf_b_subst1(1)  Wellformed.wfE_fstI         
@@ -4753,19 +4617,14 @@ next
   case (wfE_concatI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
 then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(86) wf_b_subst1(1)  Wellformed.wfE_concatI  
   by (metis wf_b_subst_lemmas(91))
-
 next
   case (wfE_splitI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1 v2)
-  thm  wf_b_subst_lemmas(91)
-then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(86) wf_b_subst1(1)  Wellformed.wfE_splitI    
-  by (metis wf_b_subst_lemmas(89) wf_b_subst_lemmas(91))
-  
-(*  by (metis wf_b_subst_lemmas(84) wf_b_subst_lemmas(89))*)
+  then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(86) wf_b_subst1(1)  Wellformed.wfE_splitI    
+    by (metis wf_b_subst_lemmas(89) wf_b_subst_lemmas(91))
 next
   case (wfE_lenI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> v1)
   then show ?case unfolding subst_eb.simps   using wf_b_subst_lemmas(86) wf_b_subst1(1)  Wellformed.wfE_lenI  
     by (metis wf_b_subst_lemmas(91) wf_b_subst_lemmas(89))
-(* by (metis wf_b_subst_lemmas wf_b_subst_lemmas)*)
 next
   case (wfE_appI \<Theta> \<Phi> \<B>' \<Gamma> \<Delta> f x b' c \<tau> s v)
   hence bf: "atom bv \<sharp> b'" using wfPhi_f_simple_wfT wfT_supp bv_not_in_dom_g  wfPhi_f_simple_supp_b fresh_def by fast
@@ -4781,11 +4640,9 @@ next
   qed
   then show ?case using subst_eb.simps b_of_subst_bb_commute by simp
 next
-(*  case (wfE_appPI \<Theta> \<Phi> \<B>' \<Gamma> \<Delta> b' bv1 f  x1 b1 c1 \<tau>1 s1 v1)*)
   case (wfE_appPI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> b' bv1 v1 \<tau>1 f x1 b1 c1 s1)
   then have *: "atom bv \<sharp> b1" using wfPhi_f_supp(1)  wfE_appPI(7,11) 
       by (metis fresh_def fresh_finsert singleton_iff subsetD fresh_def supp_at_base wfE_appPI.hyps(1))
-  thm Wellformed.wfE_appPI
   have "\<Theta> ; \<Phi>  ; B ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b ; \<Delta>[bv::=b]\<^sub>\<Delta>\<^sub>b \<turnstile>\<^sub>w\<^sub>f AE_appP f b'[bv::=b]\<^sub>b\<^sub>b (v1[bv::=b]\<^sub>v\<^sub>b) : (b_of \<tau>1)[bv1::=b'[bv::=b]\<^sub>b\<^sub>b]\<^sub>b"
   proof
     show \<open> \<Theta>  \<turnstile>\<^sub>w\<^sub>f \<Phi> \<close> using wfE_appPI by auto
@@ -4827,7 +4684,6 @@ next
 next
   case (wfS_seqI \<Theta> \<Phi> \<B> \<Gamma> \<Delta> s1 s2 b)
   then show ?case using subst_bb.simps wf_intros wfX_wfY   by metis
-
 next
   case (wfD_emptyI \<Theta> \<B>' \<Gamma>)
   then show ?case using subst_db.simps Wellformed.wfD_emptyI wf_b_subst1 by simp

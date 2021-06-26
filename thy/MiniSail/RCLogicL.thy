@@ -1,15 +1,14 @@
 (*<*)
 theory RCLogicL
-imports RCLogic WellformedL
+  imports RCLogic WellformedL
 begin
-(*>*)
+  (*>*)
 
 hide_const Syntax.dom
 
 chapter \<open>Refinement Constraint Logic Lemmas\<close>
 
 section \<open>Lemmas\<close>
-
 
 lemma wfI_domi:
   assumes "\<Theta> ; \<Gamma> \<turnstile> i"
@@ -33,16 +32,16 @@ lemma wfI_restrict_weakening:
   shows  "\<Theta> ; \<Gamma> \<turnstile> i"
 proof -
   { fix x
-  assume "x \<in> toSet \<Gamma>"
-  have "case x of (x, b, c) \<Rightarrow> \<exists>s. Some s = i x \<and> \<Theta> \<turnstile> s : b" using assms wfI_def
-  proof -
-    have "case x of (x, b, c) \<Rightarrow> \<exists>s. Some s = i' x \<and> \<Theta> \<turnstile> s : b"
-      using \<open>x \<in> toSet \<Gamma>\<close>  assms wfI_def by auto
-    then have "\<exists>s. Some s = i (fst x) \<and> wfRCV \<Theta> s (fst (snd x))"
-      by (simp add: \<open>x \<in> toSet \<Gamma>\<close> assms(2) case_prod_unfold)
-    then show ?thesis
-      by (simp add: case_prod_unfold)
-  qed
+    assume "x \<in> toSet \<Gamma>"
+    have "case x of (x, b, c) \<Rightarrow> \<exists>s. Some s = i x \<and> \<Theta> \<turnstile> s : b" using assms wfI_def
+    proof -
+      have "case x of (x, b, c) \<Rightarrow> \<exists>s. Some s = i' x \<and> \<Theta> \<turnstile> s : b"
+        using \<open>x \<in> toSet \<Gamma>\<close>  assms wfI_def by auto
+      then have "\<exists>s. Some s = i (fst x) \<and> wfRCV \<Theta> s (fst (snd x))"
+        by (simp add: \<open>x \<in> toSet \<Gamma>\<close> assms(2) case_prod_unfold)
+      then show ?thesis
+        by (simp add: case_prod_unfold)
+    qed
   }
   thus ?thesis using wfI_def assms by auto
 qed
@@ -51,20 +50,19 @@ lemma wfI_suffix:
   fixes G::\<Gamma>
   assumes "wfI P (G'@G) i" and "P ; B \<turnstile>\<^sub>w\<^sub>f G"
   shows "P ; G \<turnstile> i"
-using wfI_def append_g.simps assms toSet.simps by simp
+  using wfI_def append_g.simps assms toSet.simps by simp
 
 lemma wfI_replace_inside:
   assumes "wfI \<Theta> (\<Gamma>' @ (x, b, c) #\<^sub>\<Gamma> \<Gamma>) i"
   shows  "wfI \<Theta> (\<Gamma>' @ (x, b, c') #\<^sub>\<Gamma> \<Gamma>) i"
   using wfI_def toSet_splitP assms by simp
 
-
 section \<open>Existence of evaluation\<close>
 
 lemma eval_l_base:
   "\<Theta> \<turnstile> \<lbrakk> l \<rbrakk>  : (base_for_lit l)"
-apply(nominal_induct l rule:l.strong_induct)
-using wfRCV.intros eval_l.simps  base_for_lit.simps by auto+
+  apply(nominal_induct l rule:l.strong_induct)
+  using wfRCV.intros eval_l.simps  base_for_lit.simps by auto+
 
 lemma obtain_fresh_bv_dclist:
   fixes tm::"'a::fs"
@@ -92,16 +90,15 @@ proof -
 
   hence "b[bv::=b']\<^sub>b\<^sub>b = b1[bv1::=b']\<^sub>b\<^sub>b" 
     using  wfTh_typedef_poly_b_eq_iff[OF assms(2) assms(1) _ _ assms(3),of bv1 dclist1 x1 b1 c1 b']  * by metis
- 
+
   from this that show ?thesis using * by metis  
 qed
- 
 
 lemma eval_v_exist:
   fixes \<Gamma>::\<Gamma> and v::v and b::b
   assumes "P ; \<Gamma>  \<turnstile> i" and "P ; B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b"
   shows "\<exists>s. i \<lbrakk> v \<rbrakk> ~  s \<and> P \<turnstile> s : b "
-using assms proof(nominal_induct v  arbitrary: b rule:v.strong_induct)
+  using assms proof(nominal_induct v  arbitrary: b rule:v.strong_induct)
   case (V_lit x)
   then show ?case using eval_l_base eval_v.intros eval_l.simps wfV_elims rcl_val.supp pure_supp by metis
 next
@@ -126,7 +123,7 @@ next
   then show ?case using eval_v.intros(4) wfRCV.intros(5) V_cons by metis
 next
   case (V_consp tyid dc b' v)
-  
+
   obtain  b'a::b and bv and dclist and x::x and c::c where *:"(wfV P  B  \<Gamma> v  b'a[bv::=b']\<^sub>b\<^sub>b) \<and> b = B_app tyid b' \<and>
                  AF_typedef_poly tyid bv dclist \<in> set P \<and> (dc, \<lbrace> x : b'a  | c \<rbrace>) \<in> set dclist \<and> 
            atom bv \<sharp> (P, B_app tyid b',B) " using  wf_strong_elim(1)[OF V_consp(3)] by metis
@@ -138,7 +135,7 @@ next
       \<and> (dc, \<lbrace> x1 : b1  | c1 \<rbrace>) \<in> set dclist1 \<and> atom bv1 \<sharp>  (P, SConsp tyid dc b' s, B_app tyid b')
           \<and> b'a[bv::=b']\<^sub>b\<^sub>b = b1[bv1::=b']\<^sub>b\<^sub>b" 
     using  *  obtain_fresh_bv_dclist_b_iff by blast
-    
+
   have " i \<lbrakk> V_consp tyid dc b' v \<rbrakk> ~ SConsp tyid dc b' s" using  eval_v.intros  by (simp add: "**")
 
   moreover have " P  \<turnstile>  SConsp tyid dc b' s : B_app tyid b'" proof
@@ -155,7 +152,7 @@ lemma eval_v_uniqueness:
   fixes v::v
   assumes "i \<lbrakk> v \<rbrakk> ~  s" and "i \<lbrakk> v \<rbrakk> ~  s'"
   shows "s=s'"
-using assms proof(nominal_induct v arbitrary: s s' rule:v.strong_induct)
+  using assms proof(nominal_induct v arbitrary: s s' rule:v.strong_induct)
   case (V_lit x)
   then show ?case using eval_v_elims eval_l.simps by metis
 next
@@ -184,12 +181,11 @@ lemma eval_v_base:
   shows "P \<turnstile> s : b"
   using eval_v_exist eval_v_uniqueness assms by metis
 
-
 lemma eval_e_uniqueness:
   fixes e::ce
   assumes "i \<lbrakk> e \<rbrakk> ~ s" and "i \<lbrakk> e \<rbrakk> ~ s'"
   shows "s=s'"
-using assms proof(nominal_induct e arbitrary: s s' rule:ce.strong_induct)
+  using assms proof(nominal_induct e arbitrary: s s' rule:ce.strong_induct)
   case (CE_val x)
   then show ?case using eval_v_uniqueness eval_e_elims by metis
 next
@@ -199,28 +195,25 @@ next
     case 1
     hence a1:"eval_e i (CE_op Plus x1 x2) s" and a2:"eval_e i (CE_op Plus x1 x2) s'" using CE_op by auto
     then show ?thesis using   eval_e_elims(2)[OF a1] eval_e_elims(2)[OF a2]
-       CE_op eval_e_plusI 
+        CE_op eval_e_plusI 
       by (metis rcl_val.eq_iff(2))
   next
     case 2
     hence a1:"eval_e i (CE_op LEq x1 x2) s" and a2:"eval_e i (CE_op LEq x1 x2) s'" using CE_op by auto
-    thm eval_e_elims(2)
     then show ?thesis using eval_v_uniqueness  eval_e_elims(3)[OF a1] eval_e_elims(3)[OF a2]
-      CE_op eval_e_plusI 
+        CE_op eval_e_plusI 
       by (metis rcl_val.eq_iff(2))
   next
     case 3
     hence a1:"eval_e i (CE_op Eq x1 x2) s" and a2:"eval_e i (CE_op Eq x1 x2) s'" using CE_op by auto
-    thm eval_e_elims(2)
     then show ?thesis using eval_v_uniqueness  eval_e_elims(4)[OF a1] eval_e_elims(4)[OF a2]
-      CE_op eval_e_plusI 
+        CE_op eval_e_plusI 
       by (metis rcl_val.eq_iff(2))
   qed
 next
   case (CE_concat x1 x2)
   hence a1:"eval_e i (CE_concat x1 x2) s" and a2:"eval_e i (CE_concat x1 x2) s'" using CE_concat by auto
   show ?case using  eval_e_elims(7)[OF a1] eval_e_elims(7)[OF a2] CE_concat eval_e_concatI rcl_val.eq_iff 
-  (* Why is this harder than the CE_op case *)
   proof -
     assume "\<And>P. (\<And>bv1 bv2. \<lbrakk>s' = SBitvec (bv1 @ bv2); i \<lbrakk> x1 \<rbrakk> ~ SBitvec bv1 ; i \<lbrakk> x2 \<rbrakk> ~ SBitvec bv2 \<rbrakk> \<Longrightarrow> P) \<Longrightarrow> P"
     obtain bbs :: "bit list" and bbsa :: "bit list" where
@@ -272,7 +265,6 @@ proof -
   ultimately show  ?thesis by metis
 qed
 
-
 lemma wfV_eval_int:
   fixes v::v
   assumes  "P ;  B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : B_int" and "P ; \<Gamma>  \<turnstile> i"
@@ -283,7 +275,7 @@ proof -
   ultimately show  ?thesis by metis
 qed
 
-text {* Well sorted value with a well sorted valuation evaluates *}
+text \<open>Well sorted value with a well sorted valuation evaluates\<close>
 lemma wfI_wfV_eval_v:
   fixes v::v and b::b
   assumes "\<Theta> ;  B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b" and "wfI \<Theta>  \<Gamma> i"
@@ -294,56 +286,55 @@ lemma wfI_wfCE_eval_e:
   fixes e::ce and b::b
   assumes "wfCE P B G e b" and "P ; G \<turnstile> i" 
   shows "\<exists>s. i \<lbrakk> e \<rbrakk> ~ s \<and> P \<turnstile> s : b"
-using assms proof(nominal_induct e arbitrary:  b  rule: ce.strong_induct)
+  using assms proof(nominal_induct e arbitrary:  b  rule: ce.strong_induct)
   case (CE_val v)
   obtain s where "i \<lbrakk> v \<rbrakk> ~ s \<and> P \<turnstile> s : b" using wfI_wfV_eval_v[of P B G v b i]  assms wfCE_elims(1)  [of P B G v b] CE_val  by auto
   then show ?case using CE_val   eval_e.intros(1)[of i v s ] by auto
 next
   case (CE_op opp v1 v2)
- 
+
   consider "opp =Plus" | "opp=LEq" | "opp=Eq" using opp.exhaust by auto
 
   thus ?case proof(cases)
     case 1
     hence  "wfCE P  B G v1 B_int \<and> wfCE P  B G v2 B_int" using wfCE_elims(2) CE_op
-      
+
       by blast
-  then obtain s1 and s2 where *: "eval_e i v1 s1 \<and> wfRCV P s1 B_int \<and> eval_e i v2 s2 \<and> wfRCV P s2 B_int"
-    using wfI_wfV_eval_v  CE_op by metis
-  then obtain n1 and n2 where **:"s2=SNum n2 \<and> s1 = SNum n1"  using wfRCV_elims  by meson
+    then obtain s1 and s2 where *: "eval_e i v1 s1 \<and> wfRCV P s1 B_int \<and> eval_e i v2 s2 \<and> wfRCV P s2 B_int"
+      using wfI_wfV_eval_v  CE_op by metis
+    then obtain n1 and n2 where **:"s2=SNum n2 \<and> s1 = SNum n1"  using wfRCV_elims  by meson
     hence "eval_e i (CE_op Plus v1 v2) (SNum (n1+n2))" using eval_e_plusI * ** by simp
     moreover have "wfRCV P (SNum (n1+n2)) B_int" using wfRCV.intros by auto
     ultimately show ?thesis using 1
       using CE_op.prems(1) wfCE_elims(2) by blast
   next
     case 2
- hence  "wfCE P  B G v1 B_int \<and> wfCE P  B G v2 B_int" using wfCE_elims(3) CE_op
-   by blast
-  then obtain s1 and s2 where *: "eval_e i v1 s1 \<and> wfRCV P s1 B_int \<and> eval_e i v2 s2 \<and> wfRCV P s2 B_int"
-    using wfI_wfV_eval_v  CE_op by metis
-  then obtain n1 and n2 where **:"s2=SNum n2 \<and> s1 = SNum n1"  using wfRCV_elims  by meson
+    hence  "wfCE P  B G v1 B_int \<and> wfCE P  B G v2 B_int" using wfCE_elims(3) CE_op
+      by blast
+    then obtain s1 and s2 where *: "eval_e i v1 s1 \<and> wfRCV P s1 B_int \<and> eval_e i v2 s2 \<and> wfRCV P s2 B_int"
+      using wfI_wfV_eval_v  CE_op by metis
+    then obtain n1 and n2 where **:"s2=SNum n2 \<and> s1 = SNum n1"  using wfRCV_elims  by meson
     hence "eval_e i (CE_op LEq v1 v2) (SBool (n1 \<le> n2))" using eval_e_leqI * ** by simp
     moreover have "wfRCV P (SBool (n1\<le>n2)) B_bool" using wfRCV.intros by auto
     ultimately show ?thesis using 2
-      using CE_op.prems wfCE_elims    by metis
+      using CE_op.prems wfCE_elims by metis
   next
     case 3
-    then  obtain b2 where   "wfCE P  B G v1 b2 \<and> wfCE P  B G v2 b2" using wfCE_elims(9) CE_op
-   by blast
-  then obtain s1 and s2 where *: "eval_e i v1 s1 \<and> wfRCV P s1 b2 \<and> eval_e i v2 s2 \<and> wfRCV P s2 b2"
-    using wfI_wfV_eval_v  CE_op by metis
-(*  then obtain n1 and n2 where **:"s2=SNum n2 \<and> s1 = SNum n1"  using wfRCV_elims  by meson*)
-  hence "eval_e i (CE_op Eq v1 v2) (SBool (s1 = s2))" using eval_e_leqI *  
-    by (simp add: eval_e_eqI)
+    then  obtain b2 where "wfCE P  B G v1 b2 \<and> wfCE P  B G v2 b2" using wfCE_elims(9) CE_op
+      by blast
+    then obtain s1 and s2 where *: "eval_e i v1 s1 \<and> wfRCV P s1 b2 \<and> eval_e i v2 s2 \<and> wfRCV P s2 b2"
+      using wfI_wfV_eval_v  CE_op by metis
+    hence "eval_e i (CE_op Eq v1 v2) (SBool (s1 = s2))" using eval_e_leqI *  
+      by (simp add: eval_e_eqI)
     moreover have "wfRCV P (SBool (s1 = s2)) B_bool" using wfRCV.intros by auto
     ultimately show ?thesis using 3
-      using CE_op.prems wfCE_elims    by metis
+      using CE_op.prems wfCE_elims by metis
   qed
 next
   case (CE_concat v1 v2)
   then obtain s1 and s2 where *:"b = B_bitvec \<and> eval_e i v1 s1 \<and> eval_e i v2 s2 \<and>
       wfRCV P s1 B_bitvec \<and> wfRCV P s2 B_bitvec" using  
-      CE_concat 
+    CE_concat 
     by (meson wfCE_elims(6))
   thus ?case using  eval_e_concatI wfRCV.intros(1) wfRCV_elims 
   proof -
@@ -371,7 +362,7 @@ lemma eval_e_exist:
   fixes \<Gamma>::\<Gamma> and e::ce
   assumes "P ; \<Gamma>  \<turnstile> i" and "P ;  B ; \<Gamma>  \<turnstile>\<^sub>w\<^sub>f e : b"
   shows "\<exists>s. i \<lbrakk> e \<rbrakk> ~ s"
-using assms proof(nominal_induct e arbitrary: b rule:ce.strong_induct)
+  using assms proof(nominal_induct e arbitrary: b rule:ce.strong_induct)
   case (CE_val v)
   then show ?case using eval_v_exist wfCE_elims eval_e.intros by metis
 next
@@ -387,13 +378,13 @@ next
     assume \<open>op = LEq\<close>
     hence "P ;  B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : B_int \<and> P ;  B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : B_int \<and> b = B_bool" using wfCE_elims CE_op by metis
     then obtain n1 and n2 where "eval_e i v1 (SNum n1) \<and> eval_e i v2 (SNum n2)" using CE_op eval_v_exist wfV_eval_int 
-     by (metis wfI_wfCE_eval_e wfRCV_elims(3))
-   then show \<open>\<exists>a. eval_e i (CE_op op v1 v2) a\<close> using eval_e_leqI[of i v1 _ v2] eval_v_exist \<open>op=LEq\<close> CE_op by auto
- next
+      by (metis wfI_wfCE_eval_e wfRCV_elims(3))
+    then show \<open>\<exists>a. eval_e i (CE_op op v1 v2) a\<close> using eval_e_leqI[of i v1 _ v2] eval_v_exist \<open>op=LEq\<close> CE_op by auto
+  next
     assume \<open>op = Eq\<close>
     then obtain b1 where  "P ;  B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v1 : b1 \<and> P ;  B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v2 : b1 \<and> b = B_bool" using wfCE_elims CE_op by metis
     then obtain s1 and s2 where "eval_e i v1 s1 \<and> eval_e i v2 s2" using CE_op eval_v_exist wfV_eval_int 
-     by (metis wfI_wfCE_eval_e wfRCV_elims(3))
+      by (metis wfI_wfCE_eval_e wfRCV_elims(3))
     then show \<open>\<exists>a. eval_e i (CE_op op v1 v2) a\<close> using eval_e_eqI[of i v1 _ v2] eval_v_exist \<open>op=Eq\<close> CE_op by auto
   qed
 next
@@ -415,7 +406,7 @@ next
   then obtain s where s:"i \<lbrakk> ce \<rbrakk> ~ s" using CE_snd by auto
   then obtain s1 and s2 where "s = (SPair s1 s2)" 
     using eval_e_elims(5)  CE_snd wfI_wfCE_eval_e[of P B \<Gamma> ce "B_pair b1 b" i,OF b] wfRCV_elims(2)[of P s b b1]    
-    eval_e_uniqueness 
+      eval_e_uniqueness 
     by (metis wfRCV_elims(2))
   then show ?case using s eval_e.intros by metis
 next
@@ -426,13 +417,12 @@ next
   then show ?case using  eval_e.intros by metis
 qed
 
-
 lemma eval_c_exist:
   fixes \<Gamma>::\<Gamma> and c::c
   assumes "P ; \<Gamma>  \<turnstile> i" and "P ; B ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f c"
   shows "\<exists>s. i \<lbrakk> c \<rbrakk> ~ s"
-using assms proof(nominal_induct c  rule: c.strong_induct)
-case C_true
+  using assms proof(nominal_induct c  rule: c.strong_induct)
+  case C_true
   then show ?case using eval_c.intros wfC_elims by metis
 next
   case C_false
@@ -458,7 +448,7 @@ lemma eval_c_uniqueness:
   fixes c::c
   assumes "i \<lbrakk> c \<rbrakk> ~ s" and "i \<lbrakk> c \<rbrakk> ~ s'"
   shows "s=s'"
-using assms proof(nominal_induct c arbitrary: s s' rule:c.strong_induct)
+  using assms proof(nominal_induct c arbitrary: s s' rule:c.strong_induct)
   case C_true
   then show ?case using eval_c_elims by metis
 next
@@ -475,20 +465,18 @@ next
   then show ?case using eval_c_elims(6)  by (metis (full_types))
 next
   case (C_imp x1 x2)
-   then show ?case using eval_c_elims(5)  by (metis (full_types))
+  then show ?case using eval_c_elims(5)  by (metis (full_types))
 next
   case (C_eq x1 x2)
   then show ?case using eval_e_uniqueness eval_c_elims(7) by metis
 qed
 
-
 lemma wfI_wfC_eval_c:
   fixes c::c
   assumes "wfC P B G c" and "P ; G \<turnstile> i"
   shows "\<exists>s. i \<lbrakk> c \<rbrakk> ~ s"
-using assms proof(nominal_induct c  rule: c.strong_induct)
+  using assms proof(nominal_induct c  rule: c.strong_induct)
 qed(metis wfC_elims wfI_wfCE_eval_e eval_c.intros)+
-
 
 section \<open>Satisfiability\<close>
 
@@ -496,13 +484,13 @@ lemma satis_reflI:
   fixes c::c
   assumes "i \<Turnstile> ((x, b, c) #\<^sub>\<Gamma> G)"
   shows "i \<Turnstile> c"
-using assms by auto
+  using assms by auto
 
 lemma is_satis_mp:
   fixes c1::c and c2::c
   assumes "i \<Turnstile> (c1 IMP c2)" and "i \<Turnstile> c1"
   shows "i \<Turnstile> c2"
-using assms proof -
+  using assms proof -
   have "eval_c i (c1 IMP c2) True" using is_satis.simps  using assms by blast
   then obtain b1 and b2 where "True = (b1 \<longrightarrow> b2) \<and> eval_c i c1 b1 \<and> eval_c i c2 b2"
     using eval_c_elims(5) by metis
@@ -535,15 +523,14 @@ lemma is_satis_g_append:
   "i \<Turnstile> (G1@G2) = (i \<Turnstile>  G1 \<and> i \<Turnstile>  G2)"
   using is_satis_g.simps  is_satis_iff by auto
 
-
 section \<open>Substitution for Evaluation\<close>
 
 lemma eval_v_i_upd:
   fixes v::v
   assumes "atom x \<sharp> v" and "i \<lbrakk> v \<rbrakk> ~  s'"
   shows "eval_v ((i ( x \<mapsto>s))) v s' "
-using assms proof(nominal_induct v arbitrary: s' rule:v.strong_induct)
-case (V_lit x)
+  using assms proof(nominal_induct v arbitrary: s' rule:v.strong_induct)
+  case (V_lit x)
   then show ?case  by (metis eval_v_elims(1) eval_v_litI)
 next
   case (V_var y)
@@ -578,14 +565,14 @@ lemma eval_e_i_upd:
   fixes e::ce
   assumes "i \<lbrakk> e \<rbrakk> ~ s'" and "atom x \<sharp> e"
   shows " (i ( x \<mapsto>s)) \<lbrakk> e \<rbrakk> ~ s'"
-using assms apply(induct rule: eval_e.induct) using eval_v_i_upd eval_e_elims
-    by (meson ce.fresh eval_e.intros)+
+  using assms apply(induct rule: eval_e.induct) using eval_v_i_upd eval_e_elims
+  by (meson ce.fresh eval_e.intros)+
 
 lemma eval_c_i_upd:
   fixes c::c
   assumes "i \<lbrakk> c \<rbrakk> ~ s'" and "atom x \<sharp> c"
   shows "((i ( x \<mapsto>s))) \<lbrakk> c \<rbrakk> ~ s' "
-using assms proof(induct rule:eval_c.induct)
+  using assms proof(induct rule:eval_c.induct)
   case (eval_c_eqI i e1 sv1 e2 sv2)
   then show ?case using RCLogic.eval_c_eqI eval_e_i_upd c.fresh by metis
 qed(simp add: eval_c.intros)+
@@ -594,7 +581,7 @@ lemma subst_v_eval_v[simp]:
   fixes v::v and v'::v
   assumes "i \<lbrakk> v \<rbrakk> ~  s" and "i \<lbrakk> (v'[x::=v]\<^sub>v\<^sub>v) \<rbrakk> ~ s'"
   shows "(i ( x \<mapsto> s )) \<lbrakk> v' \<rbrakk> ~ s'"
-using assms proof(nominal_induct v' arbitrary: s' rule:v.strong_induct)
+  using assms proof(nominal_induct v' arbitrary: s' rule:v.strong_induct)
   case (V_lit x)
   then show ?case using subst_vv.simps
     by (metis eval_v_elims(1) eval_v_litI)
@@ -630,9 +617,9 @@ qed
 
 lemma subst_e_eval_v[simp]:
   fixes y::x and e::ce and v::v and e'::ce
-   assumes  "i \<lbrakk> e' \<rbrakk> ~  s'" and "e'=(e[y::=v]\<^sub>c\<^sub>e\<^sub>v)" and "i \<lbrakk> v \<rbrakk> ~  s"
-   shows "(i ( y \<mapsto> s )) \<lbrakk> e \<rbrakk> ~ s'"
-using assms proof(induct arbitrary: e rule: eval_e.induct)
+  assumes  "i \<lbrakk> e' \<rbrakk> ~  s'" and "e'=(e[y::=v]\<^sub>c\<^sub>e\<^sub>v)" and "i \<lbrakk> v \<rbrakk> ~  s"
+  shows "(i ( y \<mapsto> s )) \<lbrakk> e \<rbrakk> ~ s'"
+  using assms proof(induct arbitrary: e rule: eval_e.induct)
   case (eval_e_valI i v1 sv)
   then obtain v1' where *:"e = CE_val v1' \<and> v1 = v1'[y::=v]\<^sub>v\<^sub>v"
     using assms by(nominal_induct e rule:ce.strong_induct,simp+)
@@ -699,7 +686,7 @@ lemma subst_c_eval_v[simp]:
   assumes "i \<lbrakk> v \<rbrakk> ~  s" and "i \<lbrakk> c[x::=v]\<^sub>c\<^sub>v \<rbrakk> ~ s1" and
     "(i ( x \<mapsto> s)) \<lbrakk> c \<rbrakk> ~ s2"
   shows "s1 = s2"
-using assms proof(nominal_induct c arbitrary: s1 s2 rule: c.strong_induct)
+  using assms proof(nominal_induct c arbitrary: s1 s2 rule: c.strong_induct)
   case C_true
   hence "s1 = True \<and> s2 = True" using eval_c_elims subst_cv.simps  by auto
   then show ?case by auto
@@ -713,7 +700,7 @@ next
   then obtain s11 and s12 where "(s1 = (s11 \<and> s12)) \<and> eval_c i c1[x::=v]\<^sub>c\<^sub>v s11 \<and> eval_c i c2[x::=v]\<^sub>c\<^sub>v s12" using
       eval_c_elims(3) by metis
   moreover obtain   s21 and s22 where "eval_c  (i ( x \<mapsto> s)) c1 s21 \<and> eval_c  (i ( x \<mapsto> s)) c2 s22 \<and> (s2 = (s21 \<and> s22))" using
-     eval_c_elims(3) C_conj by metis
+      eval_c_elims(3) C_conj by metis
   ultimately show ?case using C_conj  by (meson eval_c_elims)
 next
   case (C_disj c1 c2)
@@ -721,14 +708,14 @@ next
   then obtain s11 and s12 where "(s1 = (s11 \<or> s12)) \<and> eval_c i c1[x::=v]\<^sub>c\<^sub>v s11 \<and> eval_c i c2[x::=v]\<^sub>c\<^sub>v s12" using
       eval_c_elims(4) by metis
   moreover obtain   s21 and s22 where "eval_c  (i ( x \<mapsto> s)) c1 s21 \<and> eval_c  (i ( x \<mapsto> s)) c2 s22 \<and> (s2 = (s21 \<or> s22))" using
-     eval_c_elims(4) C_disj by metis
+      eval_c_elims(4) C_disj by metis
   ultimately show ?case using C_disj  by (meson eval_c_elims)
 next
   case (C_not c1)
   then obtain s11 where "(s1 = (\<not> s11)) \<and> eval_c i c1[x::=v]\<^sub>c\<^sub>v s11" using
       eval_c_elims(6)  by (metis subst_cv.simps(7))
   moreover obtain   s21 where "eval_c  (i ( x \<mapsto> s)) c1 s21 \<and> (s2 = (\<not>s21))" using
-     eval_c_elims(6) C_not by metis
+      eval_c_elims(6) C_not by metis
   ultimately show ?case using C_not  by (meson eval_c_elims)
 next
   case (C_imp c1 c2)
@@ -736,7 +723,7 @@ next
   then obtain s11 and s12 where "(s1 = (s11 \<longrightarrow> s12)) \<and> eval_c i c1[x::=v]\<^sub>c\<^sub>v s11 \<and> eval_c i c2[x::=v]\<^sub>c\<^sub>v s12" using
       eval_c_elims(5) by metis
   moreover obtain   s21 and s22 where "eval_c  (i ( x \<mapsto> s)) c1 s21 \<and> eval_c  (i ( x \<mapsto> s)) c2 s22 \<and> (s2 = (s21 \<longrightarrow> s22))" using
-     eval_c_elims(5) C_imp by metis
+      eval_c_elims(5) C_imp by metis
   ultimately show ?case using C_imp  by (meson eval_c_elims)
 next
   case (C_eq e1 e2)
@@ -744,10 +731,9 @@ next
   then obtain s11 and s12 where "(s1 = (s11 = s12)) \<and> eval_e i (e1[x::=v]\<^sub>c\<^sub>e\<^sub>v) s11 \<and> eval_e i (e2[x::=v]\<^sub>c\<^sub>e\<^sub>v) s12" using
       eval_c_elims(7) by metis
   moreover obtain   s21 and s22 where "eval_e  (i ( x \<mapsto> s)) e1 s21 \<and> eval_e  (i ( x \<mapsto> s)) e2 s22 \<and> (s2 = (s21 = s22))" using
-     eval_c_elims(7) C_eq by metis
+      eval_c_elims(7) C_eq by metis
   ultimately show ?case using C_eq subst_e_eval_v  by (metis eval_e_uniqueness)
 qed
-
 
 lemma wfI_upd:
   assumes  "wfI \<Theta> \<Gamma> i" and "wfRCV \<Theta> s b" and "wfG \<Theta> B ((x, b, c) #\<^sub>\<Gamma> \<Gamma>)"
@@ -819,9 +805,7 @@ proof -
     using eval_c_uniqueness is_satis.simps by auto
 qed
 
-text {* Key theorem telling us we can replace a substitution with an update to the valuation *}
-
-
+text \<open> Key theorem telling us we can replace a substitution with an update to the valuation \<close>
 lemma subst_c_satis_full:
   fixes v::v and \<Gamma>'::\<Gamma>
   assumes "i \<lbrakk> v \<rbrakk> ~  s" and "wfC \<Theta> B  (\<Gamma>'@((x,b,c')#\<^sub>\<Gamma>\<Gamma>)) c" and "wfI \<Theta>  ((\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v)@\<Gamma>) i" and  "\<Theta> ; B  ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f v : b"
@@ -838,7 +822,6 @@ proof -
     using eval_c_uniqueness is_satis.simps by auto
 qed
 
-
 section \<open>Validity\<close>
 
 lemma validI[intro]:
@@ -851,25 +834,23 @@ lemma valid_g_wf:
   fixes c::c and G::\<Gamma>
   assumes "P ; B ; G \<Turnstile> c"
   shows "P ; B \<turnstile>\<^sub>w\<^sub>f G"
-using assms wfC_wf valid.simps by blast
+  using assms wfC_wf valid.simps by blast
 
 lemma valid_reflI [intro]:
   fixes b::b
   assumes  "P ; B ; ((x,b,c1)#\<^sub>\<Gamma>G) \<turnstile>\<^sub>w\<^sub>f c1" and "c1 = c2"
   shows "P ; B ; ((x,b,c1)#\<^sub>\<Gamma>G) \<Turnstile> c2"
-using satis_reflI assms by simp
+  using satis_reflI assms by simp
 
 subsection \<open>Weakening and Strengthening\<close>
 
 text \<open> Adding to the domain of a valuation doesn't change the result \<close>
 
-(* FIXME - I think the second assumption is redundant and should be provable from the third *)
-
 lemma eval_v_weakening:
   fixes c::v and B::"bv fset"
   assumes "i = i'|` d" and "supp c \<subseteq> atom ` d \<union> supp B "  and "i \<lbrakk> c \<rbrakk> ~ s"
   shows "i' \<lbrakk> c \<rbrakk> ~ s"
-using assms proof(nominal_induct c arbitrary:s rule: v.strong_induct)
+  using assms proof(nominal_induct c arbitrary:s rule: v.strong_induct)
   case (V_lit x)
   then show ?case using eval_v_elims eval_v_litI by metis
 next
@@ -904,12 +885,11 @@ next
   then show ?case using * eval_v_conspI v.supp eval_v.simps  assms le_sup_iff by metis
 qed
 
-
 lemma eval_v_restrict:
   fixes c::v and B::"bv fset"
   assumes "i = i' |` d" and "supp c \<subseteq> atom ` d \<union> supp B "  and "i' \<lbrakk> c \<rbrakk> ~ s"
   shows "i \<lbrakk> c \<rbrakk> ~ s"
-using assms proof(nominal_induct c arbitrary:s rule: v.strong_induct)
+  using assms proof(nominal_induct c arbitrary:s rule: v.strong_induct)
   case (V_lit x)
   then show ?case using eval_v_elims eval_v_litI by metis
 next
@@ -937,7 +917,6 @@ next
     by (metis assms le_sup_iff)
 next
   case (V_consp tyid dc b1 v1)
-
   then obtain sv1 where *:"i' \<lbrakk> v1 \<rbrakk> ~ sv1 \<and> s = SConsp tyid dc b1 sv1" using eval_v_elims by metis
   hence "i \<lbrakk> v1 \<rbrakk> ~ sv1" using V_consp by auto 
   then show ?case using * eval_v_conspI v.supp eval_v.simps  assms le_sup_iff by metis
@@ -947,7 +926,7 @@ lemma eval_e_weakening:
   fixes e::ce and B::"bv fset"
   assumes  "i \<lbrakk> e \<rbrakk> ~ s" and "i = i' |` d" and "supp e \<subseteq> atom ` d \<union> supp B "
   shows "i' \<lbrakk> e \<rbrakk> ~ s"
-using assms proof(induct rule: eval_e.induct)
+  using assms proof(induct rule: eval_e.induct)
   case (eval_e_valI i v sv)
   then show ?case using ce.supp eval_e.intros
     using eval_v_weakening by auto
@@ -957,11 +936,11 @@ next
     using eval_v_weakening by auto
 next
   case (eval_e_leqI i v1 n1 v2 n2)
-    then show ?case using ce.supp eval_e.intros
-      using eval_v_weakening by auto
+  then show ?case using ce.supp eval_e.intros
+    using eval_v_weakening by auto
 next
   case (eval_e_eqI i v1 n1 v2 n2)
-    then show ?case using ce.supp eval_e.intros
+  then show ?case using ce.supp eval_e.intros
     using eval_v_weakening by auto
 next
   case (eval_e_fstI i v v1 v2)
@@ -985,7 +964,7 @@ lemma eval_e_restrict :
   fixes e::ce and B::"bv fset"
   assumes  "i' \<lbrakk> e \<rbrakk> ~ s" and "i = i' |` d" and "supp e \<subseteq> atom ` d \<union> supp B "
   shows "i \<lbrakk> e \<rbrakk> ~ s"
-using assms proof(induct rule: eval_e.induct)
+  using assms proof(induct rule: eval_e.induct)
   case (eval_e_valI i v sv)
   then show ?case using ce.supp eval_e.intros
     using eval_v_restrict by auto
@@ -995,16 +974,16 @@ next
     using eval_v_restrict by auto
 next
   case (eval_e_leqI i v1 n1 v2 n2)
-    then show ?case using ce.supp eval_e.intros
-      using eval_v_restrict by auto
+  then show ?case using ce.supp eval_e.intros
+    using eval_v_restrict by auto
 next
   case (eval_e_eqI i v1 n1 v2 n2)
-    then show ?case using ce.supp eval_e.intros
+  then show ?case using ce.supp eval_e.intros
     using eval_v_restrict by auto
 next
   case (eval_e_fstI i v v1 v2)
   then show ?case using ce.supp eval_e.intros
-     using eval_v_restrict by metis
+    using eval_v_restrict by metis
 next
   case (eval_e_sndI i v v1 v2)
   then show ?case using ce.supp eval_e.intros
@@ -1023,7 +1002,7 @@ lemma eval_c_i_weakening:
   fixes c::c and B::"bv fset"
   assumes  "i \<lbrakk> c \<rbrakk> ~ s" and "i = i' |` d" and "supp c \<subseteq> atom ` d \<union> supp B"
   shows "i' \<lbrakk> c \<rbrakk> ~ s"
-using assms proof(induct rule:eval_c.induct)
+  using assms proof(induct rule:eval_c.induct)
   case (eval_c_eqI i e1 sv1 e2 sv2)
   then show ?case  using eval_c.intros eval_e_weakening by auto
 qed(auto simp add: eval_c.intros)+
@@ -1032,7 +1011,7 @@ lemma eval_c_i_restrict:
   fixes c::c and B::"bv fset"
   assumes  "i' \<lbrakk> c \<rbrakk> ~ s" and "i = i' |` d" and "supp c \<subseteq> atom ` d \<union> supp B"
   shows "i \<lbrakk> c \<rbrakk> ~ s"
-using assms proof(induct rule:eval_c.induct)
+  using assms proof(induct rule:eval_c.induct)
   case (eval_c_eqI i e1 sv1 e2 sv2)
   then show ?case  using eval_c.intros eval_e_restrict by auto
 qed(auto simp add: eval_c.intros)+
@@ -1055,16 +1034,16 @@ lemma is_satis_g_restrict1:
   fixes \<Gamma>'::\<Gamma> and  \<Gamma>::\<Gamma>
   assumes "toSet \<Gamma> \<subseteq> toSet \<Gamma>'" and "i \<Turnstile> \<Gamma>'"
   shows "i \<Turnstile> \<Gamma>"
-using assms proof(induct \<Gamma> rule: \<Gamma>.induct)
+  using assms proof(induct \<Gamma> rule: \<Gamma>.induct)
   case GNil
   then show ?case by auto
 next
   case (GCons xbc G)
   obtain x and b and c::c where xbc: "xbc=(x,b,c)"
-      using prod_cases3 by blast
+    using prod_cases3 by blast
   hence "i \<Turnstile> G" using GCons by auto
   moreover have "i \<Turnstile> c" using GCons
-    is_satis_iff toSet.simps  subset_iff
+      is_satis_iff toSet.simps  subset_iff
     using xbc by blast
   ultimately show ?case using is_satis_g.simps GCons
     by (simp add: xbc)
@@ -1074,7 +1053,7 @@ lemma is_satis_g_restrict2:
   fixes \<Gamma>'::\<Gamma> and  \<Gamma>::\<Gamma>
   assumes "i \<Turnstile> \<Gamma>" and  "i' = i |` d" and "atom_dom \<Gamma> \<subseteq> atom ` d" and "\<Theta> ; B \<turnstile>\<^sub>w\<^sub>f \<Gamma>"
   shows "i' \<Turnstile> \<Gamma>"
-using assms proof(induct \<Gamma> rule: \<Gamma>_induct)
+  using assms proof(induct \<Gamma> rule: \<Gamma>_induct)
   case GNil
   then show ?case by auto
 next
@@ -1114,7 +1093,7 @@ lemma is_satis_g_i_upd:
   fixes G::\<Gamma>
   assumes "atom x \<sharp> G"  and "i \<Turnstile> G"
   shows "((i ( x \<mapsto>s))) \<Turnstile> G"
-using assms proof(induct G rule: \<Gamma>_induct)
+  using assms proof(induct G rule: \<Gamma>_induct)
   case GNil
   then show ?case by auto
 next
@@ -1169,7 +1148,7 @@ lemma is_satis_g_suffix:
 next
   case (GCons xbc x2)
   obtain x and b and c::c where xbc: "xbc=(x,b,c)"
-      using prod_cases3 by blast
+    using prod_cases3 by blast
   hence " i \<Turnstile> (xbc #\<^sub>\<Gamma> (x2 @ G))" using append_g.simps GCons by fastforce
   then show ?case using is_satis_g.simps GCons xbc by blast
 qed
@@ -1177,13 +1156,12 @@ qed
 lemma wfG_inside_valid2:
   fixes x::x and \<Gamma>::\<Gamma> and c0::c and c0'::c
   assumes "wfG \<Theta> B  (\<Gamma>'@((x,b0,c0')#\<^sub>\<Gamma>\<Gamma>))" and
-        "\<Theta> ; B ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'"
+    "\<Theta> ; B ; \<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c0'"
   shows "wfG \<Theta> B  (\<Gamma>'@((x,b0,c0)#\<^sub>\<Gamma>\<Gamma>))"
 proof -
   have "wfG \<Theta>  B  (\<Gamma>'@(x,b0,c0)#\<^sub>\<Gamma>\<Gamma>)" using valid.simps wfC_wf assms by auto
   thus ?thesis using wfG_replace_inside_full assms by auto
 qed
-
 
 lemma valid_trans:
   assumes   " \<Theta> ; \<B> ; \<Gamma> \<Turnstile> c0[z::=v]\<^sub>v"  and " \<Theta> ; \<B> ; (z,b,c0)#\<^sub>\<Gamma>\<Gamma> \<Turnstile> c1" and "atom z \<sharp> \<Gamma>" and "wfV \<Theta> \<B> \<Gamma> v b" 
@@ -1207,16 +1185,16 @@ proof -
     ultimately have "is_satis (i(z \<mapsto> sv)) c1" using assms valid.simps by auto
     thus "is_satis i (c1[z::=v]\<^sub>v)" using subst_c_satis sv as assms valid.simps wfC_wf wfG_elim2 subst_v_c_def by metis
   qed
-    
+
   ultimately show ?thesis using valid.simps by auto
 qed
 
 lemma valid_trans_full:
   assumes  "\<Theta> ; \<B> ; ((x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c2[z2::=V_var x]\<^sub>v" and
-           "\<Theta> ; \<B> ; ((x, b, c2[z2::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c3[z3::=V_var x]\<^sub>v" 
-         shows  "\<Theta> ; \<B> ; ((x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c3[z3::=V_var x]\<^sub>v"
-unfolding valid.simps proof
- show "\<Theta> ; \<B> ; (x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>   \<turnstile>\<^sub>w\<^sub>f c3[z3::=V_var x]\<^sub>v" using wf_trans valid.simps assms by metis
+    "\<Theta> ; \<B> ; ((x, b, c2[z2::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c3[z3::=V_var x]\<^sub>v" 
+  shows  "\<Theta> ; \<B> ; ((x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) \<Turnstile> c3[z3::=V_var x]\<^sub>v"
+  unfolding valid.simps proof
+  show "\<Theta> ; \<B> ; (x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>   \<turnstile>\<^sub>w\<^sub>f c3[z3::=V_var x]\<^sub>v" using wf_trans valid.simps assms by metis
 
   show "\<forall>i.  ( wfI  \<Theta> ((x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>) i \<and>  (is_satis_g i ((x, b, c1[z1::=V_var x]\<^sub>v) #\<^sub>\<Gamma> \<Gamma>))  \<longrightarrow>  (is_satis i (c3[z3::=V_var x]\<^sub>v)) ) "
   proof(rule,rule)
@@ -1234,7 +1212,7 @@ lemma eval_v_weakening_x:
   assumes  "i' \<lbrakk> c \<rbrakk> ~ s" and "atom x \<sharp> c" and "i = i' (x \<mapsto> s')"
   shows "i \<lbrakk> c \<rbrakk> ~ s"
   using assms proof(induct rule: eval_v.induct)
-case (eval_v_litI i l)
+  case (eval_v_litI i l)
   then show ?case using eval_v.intros by auto
 next
   case (eval_v_varI sv i1 x1)
@@ -1242,13 +1220,13 @@ next
   hence "i x1 = Some sv" using eval_v_varI by simp
   then show ?case  using eval_v.intros by auto
 next
-case (eval_v_pairI i v1 s1 v2 s2)
+  case (eval_v_pairI i v1 s1 v2 s2)
   then show ?case  using eval_v.intros by auto
 next
   case (eval_v_consI i v s tyid dc)
   then show ?case  using eval_v.intros by auto
 next
-case (eval_v_conspI i v s tyid dc b)
+  case (eval_v_conspI i v s tyid dc b)
   then show ?case  using eval_v.intros by auto
 qed
 
@@ -1256,8 +1234,8 @@ lemma eval_e_weakening_x:
   fixes c::ce
   assumes  "i' \<lbrakk> c \<rbrakk> ~ s" and "atom x \<sharp> c" and "i = i' (x \<mapsto> s')"
   shows "i \<lbrakk> c \<rbrakk> ~ s"
- using assms proof(induct rule: eval_e.induct)
-case (eval_e_valI i v sv)
+  using assms proof(induct rule: eval_e.induct)
+  case (eval_e_valI i v sv)
   then show ?case using  eval_v_weakening_x eval_e.intros  ce.fresh by metis
 next
   case (eval_e_plusI i v1 n1 v2 n2)
@@ -1272,8 +1250,8 @@ next
   case (eval_e_fstI i v v1 v2)
   then show ?case using  eval_v_weakening_x eval_e.intros  ce.fresh by metis
 next
-case (eval_e_sndI i v v1 v2)
-then show ?case using  eval_v_weakening_x eval_e.intros  ce.fresh by metis
+  case (eval_e_sndI i v v1 v2)
+  then show ?case using  eval_v_weakening_x eval_e.intros  ce.fresh by metis
 next
   case (eval_e_concatI i v1 bv1 v2 bv2)
   then show ?case using  eval_v_weakening_x eval_e.intros  ce.fresh by metis
@@ -1287,7 +1265,7 @@ lemma eval_c_weakening_x:
   assumes  "i' \<lbrakk> c \<rbrakk> ~ s" and "atom x \<sharp> c" and "i = i' (x \<mapsto> s')"
   shows "i \<lbrakk> c \<rbrakk> ~ s"
   using assms proof(induct rule: eval_c.induct)
-case (eval_c_trueI i)
+  case (eval_c_trueI i)
   then show ?case using eval_c.intros by auto
 next
   case (eval_c_falseI i)
@@ -1315,7 +1293,6 @@ lemma is_satis_weakening_x:
   shows "i \<Turnstile> c"
   using eval_c_weakening_x assms is_satis.simps by simp
 
-
 lemma is_satis_g_weakening_x:
   fixes G::\<Gamma>
   assumes "i' \<Turnstile> G" and "atom x \<sharp> G" and "i = i' (x \<mapsto> s)"
@@ -1329,7 +1306,6 @@ next
   moreover hence "i \<Turnstile> c'"  using is_satis_weakening_x  is_satis_g.simps(2) GCons by metis
   then show ?case using   is_satis_g.simps(2)[of i x' b' c' \<Gamma>'] GCons fresh_GCons by simp
 qed
-  
 
 section \<open>Base Type Substitution\<close>
 
@@ -1347,12 +1323,10 @@ For example is an SMT value is (SPair (SInt 1) (SBool true)) and it has sort (BP
 the boxed version is SPair (SUt (SInt 1)) (SBool true) and is has sort (BPair (BVar x) BBool). We need to do this 
 so that we can obtain from a valuation i, that gives values like the first smt value, to a valuation i' that gives values like
 the second.
-
- \<close>
-
+\<close>
 
 inductive  boxed_b :: "\<Theta> \<Rightarrow> rcl_val \<Rightarrow> b \<Rightarrow> bv \<Rightarrow> b \<Rightarrow> rcl_val \<Rightarrow> bool"   ( " _  \<turnstile> _ ~ _ [ _ ::= _ ] \<setminus> _ " [50,50] 50) where    
-boxed_b_BVar1I:  "\<lbrakk> bv = bv' ;  wfRCV P s b \<rbrakk> \<Longrightarrow> boxed_b P s (B_var bv') bv b (SUt s)"
+  boxed_b_BVar1I:  "\<lbrakk> bv = bv' ;  wfRCV P s b \<rbrakk> \<Longrightarrow> boxed_b P s (B_var bv') bv b (SUt s)"
 | boxed_b_BVar2I:  "\<lbrakk> bv \<noteq> bv'; wfRCV P s  (B_var bv')  \<rbrakk> \<Longrightarrow> boxed_b P s (B_var bv') bv b s"
 | boxed_b_BIntI:"wfRCV P s B_int \<Longrightarrow> boxed_b P s B_int _ _ s"
 | boxed_b_BBoolI:"wfRCV P s B_bool \<Longrightarrow> boxed_b P s B_bool _ _ s "
@@ -1379,21 +1353,20 @@ equivariance boxed_b
 nominal_inductive boxed_b .
 
 inductive_cases boxed_b_elims:
-"boxed_b P s (B_var bv) bv' b s'"
-"boxed_b P s B_int bv b s'"
-"boxed_b P s B_bool bv b s'"
-"boxed_b P s B_unit bv b s'"
-"boxed_b P s (B_pair b1 b2) bv b s'"
-"boxed_b P s (B_id dc) bv b s'"
-"boxed_b P s B_bitvec bv b s'"
-"boxed_b P s (B_app dc b') bv b s'"
-
+  "boxed_b P s (B_var bv) bv' b s'"
+  "boxed_b P s B_int bv b s'"
+  "boxed_b P s B_bool bv b s'"
+  "boxed_b P s B_unit bv b s'"
+  "boxed_b P s (B_pair b1 b2) bv b s'"
+  "boxed_b P s (B_id dc) bv b s'"
+  "boxed_b P s B_bitvec bv b s'"
+  "boxed_b P s (B_app dc b') bv b s'"
 
 lemma boxed_b_wfRCV:
   assumes  "boxed_b P s b bv b' s'" (*and "supp s = {}"*) and "\<turnstile>\<^sub>w\<^sub>f P"
   shows "wfRCV P s b[bv::=b']\<^sub>b\<^sub>b \<and> wfRCV P s' b"
   using assms proof(induct rule: boxed_b.inducts)
-case (boxed_b_BVar1I bv bv' P s b )
+  case (boxed_b_BVar1I bv bv' P s b )
   then show ?case using wfRCV.intros by auto
 next
   case (boxed_b_BVar2I bv bv' P s )
@@ -1415,14 +1388,14 @@ next
   obtain bva2 and dclist2 where *:"AF_typedef_poly tyid bva dclist = AF_typedef_poly tyid bva2 dclist2 \<and> 
              atom bva2 \<sharp> (bv,(P, SConsp tyid dc b1[bv::=b']\<^sub>b\<^sub>b s1, B_app tyid b1[bv::=b']\<^sub>b\<^sub>b))" 
     using  obtain_fresh_bv by metis
-    
+
   then obtain x2 and b2 and c2 where **:\<open>(dc, \<lbrace> x2 : b2  | c2 \<rbrace>) \<in> set dclist2\<close>  
     using boxed_b_BConspI td_lookup_eq_iff type_def.eq_iff by metis
 
   have  "P  \<turnstile> SConsp tyid dc b1[bv::=b']\<^sub>b\<^sub>b s1 : (B_app tyid b1[bv::=b']\<^sub>b\<^sub>b)" proof
     show 1: \<open>AF_typedef_poly tyid bva2 dclist2 \<in> set P\<close> using boxed_b_BConspI * by auto
     show 2: \<open>(dc, \<lbrace> x2 : b2  | c2 \<rbrace>) \<in> set dclist2\<close> using boxed_b_BConspI using ** by simp
-    
+
     hence "atom bv \<sharp> b2" proof -
       have "supp b2 \<subseteq> { atom bva2 }" using wfTh_poly_supp_b 1 2 boxed_b_BConspI by auto
       moreover have "bv \<noteq> bva2" using  * fresh_Pair fresh_at_base by metis
@@ -1444,19 +1417,17 @@ next
   ultimately show ?case using subst_bb.simps  by simp
 qed(auto)+
 
-
 lemma subst_b_var:
   assumes  "B_var bv2 = b[bv::=b']\<^sub>b\<^sub>b"
-   shows  "(b = B_var bv \<and> b' = B_var bv2) \<or> (b=B_var bv2 \<and> bv \<noteq> bv2)"
-using assms by(nominal_induct b rule: b.strong_induct,auto+)
+  shows  "(b = B_var bv \<and> b' = B_var bv2) \<or> (b=B_var bv2 \<and> bv \<noteq> bv2)"
+  using assms by(nominal_induct b rule: b.strong_induct,auto+)
 
+text \<open>Here the valuation i' is the conv wrap version of i. For every x in G, i' x is the conv wrap version of i x.
+The next lemma for a clearer explanation of what this is. i produces values of sort b[bv::=b'] and i' produces values of sort b\<close>
 
-text \<open>Here the valuation i' is the conv wrap version of i. For every x in G, i' x is the conv wrap version of i x\<close>
-
-(* Next lemma for a clearer explanation of what this is. i produces values of sort b[bv::=b'] and i' produces values of sort b *)
 inductive boxed_i :: "\<Theta> \<Rightarrow> \<Gamma> \<Rightarrow> b \<Rightarrow> bv \<Rightarrow> valuation \<Rightarrow> valuation \<Rightarrow> bool"  ( " _  ; _ ; _ , _ \<turnstile> _ \<approx> _" [50,50] 50) where
-boxed_i_GNilI:  "\<Theta> ; GNil ; b , bv  \<turnstile> i \<approx> i"
-  | boxed_i_GConsI: "\<lbrakk> Some s = i x;  boxed_b \<Theta> s b bv b' s' ;  \<Theta> ; \<Gamma> ; b' , bv \<turnstile> i \<approx> i' \<rbrakk> \<Longrightarrow> \<Theta> ; ((x,b,c)#\<^sub>\<Gamma>\<Gamma>) ; b' , bv \<turnstile> i \<approx> (i'(x \<mapsto> s'))"
+  boxed_i_GNilI:  "\<Theta> ; GNil ; b , bv  \<turnstile> i \<approx> i"
+| boxed_i_GConsI: "\<lbrakk> Some s = i x;  boxed_b \<Theta> s b bv b' s' ;  \<Theta> ; \<Gamma> ; b' , bv \<turnstile> i \<approx> i' \<rbrakk> \<Longrightarrow> \<Theta> ; ((x,b,c)#\<^sub>\<Gamma>\<Gamma>) ; b' , bv \<turnstile> i \<approx> (i'(x \<mapsto> s'))"
 equivariance boxed_i
 nominal_inductive boxed_i .
 
@@ -1464,14 +1435,12 @@ inductive_cases boxed_i_elims:
   "\<Theta> ;GNil ; b , bv \<turnstile> i \<approx> i'"
   "\<Theta> ; ((x,b,c)#\<^sub>\<Gamma>\<Gamma>) ; b' , bv \<turnstile> i \<approx> i'"
 
-
-
 lemma wfRCV_poly_elims:
   fixes tm::"'a::fs" and b::b
   assumes "T  \<turnstile> SConsp typid dc bdc s : b" 
   obtains bva dclist x1 b1 c1 where "b = B_app typid bdc \<and>
     AF_typedef_poly typid bva dclist \<in> set T \<and> (dc, \<lbrace> x1 : b1  | c1 \<rbrace>) \<in> set dclist \<and>  T  \<turnstile> s : b1[bva::=bdc]\<^sub>b\<^sub>b \<and> atom bva \<sharp> tm" 
-using assms proof(nominal_induct "SConsp typid dc bdc s" b avoiding: tm rule:wfRCV.strong_induct)
+  using assms proof(nominal_induct "SConsp typid dc bdc s" b avoiding: tm rule:wfRCV.strong_induct)
   case (wfRCV_BConsPI bv dclist \<Theta> x b c)
   then show ?case by simp
 qed
@@ -1479,9 +1448,9 @@ qed
 lemma boxed_b_ex:
   assumes "wfRCV T s b[bv::=b']\<^sub>b\<^sub>b" and "wfTh T"
   shows "\<exists>s'. boxed_b T s b bv b' s'"
-using assms proof(nominal_induct s arbitrary: b rule: rcl_val.strong_induct)
+  using assms proof(nominal_induct s arbitrary: b rule: rcl_val.strong_induct)
   case (SBitvec x)
-    have *:"b[bv::=b']\<^sub>b\<^sub>b = B_bitvec" using wfRCV_elims(9)[OF SBitvec(1)] by metis
+  have *:"b[bv::=b']\<^sub>b\<^sub>b = B_bitvec" using wfRCV_elims(9)[OF SBitvec(1)] by metis
   show ?case proof (cases "b = B_var bv")
     case True
     moreover have "T  \<turnstile> SBitvec x : B_bitvec" using wfRCV.intros by simp
@@ -1507,7 +1476,7 @@ next
   qed
 next
   case (SBool x)
-    have *:"b[bv::=b']\<^sub>b\<^sub>b = B_bool" using wfRCV_elims(11)[OF SBool(1)] by metis
+  have *:"b[bv::=b']\<^sub>b\<^sub>b = B_bool" using wfRCV_elims(11)[OF SBool(1)] by metis
   show ?case proof (cases "b = B_var bv")
     case True
     moreover have "T  \<turnstile> SBool x : B_bool" using wfRCV.intros by simp
@@ -1552,7 +1521,7 @@ next
       show "AF_typedef tyid dclist \<in> set T" using ** by auto
       show "(dc, \<lbrace> x : b2  | c \<rbrace>) \<in> set dclist" using ** by auto
       show "T  \<turnstile> s1 ~ b2 [ bv ::= b' ] \<setminus> s1' " using s1 ** by auto
-      
+
     qed
     thus ?thesis using beq by metis
   qed
@@ -1562,9 +1531,9 @@ next
   obtain bva dclist x1 b1 c1 where **:"b[bv::=b']\<^sub>b\<^sub>b = B_app typid bdc \<and>
     AF_typedef_poly typid bva dclist \<in> set T \<and> (dc, \<lbrace> x1 : b1  | c1 \<rbrace>) \<in> set dclist \<and>  T  \<turnstile> s : b1[bva::=bdc]\<^sub>b\<^sub>b \<and> atom bva \<sharp> bv"
     using wfRCV_poly_elims[OF SConsp(2)]  by metis
-  
+
   then have *:"B_app typid bdc = b[bv::=b']\<^sub>b\<^sub>b" using wfRCV_elims(14)[OF SConsp(2)] by metis
-   show ?case proof (cases "b = B_var bv")
+  show ?case proof (cases "b = B_var bv")
     case True
     moreover have "T  \<turnstile> SConsp typid dc bdc s  : B_app typid bdc" using wfRCV.intros 
       using "local.*" SConsp.prems(1) by auto
@@ -1573,7 +1542,7 @@ next
   next
     case False
     then obtain bdc' where bdc: "b = B_app typid bdc' \<and> bdc = bdc'[bv::=b']\<^sub>b\<^sub>b" using * subst_bb_inject(8)[OF *] by metis
-    (*hence beq:"b = B_app typid bdc" using subst_bb_inject *  sory (* going to be like the above as bdc is closed *)*)
+        (*hence beq:"b = B_app typid bdc" using subst_bb_inject *  sory (* going to be like the above as bdc is closed *)*)
     have "atom bv \<sharp> b1" proof -
       have "supp b1 \<subseteq> { atom bva }" using wfTh_poly_supp_b ** SConsp by metis
       moreover have "bv \<noteq> bva" using ** by auto
@@ -1589,18 +1558,18 @@ next
       obtain bva3 and dclist3 where 3:"AF_typedef_poly typid bva3 dclist3 =  AF_typedef_poly typid bva dclist \<and> 
             atom bva3 \<sharp> (bdc', bv, b', s, s')" using obtain_fresh_bv  by metis
       then obtain x3 b3 c3 where 4:"(dc, \<lbrace> x3 : b3  | c3 \<rbrace>) \<in> set dclist3" 
-           using boxed_b_BConspI td_lookup_eq_iff type_def.eq_iff 
-           by (metis "**")
+        using boxed_b_BConspI td_lookup_eq_iff type_def.eq_iff 
+        by (metis "**")
 
       show ?thesis proof
         show \<open>AF_typedef_poly typid bva3 dclist3 \<in> set T\<close> using 3 ** by metis 
         show \<open>atom bva3 \<sharp> (bdc', bv, b', s, s')\<close> using 3 by metis
         show 4:\<open>(dc, \<lbrace> x3 : b3  | c3 \<rbrace>) \<in> set dclist3\<close> using 4 by auto
         have "b3[bva3::=bdc']\<^sub>b\<^sub>b = b1[bva::=bdc']\<^sub>b\<^sub>b" proof(rule wfTh_typedef_poly_b_eq_iff)
-           show \<open>AF_typedef_poly typid bva3 dclist3 \<in> set T\<close> using 3 ** by metis
-           show \<open>(dc, \<lbrace> x3 : b3  | c3 \<rbrace>) \<in> set dclist3\<close> using 4 by auto
-           show \<open>AF_typedef_poly typid bva dclist \<in> set T\<close> using ** by auto
-           show \<open>(dc, \<lbrace> x1 : b1  | c1 \<rbrace>) \<in> set dclist\<close> using ** by auto
+          show \<open>AF_typedef_poly typid bva3 dclist3 \<in> set T\<close> using 3 ** by metis
+          show \<open>(dc, \<lbrace> x3 : b3  | c3 \<rbrace>) \<in> set dclist3\<close> using 4 by auto
+          show \<open>AF_typedef_poly typid bva dclist \<in> set T\<close> using ** by auto
+          show \<open>(dc, \<lbrace> x1 : b1  | c1 \<rbrace>) \<in> set dclist\<close> using ** by auto
         qed(simp add: ** SConsp)
         thus  \<open> T  \<turnstile> s ~ b3[bva3::=bdc']\<^sub>b\<^sub>b [ bv ::= b' ] \<setminus> s' \<close> using s' by auto
       qed
@@ -1610,7 +1579,7 @@ next
   qed
 next 
   case SUnit
-    have *:"b[bv::=b']\<^sub>b\<^sub>b = B_unit" using wfRCV_elims SUnit by metis
+  have *:"b[bv::=b']\<^sub>b\<^sub>b = B_unit" using wfRCV_elims SUnit by metis
   show ?case proof (cases "b = B_var bv")
     case True
     moreover have "T  \<turnstile> SUnit : B_unit" using wfRCV.intros by simp
@@ -1638,7 +1607,7 @@ qed
 lemma boxed_i_ex:
   assumes "wfI T \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b i" and "wfTh T"
   shows  "\<exists>i'. T ; \<Gamma> ; b , bv \<turnstile> i \<approx> i'"
-using assms proof(induct \<Gamma> arbitrary: i rule:\<Gamma>_induct)
+  using assms proof(induct \<Gamma> arbitrary: i rule:\<Gamma>_induct)
   case GNil
   then show ?case using boxed_i_GNilI by metis
 next
@@ -1654,11 +1623,10 @@ next
   thus ?case by auto
 qed
 
-
 lemma  boxed_b_eq:
   assumes "boxed_b \<Theta> s1 b bv b' s1'" and "\<turnstile>\<^sub>w\<^sub>f \<Theta>"
   shows "wfTh \<Theta> \<Longrightarrow> boxed_b \<Theta> s2 b bv b' s2' \<Longrightarrow> ( s1 = s2 ) = ( s1' = s2' )"
-using assms proof(induct arbitrary: s2 s2'  rule: boxed_b.inducts )
+  using assms proof(induct arbitrary: s2 s2'  rule: boxed_b.inducts )
   case (boxed_b_BVar1I bv bv'  P s b )  
   then show ?case 
     using boxed_b_elims(1) rcl_val.eq_iff by metis
@@ -1699,7 +1667,6 @@ next
   then show ?case by auto
 next
   case (boxed_b_BConspI tyid bva dclist P b1 bv b' s1 s1' dc x b c)
-  thm boxed_b_elims(8)[OF boxed_b_BConspI(7)]
   obtain bva2 s22  s22' dclist2 dc2 x2 b2 c2 where *:"
      s2 = SConsp tyid dc2 b1[bv::=b']\<^sub>b\<^sub>b s22 \<and> 
      s2' = SConsp tyid dc2 b1 s22' \<and> 
@@ -1716,7 +1683,6 @@ next
   qed    
 qed
 
-
 lemma bs_boxed_var:
   assumes "boxed_i \<Theta> \<Gamma> b' bv i i'"
   shows "Some (b,c) = lookup \<Gamma> x \<Longrightarrow> Some s = i x \<Longrightarrow> Some s' = i' x \<Longrightarrow> boxed_b \<Theta> s b bv b' s'"
@@ -1724,30 +1690,29 @@ lemma bs_boxed_var:
   case (boxed_i_GNilI T i)
   then show ?case using lookup.simps by auto
 next
-    case (boxed_i_GConsI s i x1 \<Theta> b1 bv b' s'  \<Gamma> i' c)
+  case (boxed_i_GConsI s i x1 \<Theta> b1 bv b' s'  \<Gamma> i' c)
   show ?case proof (cases "x=x1")
     case True
     then show ?thesis using boxed_i_GConsI
-      fun_upd_same lookup.simps(2) option.inject prod.inject by metis
+        fun_upd_same lookup.simps(2) option.inject prod.inject by metis
   next
     case False
     then show ?thesis using boxed_i_GConsI
-       fun_upd_same lookup.simps option.inject prod.inject by auto
+        fun_upd_same lookup.simps option.inject prod.inject by auto
   qed
 qed
 
 lemma eval_l_boxed_b:
   assumes  "\<lbrakk> l \<rbrakk> = s"
   shows   "boxed_b \<Theta> s (base_for_lit l) bv b' s"
-using assms proof(nominal_induct l arbitrary: s  rule:l.strong_induct)
+  using assms proof(nominal_induct l arbitrary: s  rule:l.strong_induct)
 qed(auto simp add:  boxed_b.intros wfRCV.intros )+
-
 
 lemma boxed_i_eval_v_boxed_b:
   fixes v::v
   assumes "boxed_i \<Theta> \<Gamma> b' bv i i'" and "i \<lbrakk> v[bv::=b']\<^sub>v\<^sub>b \<rbrakk> ~  s" and  "i' \<lbrakk> v \<rbrakk> ~ s'" and "wfV \<Theta> B \<Gamma> v b"  and "wfI \<Theta>  \<Gamma> i'"
   shows "boxed_b \<Theta> s b bv b' s'"
-using assms proof(nominal_induct v arbitrary: s s' b  rule:v.strong_induct)
+  using assms proof(nominal_induct v arbitrary: s s' b  rule:v.strong_induct)
   case (V_lit l)
   hence "\<lbrakk> l \<rbrakk> = s \<and> \<lbrakk> l \<rbrakk> = s'" using eval_v_elims by auto
   moreover have "b = base_for_lit l" using wfV_elims(2) V_lit  by metis
@@ -1763,7 +1728,6 @@ next
   then obtain b1 and b2 where b:"b=B_pair b1 b2" using wfV_elims subst_vb.simps  by metis
   obtain s1 and s2 where s: "eval_v i (v1[bv::=b']\<^sub>v\<^sub>b) s1 \<and> eval_v i (v2[bv::=b']\<^sub>v\<^sub>b) s2 \<and> s = SPair s1 s2" using eval_v_elims V_pair subst_vb.simps by metis
   obtain s1' and s2' where s': "eval_v i' v1 s1' \<and> eval_v i' v2 s2' \<and> s' = SPair s1' s2'" using eval_v_elims V_pair  by metis
-  thm boxed_b_BPairI
   have  "boxed_b  \<Theta> (SPair s1 s2) (B_pair b1 b2)  bv b' (SPair s1' s2') " proof(rule boxed_b_BPairI)
     show "boxed_b \<Theta> s1 b1 bv b' s1'" using V_pair eval_v_elims wfV_elims b s s' b.eq_iff by metis
     show "boxed_b \<Theta> s2 b2 bv b' s2'" using V_pair eval_v_elims wfV_elims b s s' b.eq_iff by metis
@@ -1799,8 +1763,6 @@ next
   obtain s2' where s2': "s' = SConsp tyid dc b1 s2' \<and>  i' \<lbrakk> v1 \<rbrakk> ~ s2'" 
     using eval_v_elims V_consp by metis
 
-  thm obtain_fresh_bv_dclist_b_iff
-
   have "\<turnstile>\<^sub>w\<^sub>f \<Theta>" using V_consp wfX_wfY by metis
   then obtain bv3::bv and dclist3 x3 b3 c3 where **:" AF_typedef_poly tyid bv2 dclist =  AF_typedef_poly tyid bv3 dclist3 \<and>
         (dc, \<lbrace> x3 : b3  | c3 \<rbrace>) \<in> set dclist3 \<and> atom bv3 \<sharp> (b1, bv, b', s2, s2') \<and> b2[bv2::=b1]\<^sub>b\<^sub>b = b3[bv3::=b1]\<^sub>b\<^sub>b"
@@ -1814,32 +1776,23 @@ next
     show " \<Theta>  \<turnstile> s2 ~ b3[bv3::=b1]\<^sub>b\<^sub>b [ bv ::= b' ] \<setminus> s2'" using V_consp s2 s2' * ** by metis
   qed
   then show ?case using * s2 s2' by simp
-
 qed
 
 lemma boxed_b_eq_eq:
   assumes  "boxed_b \<Theta> n1 b1 bv b' n1'" and "boxed_b \<Theta> n2 b1 bv b' n2'" and "s = SBool (n1 = n2)" and  "\<turnstile>\<^sub>w\<^sub>f \<Theta>"
-   "s' = SBool (n1' = n2')"
+    "s' = SBool (n1' = n2')"
   shows  "s=s'" 
-using boxed_b_eq assms by auto
-
-      
-
+  using boxed_b_eq assms by auto
 
 lemma boxed_i_eval_ce_boxed_b:
   fixes e::ce
   assumes "i' \<lbrakk> e \<rbrakk> ~  s'" and "i \<lbrakk> e[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ s" and "wfCE \<Theta> B \<Gamma> e b" and "boxed_i \<Theta> \<Gamma> b' bv i i'" and "wfI \<Theta> \<Gamma> i'"
   shows "boxed_b \<Theta> s b bv b' s'"
-using assms proof(nominal_induct e arbitrary: s s' b b' rule: ce.strong_induct)
+  using assms proof(nominal_induct e arbitrary: s s' b b' rule: ce.strong_induct)
   case (CE_val x)
   then show ?case using boxed_i_eval_v_boxed_b eval_e_elims wfCE_elims subst_ceb.simps by metis
 next
   case (CE_op opp v1 v2)
-
-(*
-  have 1:"wfCE \<Theta> B \<Gamma> v1 (B_int)" using wfCE_elims CE_op by metis
-  *have 2:"wfCE \<Theta> B \<Gamma> v2 (B_int)" using wfCE_elims CE_op by metis
-*)
 
   show ?case proof(rule opp.exhaust)
     assume \<open>opp = Plus\<close>
@@ -1872,7 +1825,7 @@ next
   next
     assume \<open>opp = Eq\<close>
     obtain b1 where b1:"wfCE \<Theta> B \<Gamma> v1 b1 \<and> wfCE \<Theta> B \<Gamma> v2 b1" using wfCE_elims CE_op  \<open>opp = Eq\<close>  by metis
-  
+
     hence *:"b = B_bool" using CE_op wfCE_elims \<open>opp = Eq\<close>   by metis
     obtain n1 and n2 where n:"s = SBool (n1 = n2) \<and> i \<lbrakk> v1[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ n1 \<and> i \<lbrakk> v2[bv::=b']\<^sub>c\<^sub>e\<^sub>b \<rbrakk> ~ n2" using eval_e_elims subst_ceb.simps CE_op \<open>opp = Eq\<close> by metis
     obtain n1' and n2' where n':"s' = SBool (n1' = n2') \<and> i' \<lbrakk> v1 \<rbrakk> ~ n1' \<and> i' \<lbrakk> v2 \<rbrakk> ~ n2'" using eval_e_elims CE_op \<open>opp = Eq\<close>  by metis
@@ -1881,7 +1834,7 @@ next
     moreover have "boxed_b \<Theta> n2 b1 bv b' n2'" using boxed_i_eval_v_boxed_b b1  n n' CE_op by metis
     moreover have "\<turnstile>\<^sub>w\<^sub>f \<Theta>" using b1 wfX_wfY by metis
     ultimately have "s=s'" using n' n boxed_b_elims
-      boxed_b_eq_eq by metis
+        boxed_b_eq_eq by metis
     thus ?thesis using  * n n' boxed_b_BBoolI CE_op wfRCV.intros \<open>opp = Eq\<close> by simp
   qed
 
@@ -1922,13 +1875,12 @@ next
     by (metis boxed_b_BIntI boxed_b_elims(7) eval_e_lenI eval_e_uniqueness subst_ceb.simps(5) wfI_wfCE_eval_e)
 qed
 
-
 lemma eval_c_eq_bs_boxed:
   fixes c::c
   assumes "i \<lbrakk> c[bv::=b]\<^sub>c\<^sub>b \<rbrakk> ~ s" and "i' \<lbrakk> c \<rbrakk> ~ s'" and "wfC \<Theta> B \<Gamma> c" and "wfI \<Theta> \<Gamma> i'" and "\<Theta> ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b  \<turnstile> i "
-   and "boxed_i \<Theta> \<Gamma> b bv i i'"
- shows "s = s'"
-using assms proof(nominal_induct c arbitrary: s s'  rule:c.strong_induct)
+    and "boxed_i \<Theta> \<Gamma> b bv i i'"
+  shows "s = s'"
+  using assms proof(nominal_induct c arbitrary: s s'  rule:c.strong_induct)
   case C_true
   then show ?case using eval_c_elims subst_cb.simps by metis
 next
@@ -1968,37 +1920,35 @@ qed
 lemma is_satis_bs_boxed:
   fixes c::c
   assumes  "boxed_i \<Theta> \<Gamma> b bv i i'" and "wfC \<Theta> B \<Gamma> c" and "wfI \<Theta> \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b i" and "\<Theta> ; \<Gamma> \<turnstile> i'"
-  and  "(i \<Turnstile> c[bv::=b]\<^sub>c\<^sub>b)"
-shows "(i' \<Turnstile> c)"
+    and  "(i \<Turnstile> c[bv::=b]\<^sub>c\<^sub>b)"
+  shows "(i' \<Turnstile> c)"
 proof -
   have "eval_c i (c[bv::=b]\<^sub>c\<^sub>b) True" using is_satis.simps assms by auto
   moreover obtain s where "i' \<lbrakk> c \<rbrakk> ~ s" using eval_c_exist assms by metis
   ultimately show ?thesis using eval_c_eq_bs_boxed assms is_satis.simps by metis
 qed
 
-
 lemma is_satis_bs_boxed_rev:
   fixes c::c
   assumes  "boxed_i \<Theta> \<Gamma> b bv i i'" and "wfC \<Theta> B \<Gamma> c" and "wfI \<Theta> \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b i" and "\<Theta> ; \<Gamma> \<turnstile> i'" and  "wfC \<Theta> {||} \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b (c[bv::=b]\<^sub>c\<^sub>b)"
-  and  "(i' \<Turnstile> c)"
-shows "(i \<Turnstile> c[bv::=b]\<^sub>c\<^sub>b)"
+    and  "(i' \<Turnstile> c)"
+  shows "(i \<Turnstile> c[bv::=b]\<^sub>c\<^sub>b)"
 proof -
   have "eval_c i' c True" using is_satis.simps assms by auto
   moreover obtain s where "i \<lbrakk> c[bv::=b]\<^sub>c\<^sub>b \<rbrakk> ~ s" using eval_c_exist assms by metis
   ultimately show ?thesis using eval_c_eq_bs_boxed assms is_satis.simps by metis
 qed
 
-
 lemma bs_boxed_wfi_aux:
   fixes b::b and bv::bv and \<Theta>::\<Theta> and B::\<B>
   assumes   "boxed_i \<Theta> \<Gamma> b bv i i'" and "wfI \<Theta> \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b i" and "\<turnstile>\<^sub>w\<^sub>f \<Theta>" and "wfG \<Theta> B  \<Gamma>"
   shows "\<Theta> ; \<Gamma> \<turnstile> i'"
-using assms proof(induct rule: boxed_i.inducts)
+  using assms proof(induct rule: boxed_i.inducts)
   case (boxed_i_GNilI T i)
   then show ?case using wfI_def by auto
 next
   case (boxed_i_GConsI s i x1 T b1 bv b s' G i' c1)
-    {
+  {
     fix x2 b2 c2
     assume as : "(x2,b2,c2) \<in> toSet ((x1, b1, c1) #\<^sub>\<Gamma> G)"
 
@@ -2029,18 +1979,17 @@ next
       then show ?thesis using wfI_def[of T G i'] tail
         using boxed_i_GConsI.prems(3) split_G wfG_cons_fresh2 by fastforce
     qed
-    }
-    thus ?case using wfI_def by fast
+  }
+  thus ?case using wfI_def by fast
 
 qed
-
 
 lemma is_satis_g_bs_boxed_aux:
   fixes G::\<Gamma>
   assumes  "boxed_i \<Theta> G1 b bv i i'" and "wfI \<Theta> G1[bv::=b]\<^sub>\<Gamma>\<^sub>b i" and "wfI \<Theta> G1 i'"  and "G1 = (G2@G)" and  "wfG \<Theta> B G1"
-  and "(i \<Turnstile> G[bv::=b]\<^sub>\<Gamma>\<^sub>b) "
+    and "(i \<Turnstile> G[bv::=b]\<^sub>\<Gamma>\<^sub>b) "
   shows  "(i' \<Turnstile> G)"
-using assms proof(induct G arbitrary: G2 rule: \<Gamma>_induct)
+  using assms proof(induct G arbitrary: G2 rule: \<Gamma>_induct)
   case GNil
   then show ?case by auto
 next
@@ -2057,11 +2006,10 @@ qed
 lemma is_satis_g_bs_boxed:
   fixes G::\<Gamma>
   assumes  "boxed_i \<Theta> G b bv i i'" and "wfI \<Theta> G[bv::=b]\<^sub>\<Gamma>\<^sub>b i" and "wfI \<Theta> G i'"  and "wfG \<Theta> B G"
-  and "(i \<Turnstile> G[bv::=b]\<^sub>\<Gamma>\<^sub>b) "
+    and "(i \<Turnstile> G[bv::=b]\<^sub>\<Gamma>\<^sub>b) "
   shows  "(i' \<Turnstile> G)"
   using is_satis_g_bs_boxed_aux assms
   by (metis (full_types) append_g.simps(1))
-
 
 lemma subst_b_valid:
   fixes s::s and b::b
@@ -2096,10 +2044,9 @@ proof(rule validI)
       show "\<Theta> ; {||} ; \<Gamma>[bv::=b]\<^sub>\<Gamma>\<^sub>b   \<turnstile>\<^sub>w\<^sub>f c[bv::=b]\<^sub>c\<^sub>b " using ** by auto
       show "i' \<Turnstile> c" using ic by auto
     qed
-      
+
   qed
 qed
-
 
 section \<open>Expression Operator Lemmas\<close>
 
@@ -2116,7 +2063,6 @@ proof -
     using eval_e_elims(7) eval_v_elims eval_l.simps  by (metis eval_e.intros eval_v_litI)
   ultimately show ?thesis using eval_c.intros is_satis.simps by fastforce
 qed
-
 
 lemma is_satis_plus_imp:
   assumes "i \<Turnstile> (CE_val (V_var x) ==  CE_val (V_lit (L_num (n1+n2))))" (is "is_satis i ?c1")
@@ -2136,7 +2082,7 @@ lemma is_satis_leq_imp:
   assumes "i \<Turnstile> (CE_val (V_var x) ==  CE_val (V_lit (if (n1 \<le> n2) then L_true else L_false)))" (is "is_satis i ?c1")
   shows   "i \<Turnstile> (CE_val (V_var x)  ==  CE_op LEq [(V_lit (L_num n1))]\<^sup>c\<^sup>e [(V_lit (L_num n2))]\<^sup>c\<^sup>e)"
 proof -
- have *:"eval_c i ?c1 True" using assms is_satis.simps by blast
+  have *:"eval_c i ?c1 True" using assms is_satis.simps by blast
   then have  "eval_e i (CE_val (V_lit ((if (n1 \<le> n2) then L_true else L_false)))) (SBool (n1\<le>n2))"
     using eval_e_elims(1) eval_v_elims eval_l.simps
     by (metis (full_types) eval_e.intros(1) eval_v_litI)
@@ -2147,15 +2093,13 @@ proof -
   ultimately show ?thesis using eval_c.intros is_satis.simps by fastforce
 qed
 
-thm eval_l.simps
-
 lemma eval_lit_inj:
   fixes n1::l and n2::l
   assumes "\<lbrakk> n1  \<rbrakk> = s" and "\<lbrakk> n2 \<rbrakk> = s" 
   shows "n1=n2" 
   using assms proof(nominal_induct s rule: rcl_val.strong_induct)
-case (SBitvec x)
-then show ?case using eval_l.simps 
+  case (SBitvec x)
+  then show ?case using eval_l.simps 
     by (metis l.strong_exhaust rcl_val.distinct rcl_val.eq_iff)
 next
   case (SNum x)
@@ -2187,25 +2131,22 @@ next
     by (metis l.strong_exhaust rcl_val.distinct rcl_val.eq_iff)
 qed
 
-
 lemma eval_e_lit_inj:
   fixes n1::l and n2::l
   assumes "i \<lbrakk> [ [ n1 ]\<^sup>v ]\<^sup>c\<^sup>e \<rbrakk> ~ s" and "i \<lbrakk> [ [ n2 ]\<^sup>v ]\<^sup>c\<^sup>e \<rbrakk> ~ s" 
   shows "n1=n2" 
   using eval_lit_inj assms eval_e_elims eval_v_elims by metis
 
-
 lemma is_satis_eq_imp:
   assumes "i \<Turnstile> (CE_val (V_var x) ==  CE_val (V_lit (if (n1 =  n2) then L_true else L_false)))" (is "is_satis i ?c1")
   shows   "i \<Turnstile> (CE_val (V_var x)  ==  CE_op Eq [(V_lit (n1))]\<^sup>c\<^sup>e [(V_lit (n2))]\<^sup>c\<^sup>e)"
 proof -
- have *:"eval_c i ?c1 True" using assms is_satis.simps by blast
+  have *:"eval_c i ?c1 True" using assms is_satis.simps by blast
   then have  "eval_e i (CE_val (V_lit ((if (n1=n2) then L_true else L_false)))) (SBool (n1=n2))"
     using eval_e_elims(1) eval_v_elims eval_l.simps
     by (metis (full_types) eval_e.intros(1) eval_v_litI)
   hence "eval_e i (CE_val (V_var x)) (SBool (n1=n2))" using eval_c_elims(7)[OF *]
     by (metis eval_e_elims(1) eval_v_elims(1))
- thm  eval_e_eqI[of i "[(V_lit (n1))]\<^sup>c\<^sup>e"  _ "[(V_lit (n2))]\<^sup>c\<^sup>e" ]
   moreover have "eval_e i (CE_op Eq [(V_lit (n1))]\<^sup>c\<^sup>e [(V_lit (n2) )]\<^sup>c\<^sup>e) (SBool (n1=n2))"
   proof -
     obtain s1 and s2 where *:"i \<lbrakk> [ [ n1 ]\<^sup>v ]\<^sup>c\<^sup>e \<rbrakk> ~ s1  \<and> i \<lbrakk> [ [ n2 ]\<^sup>v ]\<^sup>c\<^sup>e \<rbrakk> ~ s2" using eval_l.simps eval_e.intros eval_v_litI by metis
@@ -2222,10 +2163,9 @@ proof -
   ultimately show ?thesis using eval_c.intros is_satis.simps by fastforce
 qed
 
-
 lemma valid_eq_e:
   assumes "\<forall>i s1 s2. wfG P \<B> GNil \<and> wfI P GNil i \<and> eval_e i e1 s1 \<and> eval_e i e2 s2 \<longrightarrow> s1 = s2"   
-          and "wfCE P  \<B> GNil e1 b" and "wfCE P \<B> GNil e2 b" 
+    and "wfCE P  \<B> GNil e1 b" and "wfCE P \<B> GNil e2 b" 
   shows "P ; \<B> ; (x, b , CE_val (V_var x)  ==  e1 )#\<^sub>\<Gamma> GNil \<Turnstile>  CE_val (V_var x)  ==  e2"
   unfolding valid.simps
 proof(intro conjI)
@@ -2255,9 +2195,8 @@ proof(intro conjI)
       then show ?thesis
         by (metis (full_types) \<open>i x = Some s1\<close> eval_c_eqI eval_e_valI eval_v_varI) (* 31 ms *)
     qed
- qed
+  qed
 qed
-
 
 lemma valid_len:
   assumes " \<turnstile>\<^sub>w\<^sub>f \<Theta>" 
@@ -2266,70 +2205,68 @@ proof -
   have *:"\<Theta>  \<turnstile>\<^sub>w\<^sub>f ([]::\<Phi>)  \<and>  \<Theta> ; \<B> ; GNil  \<turnstile>\<^sub>w\<^sub>f []\<^sub>\<Delta> " using assms wfG_nilI wfD_emptyI wfPhi_emptyI by auto
 
   moreover  hence "\<Theta>  ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f CE_val (V_lit (L_num (int (length v)))) : B_int" 
-      using wfCE_valI * wfV_litI base_for_lit.simps 
-      by (metis wfE_valI wfX_wfY)
+    using wfCE_valI * wfV_litI base_for_lit.simps 
+    by (metis wfE_valI wfX_wfY)
 
   moreover have "\<Theta>  ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f CE_len [(V_lit (L_bitvec v))]\<^sup>c\<^sup>e : B_int"       
-      using wfE_valI * wfV_litI base_for_lit.simps  wfE_valI wfX_wfY wfCE_valI
-      by (metis wfCE_lenI)
+    using wfE_valI * wfV_litI base_for_lit.simps  wfE_valI wfX_wfY wfCE_valI
+    by (metis wfCE_lenI)
   moreover have "atom x \<sharp> GNil" by auto
   ultimately have "\<Theta> ; \<B> ; ?G \<turnstile>\<^sub>w\<^sub>f ?c" using wfC_e_eq2 assms by simp
   moreover have "(\<forall>i. wfI \<Theta> ?G i \<and> is_satis_g i ?G \<longrightarrow> is_satis i ?c)" using is_satis_len_imp by auto
   ultimately show ?thesis using valid.simps by auto
 qed
 
-
 lemma valid_arith_bop:
- assumes "wfG \<Theta> \<B>  \<Gamma>" and "opp = Plus \<and> ll = (L_num (n1+n2)) \<or> (opp = LEq \<and> ll = ( if n1\<le>n2 then L_true else L_false))"  
-  and "(opp = Plus \<longrightarrow> b = B_int) \<and> (opp = LEq \<longrightarrow> b = B_bool)" and
-   "atom x \<sharp> \<Gamma>" 
+  assumes "wfG \<Theta> \<B>  \<Gamma>" and "opp = Plus \<and> ll = (L_num (n1+n2)) \<or> (opp = LEq \<and> ll = ( if n1\<le>n2 then L_true else L_false))"  
+    and "(opp = Plus \<longrightarrow> b = B_int) \<and> (opp = LEq \<longrightarrow> b = B_bool)" and
+    "atom x \<sharp> \<Gamma>" 
   shows   "\<Theta>; \<B> ; (x, b, (CE_val (V_var x)  ==  CE_val (V_lit (ll)) )) #\<^sub>\<Gamma> \<Gamma>  
                           \<Turnstile> (CE_val (V_var x)  ==  CE_op opp ([V_lit (L_num n1)]\<^sup>c\<^sup>e) ([V_lit (L_num n2)]\<^sup>c\<^sup>e ))" (is "\<Theta> ; \<B> ; ?G \<Turnstile> ?c")
-    proof -
-      have "wfC \<Theta> \<B> ?G ?c" proof(rule wfC_e_eq2)
-        show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_val (V_lit ll) : b" using wfCE_valI wfV_litI assms base_for_lit.simps by metis
-        show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op opp ([V_lit (L_num n1)]\<^sup>c\<^sup>e) ([V_lit (L_num n2)]\<^sup>c\<^sup>e) : b " 
-          using wfCE_plusI wfCE_leqI   wfCE_eqI wfV_litI wfCE_valI base_for_lit.simps assms  by metis
-        show "\<turnstile>\<^sub>w\<^sub>f \<Theta>" using assms wfX_wfY by auto 
-        show "atom x \<sharp> \<Gamma>" using assms by auto
-      qed
+proof -
+  have "wfC \<Theta> \<B> ?G ?c" proof(rule wfC_e_eq2)
+    show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_val (V_lit ll) : b" using wfCE_valI wfV_litI assms base_for_lit.simps by metis
+    show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op opp ([V_lit (L_num n1)]\<^sup>c\<^sup>e) ([V_lit (L_num n2)]\<^sup>c\<^sup>e) : b " 
+      using wfCE_plusI wfCE_leqI   wfCE_eqI wfV_litI wfCE_valI base_for_lit.simps assms  by metis
+    show "\<turnstile>\<^sub>w\<^sub>f \<Theta>" using assms wfX_wfY by auto 
+    show "atom x \<sharp> \<Gamma>" using assms by auto
+  qed
 
-      moreover have "\<forall>i. wfI \<Theta> ?G i \<and> is_satis_g i ?G \<longrightarrow> is_satis i ?c" proof(rule allI , rule impI)
-        fix i
-        assume "wfI \<Theta> ?G i \<and> is_satis_g i ?G" 
+  moreover have "\<forall>i. wfI \<Theta> ?G i \<and> is_satis_g i ?G \<longrightarrow> is_satis i ?c" proof(rule allI , rule impI)
+    fix i
+    assume "wfI \<Theta> ?G i \<and> is_satis_g i ?G" 
 
-        hence "is_satis i  ((CE_val (V_var x)  ==  CE_val (V_lit (ll)) ))"   by auto
-        thus  "is_satis i ((CE_val (V_var x)  ==  CE_op opp ([V_lit (L_num n1)]\<^sup>c\<^sup>e) ([V_lit (L_num n2)]\<^sup>c\<^sup>e)))" 
-          using is_satis_plus_imp assms opp.exhaust is_satis_leq_imp by auto
-      qed
-      ultimately show ?thesis using valid.simps by metis
-    qed
+    hence "is_satis i  ((CE_val (V_var x)  ==  CE_val (V_lit (ll)) ))"   by auto
+    thus  "is_satis i ((CE_val (V_var x)  ==  CE_op opp ([V_lit (L_num n1)]\<^sup>c\<^sup>e) ([V_lit (L_num n2)]\<^sup>c\<^sup>e)))" 
+      using is_satis_plus_imp assms opp.exhaust is_satis_leq_imp by auto
+  qed
+  ultimately show ?thesis using valid.simps by metis
+qed
 
 lemma valid_eq_bop:
- assumes "wfG \<Theta> \<B>  \<Gamma>" and  "atom x \<sharp> \<Gamma>"  and  "base_for_lit l1 = base_for_lit l2"
+  assumes "wfG \<Theta> \<B>  \<Gamma>" and  "atom x \<sharp> \<Gamma>"  and  "base_for_lit l1 = base_for_lit l2"
   shows   "\<Theta>; \<B> ; (x, B_bool, (CE_val (V_var x)  ==  CE_val (V_lit (if l1 = l2 then L_true else L_false)) )) #\<^sub>\<Gamma> \<Gamma>  
                           \<Turnstile> (CE_val (V_var x)  ==  CE_op Eq ([V_lit (l1)]\<^sup>c\<^sup>e) ([V_lit (l2)]\<^sup>c\<^sup>e ))" (is "\<Theta> ; \<B> ; ?G \<Turnstile> ?c")
 proof -
   let ?ll = "(if l1 = l2 then L_true else L_false)"
-      have "wfC \<Theta> \<B> ?G ?c" proof(rule wfC_e_eq2)
-        show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_val (V_lit ?ll) : B_bool" using wfCE_valI wfV_litI assms base_for_lit.simps by metis
-        show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op Eq ([V_lit (l1)]\<^sup>c\<^sup>e) ([V_lit (l2)]\<^sup>c\<^sup>e) : B_bool " 
-          using wfCE_eqI wfCE_leqI   wfCE_eqI wfV_litI wfCE_valI base_for_lit.simps assms by metis
-        show "\<turnstile>\<^sub>w\<^sub>f \<Theta>" using assms wfX_wfY by auto 
-        show "atom x \<sharp> \<Gamma>" using assms by auto
-      qed
+  have "wfC \<Theta> \<B> ?G ?c" proof(rule wfC_e_eq2)
+    show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_val (V_lit ?ll) : B_bool" using wfCE_valI wfV_litI assms base_for_lit.simps by metis
+    show "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f CE_op Eq ([V_lit (l1)]\<^sup>c\<^sup>e) ([V_lit (l2)]\<^sup>c\<^sup>e) : B_bool " 
+      using wfCE_eqI wfCE_leqI   wfCE_eqI wfV_litI wfCE_valI base_for_lit.simps assms by metis
+    show "\<turnstile>\<^sub>w\<^sub>f \<Theta>" using assms wfX_wfY by auto 
+    show "atom x \<sharp> \<Gamma>" using assms by auto
+  qed
 
-      moreover have "\<forall>i. wfI \<Theta> ?G i \<and> is_satis_g i ?G \<longrightarrow> is_satis i ?c" proof(rule allI , rule impI)
-        fix i
-        assume "wfI \<Theta> ?G i \<and> is_satis_g i ?G" 
+  moreover have "\<forall>i. wfI \<Theta> ?G i \<and> is_satis_g i ?G \<longrightarrow> is_satis i ?c" proof(rule allI , rule impI)
+    fix i
+    assume "wfI \<Theta> ?G i \<and> is_satis_g i ?G" 
 
-        hence "is_satis i  ((CE_val (V_var x)  ==  CE_val (V_lit (?ll)) ))"   by auto
-        thus  "is_satis i ((CE_val (V_var x)  ==  CE_op Eq ([V_lit (l1)]\<^sup>c\<^sup>e) ([V_lit (l2)]\<^sup>c\<^sup>e)))" 
-          using is_satis_eq_imp assms  by auto
-      qed
-      ultimately show ?thesis using valid.simps by metis
-    qed
-
+    hence "is_satis i  ((CE_val (V_var x)  ==  CE_val (V_lit (?ll)) ))"   by auto
+    thus  "is_satis i ((CE_val (V_var x)  ==  CE_op Eq ([V_lit (l1)]\<^sup>c\<^sup>e) ([V_lit (l2)]\<^sup>c\<^sup>e)))" 
+      using is_satis_eq_imp assms  by auto
+  qed
+  ultimately show ?thesis using valid.simps by metis
+qed
 
 lemma valid_fst:
   fixes x::x and v\<^sub>1::v and v\<^sub>2::v
@@ -2347,13 +2284,12 @@ proof(rule valid_eq_e)
     then show "s1 = s2" using eval_v_uniqueness as 
       using eval_e_uniqueness eval_e_valI by blast
   qed
-     
+
   show \<open>  \<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f [ v\<^sub>1 ]\<^sup>c\<^sup>e : b\<^sub>1 \<close> using assms 
     by (metis b.eq_iff(4) wfV_elims(3) wfV_wfCE)
   show \<open>  \<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f [#1[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e : b\<^sub>1 \<close> using assms using wfCE_fstI 
     using wfCE_valI by blast
 qed
-
 
 lemma valid_snd: 
   fixes x::x and v\<^sub>1::v and v\<^sub>2::v
@@ -2366,18 +2302,17 @@ proof(rule valid_eq_e)
     fix i s1 s2 
     assume as:"\<Theta> ; \<B>  \<turnstile>\<^sub>w\<^sub>f GNil  \<and>  \<Theta> ; GNil \<turnstile> i \<and> (i \<lbrakk> [ v\<^sub>2 ]\<^sup>c\<^sup>e \<rbrakk> ~ s1)  \<and> (i \<lbrakk> [#2[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e \<rbrakk> ~ s2)"
     then obtain s2' where *:"i \<lbrakk> [ v\<^sub>1 , v\<^sub>2 ]\<^sup>v \<rbrakk> ~ SPair s2' s2" 
-       using eval_e_elims(5)[of i "[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e" s2] eval_e_elims 
+      using eval_e_elims(5)[of i "[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e" s2] eval_e_elims 
       by meson
     then have " i \<lbrakk> v\<^sub>2 \<rbrakk> ~ s2" using eval_v_elims(3)[OF *] by auto
     then show "s1 = s2" using eval_v_uniqueness as 
       using eval_e_uniqueness eval_e_valI by blast
   qed
-     
+
   show \<open>  \<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f [ v\<^sub>2 ]\<^sup>c\<^sup>e : b\<^sub>2 \<close> using assms 
     by (metis b.eq_iff wfV_elims wfV_wfCE)
   show \<open>  \<Theta> ; \<B> ; GNil \<turnstile>\<^sub>w\<^sub>f [#2[[ v\<^sub>1 , v\<^sub>2 ]\<^sup>v]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e : b\<^sub>2 \<close> using assms using wfCE_sndI wfCE_valI by blast
 qed
-
 
 lemma valid_concat:
   fixes v1::"bit list" and v2::"bit list"
@@ -2413,7 +2348,7 @@ lemma valid_ce_eq:
   fixes ce::ce
   assumes  "\<Theta> ; \<B> ; \<Gamma> \<turnstile>\<^sub>w\<^sub>f ce : b"
   shows \<open>\<Theta> ; \<B> ; \<Gamma>  \<Turnstile> ce  ==  ce \<close>
-unfolding valid.simps proof 
+  unfolding valid.simps proof 
   show \<open> \<Theta> ; \<B> ; \<Gamma>   \<turnstile>\<^sub>w\<^sub>f ce  ==  ce  \<close> using assms wfC_eqI by auto
   show \<open>\<forall>i.  \<Theta> ; \<Gamma> \<turnstile> i \<and>  i \<Turnstile> \<Gamma>  \<longrightarrow>  i \<Turnstile> ce  ==  ce  \<close> proof(rule+)
     fix i
@@ -2450,7 +2385,7 @@ lemma valid_range:
   shows "\<Theta> ; {||} ; (x, B_int  , (C_eq (CE_val (V_var x)) (CE_val (V_lit (L_num n))))) #\<^sub>\<Gamma>  GNil \<Turnstile> 
                               (C_eq (CE_op LEq (CE_val (V_var x)) (CE_val (V_lit (L_num m))))  [[ L_true ]\<^sup>v ]\<^sup>c\<^sup>e) AND
                              (C_eq (CE_op LEq (CE_val (V_lit (L_num 0))) (CE_val (V_var x)))  [[ L_true ]\<^sup>v ]\<^sup>c\<^sup>e)"
-        (is "\<Theta> ; {||} ; ?G \<Turnstile> ?c1 AND ?c2")
+    (is "\<Theta> ; {||} ; ?G \<Turnstile> ?c1 AND ?c2")
 proof(rule validI)
   have wfg: " \<Theta> ; {||}  \<turnstile>\<^sub>w\<^sub>f (x, B_int, [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_num n ]\<^sup>v ]\<^sup>c\<^sup>e ) #\<^sub>\<Gamma> GNil " 
     using assms base_for_lit.simps wfG_nilI wfV_litI fresh_GNil wfB_intI wfC_v_eq wfG_cons1I wfG_cons2I by metis
@@ -2472,7 +2407,7 @@ proof(rule validI)
         by (metis eval_c_elims(7) eval_e_elims(1) eval_l.simps(3) eval_v_elims(1) eval_v_elims(2))
       thus ?thesis using eval_v_varI by auto
     qed
-     
+
     show "i \<Turnstile> ?c1 AND ?c2" 
     proof - 
       have "i \<lbrakk> ?c1 \<rbrakk> ~ True" 
@@ -2484,21 +2419,20 @@ proof(rule validI)
           using eval_v_litI eval_e_valI eval_l.simps by metis
         ultimately show ?thesis using  eval_c_eqI by metis
       qed
-      
+
       moreover have "i \<lbrakk> ?c2 \<rbrakk> ~ True" 
       proof -
         have "i \<lbrakk> [ leq [ [ L_num 0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e \<rbrakk> ~ SBool True"
-        using eval_e_leqI assms eval_v_litI eval_l.simps * 
+          using eval_e_leqI assms eval_v_litI eval_l.simps * 
           by (metis (full_types) eval_e_valI)
         moreover have "i \<lbrakk>  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e  \<rbrakk> ~ SBool True" 
           using eval_v_litI eval_e_valI eval_l.simps by metis
         ultimately show ?thesis using  eval_c_eqI by metis
       qed      
       ultimately show ?thesis using eval_c_conjI is_satis.simps by metis
+    qed
   qed
 qed
-qed
-
 
 lemma valid_range_length:
   fixes \<Gamma>::\<Gamma>
@@ -2507,10 +2441,10 @@ lemma valid_range_length:
                      (C_eq (CE_op LEq (CE_val (V_lit (L_num 0))) (CE_val (V_var x)))  [[ L_true ]\<^sup>v ]\<^sup>c\<^sup>e) AND  
                      (C_eq (CE_op LEq (CE_val (V_var x)) ([| [ [ L_bitvec v ]\<^sup>v ]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e ))  [[ L_true ]\<^sup>v ]\<^sup>c\<^sup>e)
                             "
-        (is "\<Theta> ; {||} ; ?G \<Turnstile> ?c1 AND ?c2")
+    (is "\<Theta> ; {||} ; ?G \<Turnstile> ?c1 AND ?c2")
 proof(rule validI)
   have wfg: " \<Theta> ; {||}  \<turnstile>\<^sub>w\<^sub>f (x, B_int, [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_num n ]\<^sup>v ]\<^sup>c\<^sup>e ) #\<^sub>\<Gamma> \<Gamma> " apply(rule  wfG_cons1I)
-        apply simp
+    apply simp
     using assms apply simp+
     using assms base_for_lit.simps wfG_nilI wfV_litI  wfB_intI wfC_v_eq  wfB_intI wfX_wfY assms by metis+
 
@@ -2531,7 +2465,7 @@ proof(rule validI)
         by (metis eval_c_elims(7) eval_e_elims(1) eval_l.simps(3) eval_v_elims(1) eval_v_elims(2))
       thus ?thesis using eval_v_varI by auto
     qed
-     
+
     show "i \<Turnstile> ?c1 AND ?c2" 
     proof - 
       have "i \<lbrakk> ?c2 \<rbrakk> ~ True" 
@@ -2543,41 +2477,39 @@ proof(rule validI)
           using eval_v_litI eval_e_valI eval_l.simps by metis
         ultimately show ?thesis using  eval_c_eqI by metis
       qed
-      
+
       moreover have "i \<lbrakk> ?c1 \<rbrakk> ~ True" 
       proof -
         have "i \<lbrakk> [ leq [ [ L_num 0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e \<rbrakk> ~ SBool True"
-        using eval_e_leqI assms eval_v_litI eval_l.simps * 
+          using eval_e_leqI assms eval_v_litI eval_l.simps * 
           by (metis (full_types) eval_e_valI)
         moreover have "i \<lbrakk>  [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e  \<rbrakk> ~ SBool True" 
           using eval_v_litI eval_e_valI eval_l.simps by metis
         ultimately show ?thesis using  eval_c_eqI by metis
       qed      
       ultimately show ?thesis using eval_c_conjI is_satis.simps by metis
+    qed
   qed
 qed
-qed
-
-thm valid_weakening
 
 lemma valid_range_length_inv_gnil:
   fixes \<Gamma>::\<Gamma>
   assumes  "\<turnstile>\<^sub>w\<^sub>f \<Theta> "
-  and  "\<Theta> ; {||} ; (x, B_int  , (C_eq (CE_val (V_var x)) (CE_val (V_lit (L_num n))))) #\<^sub>\<Gamma>  GNil \<Turnstile> 
+    and  "\<Theta> ; {||} ; (x, B_int  , (C_eq (CE_val (V_var x)) (CE_val (V_lit (L_num n))))) #\<^sub>\<Gamma>  GNil \<Turnstile> 
                      (C_eq (CE_op LEq (CE_val (V_lit (L_num 0))) (CE_val (V_var x)))  [[ L_true ]\<^sup>v ]\<^sup>c\<^sup>e) AND  
                      (C_eq (CE_op LEq (CE_val (V_var x)) ([| [ [ L_bitvec v ]\<^sup>v ]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e ))  [[ L_true ]\<^sup>v ]\<^sup>c\<^sup>e)
                             "
-        (is "\<Theta> ; {||} ; ?G \<Turnstile> ?c1 AND ?c2")
-      shows "0 \<le> n \<and> n \<le> int (length v)" 
+    (is "\<Theta> ; {||} ; ?G \<Turnstile> ?c1 AND ?c2")
+  shows "0 \<le> n \<and> n \<le> int (length v)" 
 proof -
   have *:"\<forall>i.  \<Theta> ; ?G \<turnstile> i \<and>  i \<Turnstile> ?G  \<longrightarrow> i \<Turnstile> ?c1 AND ?c2" using assms valid.simps by simp
- 
+
   obtain i where i: "i x = Some (SNum n)" by auto
   have "\<Theta> ; ?G \<turnstile> i \<and>  i \<Turnstile> ?G" proof 
     show  "\<Theta> ; ?G \<turnstile> i" unfolding wfI_def using wfRCV_BIntI i * by auto
     have "i \<lbrakk> ([ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_num n ]\<^sup>v ]\<^sup>c\<^sup>e )  \<rbrakk> ~ True" 
-     using * eval_c.intros(7) eval_e.intros eval_v.intros  eval_l.simps 
-     by (metis (full_types) i)
+      using * eval_c.intros(7) eval_e.intros eval_v.intros  eval_l.simps 
+      by (metis (full_types) i)
     thus  "i \<Turnstile> ?G" unfolding  is_satis_g.simps is_satis.simps by auto
   qed     
   hence **:"i \<Turnstile> ?c1 AND ?c2" using * by auto
@@ -2591,10 +2523,10 @@ proof -
     using eval_e_elims(3)[of i " [ [ L_num 0 ]\<^sup>v ]\<^sup>c\<^sup>e" "[ [ x ]\<^sup>v ]\<^sup>c\<^sup>e "  "SBool True"] 
     using \<open>(sv1 = sv2) = True \<and> i \<lbrakk> [ leq [ [ L_num 0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e \<rbrakk> ~ sv1 \<and> i \<lbrakk> [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e \<rbrakk> ~ sv2\<close> \<open>sv1 = SBool True\<close> by fastforce
   moreover hence "n1 = 0" and "n2 = n"  using eval_e_elims eval_v_elims i 
-     apply (metis eval_l.simps(3) rcl_val.eq_iff(2))
-     using eval_e_elims eval_v_elims i 
-     by (metis calculation option.inject rcl_val.eq_iff(2))
-   ultimately have  le1: "0 \<le> n " by simp
+    apply (metis eval_l.simps(3) rcl_val.eq_iff(2))
+    using eval_e_elims eval_v_elims i 
+    by (metis calculation option.inject rcl_val.eq_iff(2))
+  ultimately have  le1: "0 \<le> n " by simp
 
   hence  2: "i \<lbrakk> ?c2 \<rbrakk> ~ True" using ** eval_c_elims(3) is_satis.simps 
     by fastforce
@@ -2612,13 +2544,11 @@ proof -
   show ?thesis using le1 le2 by auto
 qed
 
-thm wfI_def
-
 lemma wfI_cons:  
   fixes i::valuation and \<Gamma>::\<Gamma>
   assumes "i' \<Turnstile> \<Gamma>" and "\<Theta> ; \<Gamma> \<turnstile> i'" and "i = i' ( x \<mapsto> s)" and "\<Theta>  \<turnstile> s : b" and "atom x \<sharp> \<Gamma>"
   shows "\<Theta> ; (x,b,c) #\<^sub>\<Gamma> \<Gamma> \<turnstile> i"  
-unfolding wfI_def proof - 
+  unfolding wfI_def proof - 
   {  
     fix x' b' c' 
     assume "(x',b',c') \<in> toSet ((x, b, c) #\<^sub>\<Gamma> \<Gamma>)"
@@ -2637,16 +2567,15 @@ unfolding wfI_def proof -
   thus "\<forall>(x, b, c)\<in>toSet ((x, b, c) #\<^sub>\<Gamma> \<Gamma>). \<exists>s. Some s = i x \<and>  \<Theta>  \<turnstile> s : b" by auto
 qed
 
-
 lemma valid_range_length_inv:
   fixes \<Gamma>::\<Gamma>
   assumes  "\<Theta> ; B \<turnstile>\<^sub>w\<^sub>f \<Gamma> " and "atom x \<sharp> \<Gamma>" and "\<exists>i. i \<Turnstile> \<Gamma> \<and> \<Theta> ; \<Gamma> \<turnstile> i"
-  and  "\<Theta> ; B ; (x, B_int  , (C_eq (CE_val (V_var x)) (CE_val (V_lit (L_num n))))) #\<^sub>\<Gamma>  \<Gamma> \<Turnstile> 
+    and  "\<Theta> ; B ; (x, B_int  , (C_eq (CE_val (V_var x)) (CE_val (V_lit (L_num n))))) #\<^sub>\<Gamma>  \<Gamma> \<Turnstile> 
                      (C_eq (CE_op LEq (CE_val (V_lit (L_num 0))) (CE_val (V_var x)))  [[ L_true ]\<^sup>v ]\<^sup>c\<^sup>e) AND  
                      (C_eq (CE_op LEq (CE_val (V_var x)) ([| [ [ L_bitvec v ]\<^sup>v ]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e ))  [[ L_true ]\<^sup>v ]\<^sup>c\<^sup>e)
                             "
-        (is "\<Theta> ; ?B ; ?G \<Turnstile> ?c1 AND ?c2")
-      shows "0 \<le> n \<and> n \<le> int (length v)" 
+    (is "\<Theta> ; ?B ; ?G \<Turnstile> ?c1 AND ?c2")
+  shows "0 \<le> n \<and> n \<le> int (length v)" 
 proof -
   have *:"\<forall>i.  \<Theta> ; ?G \<turnstile> i \<and>  i \<Turnstile> ?G  \<longrightarrow> i \<Turnstile> ?c1 AND ?c2" using assms valid.simps by simp
 
@@ -2657,13 +2586,13 @@ proof -
     show  "\<Theta> ; ?G \<turnstile> i" using wfI_cons i idash ix wfRCV_BIntI assms by simp
 
     have **:"i \<lbrakk> ([ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_num n ]\<^sup>v ]\<^sup>c\<^sup>e )  \<rbrakk> ~ True" 
-     using * eval_c.intros(7) eval_e.intros eval_v.intros  eval_l.simps i 
-     by (metis (full_types) ix)
- 
-   show  "i \<Turnstile> ?G" unfolding  is_satis_g.simps proof 
-     show \<open> i \<Turnstile> [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_num n ]\<^sup>v ]\<^sup>c\<^sup>e  \<close> using ** is_satis.simps by auto
-     show \<open> i \<Turnstile> \<Gamma> \<close> using idash i assms is_satis_g_i_upd by metis
-qed
+      using * eval_c.intros(7) eval_e.intros eval_v.intros  eval_l.simps i 
+      by (metis (full_types) ix)
+
+    show  "i \<Turnstile> ?G" unfolding  is_satis_g.simps proof 
+      show \<open> i \<Turnstile> [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ L_num n ]\<^sup>v ]\<^sup>c\<^sup>e  \<close> using ** is_satis.simps by auto
+      show \<open> i \<Turnstile> \<Gamma> \<close> using idash i assms is_satis_g_i_upd by metis
+    qed
   qed     
   hence **:"i \<Turnstile> ?c1 AND ?c2" using * by auto
 
@@ -2676,11 +2605,11 @@ qed
     using eval_e_elims(3)[of i " [ [ L_num 0 ]\<^sup>v ]\<^sup>c\<^sup>e" "[ [ x ]\<^sup>v ]\<^sup>c\<^sup>e "  "SBool True"] 
     using \<open>(sv1 = sv2) = True \<and> i \<lbrakk> [ leq [ [ L_num 0 ]\<^sup>v ]\<^sup>c\<^sup>e [ [ x ]\<^sup>v ]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e \<rbrakk> ~ sv1 \<and> i \<lbrakk> [ [ L_true ]\<^sup>v ]\<^sup>c\<^sup>e \<rbrakk> ~ sv2\<close> \<open>sv1 = SBool True\<close> by fastforce
   moreover hence "n1 = 0" and "n2 = n"  using eval_e_elims eval_v_elims i 
-     apply (metis eval_l.simps(3) rcl_val.eq_iff(2))
-     using eval_e_elims eval_v_elims i 
-     calculation option.inject rcl_val.eq_iff(2)
-     by (metis ix)
-   ultimately have  le1: "0 \<le> n " by simp
+    apply (metis eval_l.simps(3) rcl_val.eq_iff(2))
+    using eval_e_elims eval_v_elims i 
+      calculation option.inject rcl_val.eq_iff(2)
+    by (metis ix)
+  ultimately have  le1: "0 \<le> n " by simp
 
   hence  2: "i \<lbrakk> ?c2 \<rbrakk> ~ True" using ** eval_c_elims(3) is_satis.simps 
     by fastforce
@@ -2698,33 +2627,28 @@ qed
   show ?thesis using le1 le2 by auto
 qed
 
-
-
 lemma eval_c_conj2I[intro]: 
   assumes "i \<lbrakk> c1 \<rbrakk> ~ True" and "i \<lbrakk> c2 \<rbrakk> ~ True"
   shows "i \<lbrakk> (C_conj c1 c2) \<rbrakk> ~  True"
- using assms eval_c_conjI by metis
+  using assms eval_c_conjI by metis
 
 lemma valid_split:
   assumes "split n v (v1,v2)" and "\<turnstile>\<^sub>w\<^sub>f \<Theta>"
   shows "\<Theta> ; {||} ; (z , [B_bitvec , B_bitvec ]\<^sup>b ,  [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ [ L_bitvec  v1 ]\<^sup>v , [ L_bitvec  v2 ]\<^sup>v ]\<^sup>v ]\<^sup>c\<^sup>e) #\<^sub>\<Gamma> GNil  
 \<Turnstile>  ([ [ L_bitvec v ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [#1[ [ z ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e @@ [#2[ [ z ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e ]\<^sup>c\<^sup>e)   AND  ([| [#1[ [ z ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e |]\<^sup>c\<^sup>e  ==  [ [ L_num n ]\<^sup>v ]\<^sup>c\<^sup>e)"
-     (is "\<Theta> ;  {||} ;  ?G \<Turnstile> ?c1 AND ?c2")
-unfolding valid.simps proof
+    (is "\<Theta> ;  {||} ;  ?G \<Turnstile> ?c1 AND ?c2")
+  unfolding valid.simps proof
 
   have wfg: " \<Theta> ; {||}  \<turnstile>\<^sub>w\<^sub>f (z, [B_bitvec , B_bitvec ]\<^sup>b ,  [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e  ==  [ [ [ L_bitvec  v1 ]\<^sup>v , [ L_bitvec  v2 ]\<^sup>v ]\<^sup>v ]\<^sup>c\<^sup>e) #\<^sub>\<Gamma> GNil" 
     using wf_intros assms base_for_lit.simps  fresh_GNil wfC_v_eq  wfG_intros2 by metis   
 
-  (* Is the failure to be able to do this in one shot due to the overlapping wfG_cons rules? If I do apply(rule+) 
-     I get an unprovable goal arising from this overlap *)
   show "\<Theta> ; {||} ; ?G  \<turnstile>\<^sub>w\<^sub>f ?c1 AND ?c2" 
-(*    using wf_intros assms base_for_lit.simps  fresh_GNil wfC_v_eq  wfG_intros2 lookup.simps wfg *)
     apply(rule wfC_conjI)
-     apply(rule wfC_eqI)
-      apply(rule wfCE_valI)
+    apply(rule wfC_eqI)
+    apply(rule wfCE_valI)
     apply(rule wfV_litI)
     using wf_intros wfg lookup.simps base_for_lit.simps wfC_v_eq 
-     apply (metis )+
+    apply (metis )+
     done
 
   have len:"int (length v1) = n" using assms split_length by auto
@@ -2740,7 +2664,7 @@ unfolding valid.simps proof
     hence "i  \<lbrakk> [ [ z ]\<^sup>v ]\<^sup>c\<^sup>e \<rbrakk> ~ (SPair (SBitvec v1) (SBitvec v2))" using eval_c_eqI eval_v.intros eval_l.simps 
       by (metis eval_e_elims(1) eval_v_uniqueness)
     hence b:"i z = Some (SPair (SBitvec v1) (SBitvec v2))" using a eval_e_elims eval_v_elims by metis
-      
+
     have v1: "i \<lbrakk> [#1[ [ z ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e \<rbrakk> ~ SBitvec v1 " 
       using eval_e_fstI eval_e_valI eval_v_varI b by metis
     have v2: "i \<lbrakk> [#2[ [ z ]\<^sup>v ]\<^sup>c\<^sup>e]\<^sup>c\<^sup>e \<rbrakk> ~ SBitvec v2" 
@@ -2754,6 +2678,51 @@ unfolding valid.simps proof
     moreover have "i \<lbrakk>  [ [ L_num n ]\<^sup>v ]\<^sup>c\<^sup>e  \<rbrakk> ~ SNum n" using eval_e.intros eval_v.intros eval_l.simps by metis
     ultimately show  "i \<Turnstile> ?c1 AND ?c2" using is_satis.intros eval_c_conj2I eval_c_eqI len by metis
   qed
+qed
+
+
+lemma is_satis_eq:
+  assumes "wfI \<Theta> G i" and "wfCE \<Theta> \<B> G e b"
+  shows "is_satis i (e == e)"
+proof(rule)
+  obtain s where "eval_e i e s" using eval_e_exist assms by metis
+  thus "eval_c i (e  ==  e ) True" using eval_c_eqI by metis
+qed
+
+lemma is_satis_g_i_upd2:
+  assumes "eval_v i v s" and "is_satis ((i ( x \<mapsto> s))) c0" and "atom x \<sharp> G" and "wfG \<Theta> \<B> (G3@((x,b,c0)#\<^sub>\<Gamma>G))" and "wfV \<Theta> \<B> G v b" and "wfI \<Theta> (G3[x::=v]\<^sub>\<Gamma>\<^sub>v@G) i" 
+    and  "is_satis_g i (G3[x::=v]\<^sub>\<Gamma>\<^sub>v@G)"
+  shows "is_satis_g (i ( x \<mapsto> s)) (G3@((x,b,c0)#\<^sub>\<Gamma>G))"
+  using assms proof(induct G3 rule: \<Gamma>_induct)
+  case GNil
+  hence "is_satis_g (i(x \<mapsto> s)) G" using is_satis_g_i_upd by auto
+  then show ?case using GNil using is_satis_g.simps append_g.simps by metis
+next
+  case (GCons x' b' c' \<Gamma>')
+  hence "x\<noteq>x'" using wfG_cons_append  by metis
+  hence "is_satis_g i (((x', b', c'[x::=v]\<^sub>c\<^sub>v) #\<^sub>\<Gamma> (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v) @ G))" using subst_gv.simps GCons by auto
+  hence *:"is_satis i c'[x::=v]\<^sub>c\<^sub>v \<and> is_satis_g i ((\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v) @ G)" using subst_gv.simps by auto
+
+  have "is_satis_g (i(x \<mapsto> s)) ((x', b', c') #\<^sub>\<Gamma> (\<Gamma>'@  (x, b, c0) #\<^sub>\<Gamma> G))" proof(subst is_satis_g.simps,rule)
+    show "is_satis (i(x \<mapsto> s)) c'" proof(subst subst_c_satis_full[symmetric])
+      show \<open>eval_v i v s\<close> using GCons by auto
+      show \<open> \<Theta> ; \<B> ; ((x', b', c') #\<^sub>\<Gamma>\<Gamma>')@(x, b, c0) #\<^sub>\<Gamma> G \<turnstile>\<^sub>w\<^sub>f c' \<close> using GCons wfC_refl by auto
+      show \<open>wfI \<Theta> ((((x', b', c') #\<^sub>\<Gamma> \<Gamma>')[x::=v]\<^sub>\<Gamma>\<^sub>v) @ G) i\<close> using GCons  by auto
+      show \<open> \<Theta> ; \<B> ; G \<turnstile>\<^sub>w\<^sub>f v : b \<close> using GCons by auto
+      show \<open>is_satis i c'[x::=v]\<^sub>c\<^sub>v\<close> using * by auto
+    qed
+    show "is_satis_g (i(x \<mapsto> s)) (\<Gamma>' @ (x, b, c0) #\<^sub>\<Gamma> G)" proof(rule  GCons(1))
+      show \<open>eval_v i v s\<close> using GCons by auto
+      show \<open>is_satis (i(x \<mapsto> s)) c0\<close> using GCons by metis
+      show \<open>atom x \<sharp> G\<close> using GCons by auto
+      show \<open> \<Theta> ; \<B>\<turnstile>\<^sub>w\<^sub>f \<Gamma>' @ (x, b, c0) #\<^sub>\<Gamma> G \<close> using GCons wfG_elims append_g.simps by metis
+      show \<open>is_satis_g i (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ G)\<close> using * by auto
+      show "wfI \<Theta> (\<Gamma>'[x::=v]\<^sub>\<Gamma>\<^sub>v @ G) i" using GCons wfI_def subst_g_assoc_cons \<open>x\<noteq>x'\<close> by auto
+      show "\<Theta> ; \<B> ; G \<turnstile>\<^sub>w\<^sub>f v : b "  using GCons by auto
+    qed
+  qed
+  moreover have "((x', b', c') #\<^sub>\<Gamma> \<Gamma>' @ (x, b, c0) #\<^sub>\<Gamma> G) = (((x', b', c') #\<^sub>\<Gamma> \<Gamma>') @ (x, b, c0) #\<^sub>\<Gamma> G)" by auto
+  ultimately show ?case using GCons by metis
 qed
 
 
